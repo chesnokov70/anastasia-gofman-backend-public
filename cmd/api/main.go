@@ -25,7 +25,6 @@ import (
 // @title Art Gallery API
 // @version 1.0
 // @description Backend для галереи anastasii_gofman
-// @host localhost:8010
 // @BasePath /
 func main() {
 	cfg, err := config.LoadConfig()
