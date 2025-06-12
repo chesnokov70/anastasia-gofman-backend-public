@@ -98,6 +98,23 @@ compose-nocashe:
 	@echo "${GREEN}Запуск проекта с Docker Compose без кеша...${NC}"
 	@docker-compose down && docker-compose build --no-cache backend && docker-compose up -d
 
+# Production команды
+prod-up:
+	@echo "${GREEN}Запуск production версии с Nginx...${NC}"
+	@docker-compose -f docker-compose.yml up -d
+
+prod-down:
+	@echo "${GREEN}Остановка production версии...${NC}"
+	@docker-compose down
+
+prod-restart:
+	@echo "${GREEN}Перезапуск production версии...${NC}"
+	@docker-compose restart
+
+nginx-reload:
+	@echo "${GREEN}Перезагрузка конфигурации Nginx...${NC}"
+	@docker-compose exec nginx nginx -s reload
+
 # Вспомогательные команды
 setup:
 	@echo "${GREEN}Установка зависимостей...${NC}"
