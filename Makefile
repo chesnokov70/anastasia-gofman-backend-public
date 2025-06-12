@@ -94,6 +94,10 @@ compose-logs:
 	@echo "${GREEN}Просмотр логов Docker Compose...${NC}"
 	@docker-compose logs -f
 
+compose-nocashe:
+	@echo "${GREEN}Запуск проекта с Docker Compose без кеша...${NC}"
+	@docker-compose down && docker-compose build --no-cache backend && docker-compose up -d
+
 # Вспомогательные команды
 setup:
 	@echo "${GREEN}Установка зависимостей...${NC}"
