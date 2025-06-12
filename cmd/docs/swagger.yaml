@@ -1,0 +1,1229 @@
+basePath: /
+definitions:
+  dto.ArtResponseDTO:
+    properties:
+      author_id:
+        type: integer
+      created_at:
+        type: string
+      description:
+        $ref: '#/definitions/entity.TranslatedText'
+      dimension_x:
+        type: integer
+      dimension_y:
+        type: integer
+      frame:
+        $ref: '#/definitions/entity.TranslatedText'
+      id:
+        type: integer
+      main_photo_path:
+        type: string
+      medium:
+        $ref: '#/definitions/entity.TranslatedText'
+      name:
+        $ref: '#/definitions/entity.TranslatedText'
+      photos:
+        items:
+          $ref: '#/definitions/dto.PhotoResponseDTO'
+        type: array
+      position:
+        type: integer
+      preview_photo_path:
+        type: string
+      price:
+        type: integer
+      technique:
+        $ref: '#/definitions/entity.TranslatedText'
+      title:
+        $ref: '#/definitions/entity.TranslatedText'
+      updated_at:
+        type: string
+      year:
+        type: integer
+    type: object
+  dto.CreateArtDTO:
+    properties:
+      author_id:
+        example: 1
+        type: integer
+      description:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      dimension_x:
+        example: 100
+        type: integer
+      dimension_y:
+        example: 100
+        type: integer
+      frame:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      medium:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      name:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      price:
+        example: 100000
+        type: integer
+      technique:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      title:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      year:
+        example: 2021
+        type: integer
+    required:
+    - name
+    type: object
+  dto.CreateAuthorDTO:
+    properties:
+      bio:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      contact:
+        properties:
+          email:
+            example: vovka@sosijopa.com
+            type: string
+          links:
+            properties:
+              behance:
+                example: vovka_art
+                type: string
+              facebook:
+                example: vovka_fb
+                type: string
+              instagram:
+                example: vovka_insta
+                type: string
+              linkedin:
+                example: vovka_linkedin
+                type: string
+              pinterest:
+                example: vovka_pins
+                type: string
+              telegram:
+                example: vovka_tele
+                type: string
+              twitter:
+                example: vovka_tweet
+                type: string
+              vkontakte:
+                example: vovka_vk
+                type: string
+              whatsapp:
+                example: "+5553535"
+                type: string
+              youtube:
+                example: vovka_channel
+                type: string
+            type: object
+          phone:
+            example: "+5553535"
+            type: string
+        type: object
+      is_active:
+        example: true
+        type: boolean
+      name:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+    required:
+    - name
+    type: object
+  dto.CreateEventDTO:
+    type: object
+  dto.EventResponseDTO:
+    properties:
+      created_at:
+        type: string
+      description:
+        $ref: '#/definitions/entity.TranslatedText'
+      end_date:
+        type: string
+      id:
+        type: integer
+      location:
+        $ref: '#/definitions/entity.TranslatedText'
+      main_photo_path:
+        type: string
+      photos:
+        items:
+          $ref: '#/definitions/dto.PhotoResponseDTO'
+        type: array
+      position:
+        type: integer
+      preview_photo_path:
+        type: string
+      start_date:
+        type: string
+      title:
+        $ref: '#/definitions/entity.TranslatedText'
+      updated_at:
+        type: string
+    type: object
+  dto.FlexibleTime:
+    properties:
+      time.Time:
+        type: string
+    type: object
+  dto.PhotoResponseDTO:
+    properties:
+      id:
+        type: integer
+      path:
+        type: string
+      position:
+        type: integer
+    type: object
+  dto.TranslatedTextDTO:
+    properties:
+      en:
+        example: Tung, tung, tung, tung, tung, tung, tung, tung, tung, Sahur.
+        type: string
+      es:
+        example: Golybini Shpionini
+        type: string
+      ru:
+        example: Тун, тун, тун, Сахур.
+        type: string
+    type: object
+  dto.UpdateArtDTO:
+    properties:
+      author_id:
+        example: 1
+        type: integer
+      description:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      dimension_x:
+        example: 100
+        type: integer
+      dimension_y:
+        example: 100
+        type: integer
+      frame:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      medium:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      name:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      price:
+        example: 100000
+        type: integer
+      technique:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      title:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      year:
+        example: 2021
+        type: integer
+    type: object
+  dto.UpdateAuthorDTO:
+    properties:
+      bio:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      contact:
+        properties:
+          email:
+            example: vovka@sosijopa.com
+            type: string
+          links:
+            properties:
+              behance:
+                example: vovka_art
+                type: string
+              facebook:
+                example: vovka_fb
+                type: string
+              instagram:
+                example: vovka_insta
+                type: string
+              linkedin:
+                example: vovka_linkedin
+                type: string
+              pinterest:
+                example: vovka_pins
+                type: string
+              telegram:
+                example: vovka_tele
+                type: string
+              twitter:
+                example: vovka_tweet
+                type: string
+              vkontakte:
+                example: vovka_vk
+                type: string
+              whatsapp:
+                example: "+5553535"
+                type: string
+              youtube:
+                example: vovka_channel
+                type: string
+            type: object
+          phone:
+            example: "+5553535"
+            type: string
+        type: object
+      is_active:
+        example: false
+        type: boolean
+      name:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+    type: object
+  dto.UpdateEventDTO:
+    type: object
+  entity.Author:
+    properties:
+      bio:
+        $ref: '#/definitions/entity.TranslatedText'
+      contact:
+        $ref: '#/definitions/entity.ContactInfo'
+      created_at:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      name:
+        $ref: '#/definitions/entity.TranslatedText'
+      position:
+        example: 1
+        type: integer
+      updated_at:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+    type: object
+  entity.ContactInfo:
+    properties:
+      email:
+        example: vovka@sosijopa.com
+        type: string
+      links:
+        $ref: '#/definitions/entity.SocialLink'
+      phone:
+        example: "+5553535"
+        type: string
+    type: object
+  entity.Photo:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_main:
+        type: boolean
+      is_preview:
+        type: boolean
+      owner_id:
+        type: integer
+      owner_type:
+        description: '"arts", "event"'
+        type: string
+      path:
+        type: string
+      position:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  entity.SocialLink:
+    properties:
+      behance:
+        example: vovka_art
+        type: string
+      facebook:
+        example: vovka_fb
+        type: string
+      instagram:
+        example: vovka_insta
+        type: string
+      linkedin:
+        example: vovka_linkedin
+        type: string
+      pinterest:
+        example: vovka_pins
+        type: string
+      telegram:
+        example: vovka_tele
+        type: string
+      twitter:
+        example: vovka_tweet
+        type: string
+      vkontakte:
+        example: vovka_vk
+        type: string
+      whatsapp:
+        example: "+5553535"
+        type: string
+      youtube:
+        example: vovka_channel
+        type: string
+    type: object
+  entity.TranslatedText:
+    properties:
+      en:
+        example: Tung, tung, tung, tung, tung, tung, tung, tung, tung, Sahur.
+        type: string
+      es:
+        example: Golybini Shpionini
+        type: string
+      ru:
+        example: Тун, тун, тун, Сахур.
+        type: string
+    type: object
+host: localhost:8010
+info:
+  contact: {}
+  description: Backend для галереи anastasii_gofman
+  title: Art Gallery API
+  version: "1.0"
+paths:
+  /api/arts:
+    get:
+      consumes:
+      - application/json
+      description: Получает все картины
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/dto.ArtResponseDTO'
+              type: array
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all arts
+      tags:
+      - Arts
+    post:
+      consumes:
+      - application/json
+      description: Создает новую картину, все поля необязательные кроме имени, по
+        этому пути нельзя передавать ФОТО
+      parameters:
+      - description: Art
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateArtDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ArtResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new art
+      tags:
+      - Arts
+  /api/arts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет арт объект и его фотки
+      parameters:
+      - description: Art ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete art
+      tags:
+      - Arts
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет часть картины - все поля необязательные, поля, которые
+        не передал не меняются, фото сюда не суй!
+      parameters:
+      - description: Art ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Art
+        in: body
+        name: kwargs
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateArtDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ArtResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Partial update art
+      tags:
+      - Arts
+    put:
+      consumes:
+      - application/json
+      description: Обновляет всю картину - все поля необязательные, но перезаписывает
+        все поля, те которые не передал - обнуляются (кроме фото)
+      parameters:
+      - description: Art ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Art
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateArtDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ArtResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Full update art
+      tags:
+      - Arts
+  /api/arts/{id}/author/{author_id}:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет автора к картине
+      parameters:
+      - description: Art ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Author ID
+        in: path
+        name: author_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ArtResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add author to art
+      tags:
+      - Arts
+  /api/arts/{id}/main_photo:
+    get:
+      consumes:
+      - application/json
+      description: Получает главную фотографию картины
+      parameters:
+      - description: Art ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Photo'
+      summary: Get main photo
+      tags:
+      - Arts
+    post:
+      consumes:
+      - multipart/form-data
+      description: Добавляет/обновляет главную фотографию к картине - передается фото
+        в формате multipart/form-data в поле main_photo
+      parameters:
+      - description: Art ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Main Photo
+        in: formData
+        name: main_photo
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ArtResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add main photo to art
+      tags:
+      - Arts
+  /api/arts/{id}/photos:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Добавляет фотографии к картине(имеющиеся не трогаются) - передается
+        []base64 в формате multipart/form-data в поле photos
+      parameters:
+      - description: Art ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Photos
+        in: formData
+        items:
+          type: file
+        name: photos
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Art
+          schema:
+            $ref: '#/definitions/dto.ArtResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add photos to art
+      tags:
+      - Arts
+  /api/arts/with_photos:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Создает картину и фотографии к ней - передается в формате multipart/form-data
+        в поле main_photo, preview_photo, photos(массив)
+      parameters:
+      - description: JSON payload for Art details. All fields from CreateArtDTO are
+          expected here.
+        in: formData
+        name: data
+        required: true
+        type: string
+        x-example: '{ "author_id": 1, "name": {"en": "Art Name", "ru": "Название Картины",
+          "es": "Nombre del Arte"}, "title": {"en": "Art Title", "ru": "Заголовок",
+          "es": "Título"}, "description": {"en": "Detailed description", "ru": "Детальное
+          описание", "es": "Descripción detallada"}, "medium": {"en": "Oil on canvas",
+          "ru": "Холст, масло", "es": "Óleo sobre lienzo"}, "technique": {"en": "Impasto",
+          "ru": "Импасто", "es": "Empaste"}, "dimension_x": 120, "dimension_y": 90,
+          "year": 2024, "frame": {"en": "Wooden frame", "ru": "Деревянная рама", "es":
+          "Marco de madera"}, "price": 150000 }'
+      - description: Main Photo
+        in: formData
+        name: main_photo
+        type: file
+      - description: Preview Photo
+        in: formData
+        name: preview_photo
+        type: file
+      - collectionFormat: csv
+        description: Photos
+        in: formData
+        items:
+          type: file
+        name: photos
+        type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ArtResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create art with photos
+      tags:
+      - Arts
+  /api/authors:
+    get:
+      consumes:
+      - application/json
+      description: Получаем всех авторов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/entity.Author'
+              type: array
+            type: array
+      summary: Get all authors
+      tags:
+      - Authors
+    post:
+      consumes:
+      - application/json
+      description: С кайфом создаем автора, все поля необязательные кроме имени, ну
+        и в mail пихать нужно mail нормальный, но можно ничего не пихать
+      parameters:
+      - description: Author data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateAuthorDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entity.Author'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create author
+      tags:
+      - Authors
+  /api/authors/:id:
+    patch:
+      consumes:
+      - application/json
+      description: Обновляем автора частично, все поля необязательные, не передал
+        = осталось прежним
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateAuthorDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Author'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Partial update author
+      tags:
+      - Authors
+  /api/authors/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Получаем автора по ID
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get author by ID
+      tags:
+      - Authors
+    put:
+      consumes:
+      - application/json
+      description: Обновляем автора полностью, все поля необязательные, но сотрется
+        вся инфа, которая была раньше и которая не передана
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Author data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateAuthorDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Author'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update author
+      tags:
+      - Authors
+  /api/events:
+    get:
+      consumes:
+      - application/json
+      description: Получает все события
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/dto.EventResponseDTO'
+              type: array
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all events
+      tags:
+      - Events
+    post:
+      consumes:
+      - application/json
+      description: 'Создает новое событие без фотографий - принимает JSON. Поддерживаемые
+        форматы дат: "2024-01-01T00:00:00Z", "01.01.2024", "01.01.2024 15:30"'
+      parameters:
+      - description: Event data with flexible date formats
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEventDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.EventResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create event
+      tags:
+      - Events
+  /api/events/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Получает событие по ID
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get event by ID
+      tags:
+      - Events
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет поля события, которые ты передал, остальные не трогает,
+        фото сюда не суй!
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Event
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateEventDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Partial update event
+      tags:
+      - Events
+    put:
+      consumes:
+      - application/json
+      description: Обновляет все поля события - все поля необязательные, но перезаписывает
+        все поля, те которые не передал - обнуляются (кроме фото)
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Event
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateEventDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Full update event
+      tags:
+      - Events
+  /api/events/{id}/main_photo:
+    get:
+      consumes:
+      - application/json
+      description: Получает главную фотографию события
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Photo'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get main photo
+      tags:
+      - Events
+    post:
+      consumes:
+      - multipart/form-data
+      description: Добавляет/обновляет главную фотографию к событию - передается фото
+        в формате multipart/form-data в поле main_photo
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Main Photo
+        in: formData
+        name: main_photo
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add main photo to event
+      tags:
+      - Events
+  /api/events/{id}/photos:
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Обновляет фотографии события(имеющиеся удаляются) - передается
+        []base64 в формате multipart/form-data в поле photos
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Photos
+        in: formData
+        items:
+          type: file
+        name: photos
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Patch event photos
+      tags:
+      - Events
+    post:
+      consumes:
+      - multipart/form-data
+      description: Добавляет фотографии к событию(имеющиеся не трогаются) - передается
+        []base64 в формате multipart/form-data в поле photos
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Photos
+        in: formData
+        items:
+          type: file
+        name: photos
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add photos to event
+      tags:
+      - Events
+  /api/events/with_photos:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Создает событие и фотографии к нему - передается в формате multipart/form-data.
+        Поддерживаемые форматы дат: "2024-01-01T00:00:00Z", "01.01.2024", "01.01.2024
+        15:30"'
+      parameters:
+      - description: JSON payload for Event details with flexible date formats.
+        in: formData
+        name: data
+        required: true
+        type: string
+        x-example: '{ "title": {"en": "Event Title", "ru": "Заголовок События", "es":
+          "Título del Evento"}, "description": {"en": "Event description", "ru": "Описание
+          события", "es": "Descripción del evento"}, "location": {"en": "Event location",
+          "ru": "Место проведения", "es": "Ubicación del evento"}, "start_date": "01.01.2024",
+          "end_date": "02.01.2024" }'
+      - description: Main Photo
+        in: formData
+        name: main_photo
+        type: file
+      - description: Preview Photo
+        in: formData
+        name: preview_photo
+        type: file
+      - collectionFormat: csv
+        description: Photos
+        in: formData
+        items:
+          type: file
+        name: photos
+        type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.EventResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create event with photos
+      tags:
+      - Events
+swagger: "2.0"

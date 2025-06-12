@@ -10,10 +10,11 @@
 
 # Test binary, built with `go test -c`
 *.test
-
+*.js
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-
+scripts/
+node_modules/
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
@@ -23,3 +24,30 @@ go.work.sum
 
 # env file
 .env
+docker.env
+
+# Added by Claude Task Master
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+.DS_Store
+# Task files
+tasks.json
+tasks/ 
+.cursor/

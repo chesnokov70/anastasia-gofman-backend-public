@@ -1,0 +1,1780 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Backend для галереи anastasii_gofman",
+        "title": "Art Gallery API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8010",
+    "basePath": "/",
+    "paths": {
+        "/api/arts": {
+            "get": {
+                "description": "Получает все картины",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Get all arts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/dto.ArtResponseDTO"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Создает новую картину, все поля необязательные кроме имени, по этому пути нельзя передавать ФОТО",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Create a new art",
+                "parameters": [
+                    {
+                        "description": "Art",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateArtDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArtResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/arts/with_photos": {
+            "post": {
+                "description": "Создает картину и фотографии к ней - передается в формате multipart/form-data в поле main_photo, preview_photo, photos(массив)",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Create art with photos",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "x-example": "{ \"author_id\": 1, \"name\": {\"en\": \"Art Name\", \"ru\": \"Название Картины\", \"es\": \"Nombre del Arte\"}, \"title\": {\"en\": \"Art Title\", \"ru\": \"Заголовок\", \"es\": \"Título\"}, \"description\": {\"en\": \"Detailed description\", \"ru\": \"Детальное описание\", \"es\": \"Descripción detallada\"}, \"medium\": {\"en\": \"Oil on canvas\", \"ru\": \"Холст, масло\", \"es\": \"Óleo sobre lienzo\"}, \"technique\": {\"en\": \"Impasto\", \"ru\": \"Импасто\", \"es\": \"Empaste\"}, \"dimension_x\": 120, \"dimension_y\": 90, \"year\": 2024, \"frame\": {\"en\": \"Wooden frame\", \"ru\": \"Деревянная рама\", \"es\": \"Marco de madera\"}, \"price\": 150000 }",
+                        "description": "JSON payload for Art details. All fields from CreateArtDTO are expected here.",
+                        "name": "data",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Main Photo",
+                        "name": "main_photo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Preview Photo",
+                        "name": "preview_photo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Photos",
+                        "name": "photos",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArtResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/arts/{id}": {
+            "put": {
+                "description": "Обновляет всю картину - все поля необязательные, но перезаписывает все поля, те которые не передал - обнуляются (кроме фото)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Full update art",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Art ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Art",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateArtDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArtResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Удаляет арт объект и его фотки",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Delete art",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Art ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Обновляет часть картины - все поля необязательные, поля, которые не передал не меняются, фото сюда не суй!",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Partial update art",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Art ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Art",
+                        "name": "kwargs",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateArtDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArtResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/arts/{id}/author/{author_id}": {
+            "post": {
+                "description": "Добавляет автора к картине",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Add author to art",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Art ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "author_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArtResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/arts/{id}/main_photo": {
+            "get": {
+                "description": "Получает главную фотографию картины",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Get main photo",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Art ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Photo"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Добавляет/обновляет главную фотографию к картине - передается фото в формате multipart/form-data в поле main_photo",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Add main photo to art",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Art ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Main Photo",
+                        "name": "main_photo",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArtResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/arts/{id}/photos": {
+            "post": {
+                "description": "Добавляет фотографии к картине(имеющиеся не трогаются) - передается []base64 в формате multipart/form-data в поле photos",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Arts"
+                ],
+                "summary": "Add photos to art",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Art ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Photos",
+                        "name": "photos",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Art",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArtResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/authors": {
+            "get": {
+                "description": "Получаем всех авторов",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Get all authors",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/entity.Author"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "С кайфом создаем автора, все поля необязательные кроме имени, ну и в mail пихать нужно mail нормальный, но можно ничего не пихать",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Create author",
+                "parameters": [
+                    {
+                        "description": "Author data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateAuthorDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Author"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/authors/:id": {
+            "patch": {
+                "description": "Обновляем автора частично, все поля необязательные, не передал = осталось прежним",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Partial update author",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateAuthorDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Author"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/authors/{id}": {
+            "get": {
+                "description": "Получаем автора по ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Get author by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "put": {
+                "description": "Обновляем автора полностью, все поля необязательные, но сотрется вся инфа, которая была раньше и которая не передана",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Update author",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Author data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateAuthorDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Author"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/events": {
+            "get": {
+                "description": "Получает все события",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get all events",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/dto.EventResponseDTO"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Создает новое событие без фотографий - принимает JSON. Поддерживаемые форматы дат: \"2024-01-01T00:00:00Z\", \"01.01.2024\", \"01.01.2024 15:30\"",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Create event",
+                "parameters": [
+                    {
+                        "description": "Event data with flexible date formats",
+                        "name": "event",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateEventDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/events/with_photos": {
+            "post": {
+                "description": "Создает событие и фотографии к нему - передается в формате multipart/form-data. Поддерживаемые форматы дат: \"2024-01-01T00:00:00Z\", \"01.01.2024\", \"01.01.2024 15:30\"",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Create event with photos",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "x-example": "{ \"title\": {\"en\": \"Event Title\", \"ru\": \"Заголовок События\", \"es\": \"Título del Evento\"}, \"description\": {\"en\": \"Event description\", \"ru\": \"Описание события\", \"es\": \"Descripción del evento\"}, \"location\": {\"en\": \"Event location\", \"ru\": \"Место проведения\", \"es\": \"Ubicación del evento\"}, \"start_date\": \"01.01.2024\", \"end_date\": \"02.01.2024\" }",
+                        "description": "JSON payload for Event details with flexible date formats.",
+                        "name": "data",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Main Photo",
+                        "name": "main_photo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Preview Photo",
+                        "name": "preview_photo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Photos",
+                        "name": "photos",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/events/{id}": {
+            "get": {
+                "description": "Получает событие по ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get event by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Обновляет все поля события - все поля необязательные, но перезаписывает все поля, те которые не передал - обнуляются (кроме фото)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Full update event",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Event",
+                        "name": "event",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateEventDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Обновляет поля события, которые ты передал, остальные не трогает, фото сюда не суй!",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Partial update event",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Event",
+                        "name": "event",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateEventDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/events/{id}/main_photo": {
+            "get": {
+                "description": "Получает главную фотографию события",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get main photo",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Photo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Добавляет/обновляет главную фотографию к событию - передается фото в формате multipart/form-data в поле main_photo",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Add main photo to event",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Main Photo",
+                        "name": "main_photo",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/events/{id}/photos": {
+            "post": {
+                "description": "Добавляет фотографии к событию(имеющиеся не трогаются) - передается []base64 в формате multipart/form-data в поле photos",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Add photos to event",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Photos",
+                        "name": "photos",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Обновляет фотографии события(имеющиеся удаляются) - передается []base64 в формате multipart/form-data в поле photos",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Patch event photos",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Photos",
+                        "name": "photos",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.ArtResponseDTO": {
+            "type": "object",
+            "properties": {
+                "author_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "dimension_x": {
+                    "type": "integer"
+                },
+                "dimension_y": {
+                    "type": "integer"
+                },
+                "frame": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "main_photo_path": {
+                    "type": "string"
+                },
+                "medium": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "name": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PhotoResponseDTO"
+                    }
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "preview_photo_path": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "technique": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "title": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CreateArtDTO": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "author_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "description": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "dimension_x": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "dimension_y": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "frame": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "medium": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "name": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "price": {
+                    "type": "integer",
+                    "example": 100000
+                },
+                "technique": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "title": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "year": {
+                    "type": "integer",
+                    "example": 2021
+                }
+            }
+        },
+        "dto.CreateAuthorDTO": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "bio": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "contact": {
+                    "type": "object",
+                    "properties": {
+                        "email": {
+                            "type": "string",
+                            "example": "vovka@sosijopa.com"
+                        },
+                        "links": {
+                            "type": "object",
+                            "properties": {
+                                "behance": {
+                                    "type": "string",
+                                    "example": "vovka_art"
+                                },
+                                "facebook": {
+                                    "type": "string",
+                                    "example": "vovka_fb"
+                                },
+                                "instagram": {
+                                    "type": "string",
+                                    "example": "vovka_insta"
+                                },
+                                "linkedin": {
+                                    "type": "string",
+                                    "example": "vovka_linkedin"
+                                },
+                                "pinterest": {
+                                    "type": "string",
+                                    "example": "vovka_pins"
+                                },
+                                "telegram": {
+                                    "type": "string",
+                                    "example": "vovka_tele"
+                                },
+                                "twitter": {
+                                    "type": "string",
+                                    "example": "vovka_tweet"
+                                },
+                                "vkontakte": {
+                                    "type": "string",
+                                    "example": "vovka_vk"
+                                },
+                                "whatsapp": {
+                                    "type": "string",
+                                    "example": "+5553535"
+                                },
+                                "youtube": {
+                                    "type": "string",
+                                    "example": "vovka_channel"
+                                }
+                            }
+                        },
+                        "phone": {
+                            "type": "string",
+                            "example": "+5553535"
+                        }
+                    }
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                }
+            }
+        },
+        "dto.CreateEventDTO": {
+            "type": "object"
+        },
+        "dto.EventResponseDTO": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "location": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "main_photo_path": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PhotoResponseDTO"
+                    }
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "preview_photo_path": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "title": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.FlexibleTime": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PhotoResponseDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.TranslatedTextDTO": {
+            "type": "object",
+            "properties": {
+                "en": {
+                    "type": "string",
+                    "example": "Tung, tung, tung, tung, tung, tung, tung, tung, tung, Sahur."
+                },
+                "es": {
+                    "type": "string",
+                    "example": "Golybini Shpionini"
+                },
+                "ru": {
+                    "type": "string",
+                    "example": "Тун, тун, тун, Сахур."
+                }
+            }
+        },
+        "dto.UpdateArtDTO": {
+            "type": "object",
+            "properties": {
+                "author_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "description": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "dimension_x": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "dimension_y": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "frame": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "medium": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "name": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "price": {
+                    "type": "integer",
+                    "example": 100000
+                },
+                "technique": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "title": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "year": {
+                    "type": "integer",
+                    "example": 2021
+                }
+            }
+        },
+        "dto.UpdateAuthorDTO": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "contact": {
+                    "type": "object",
+                    "properties": {
+                        "email": {
+                            "type": "string",
+                            "example": "vovka@sosijopa.com"
+                        },
+                        "links": {
+                            "type": "object",
+                            "properties": {
+                                "behance": {
+                                    "type": "string",
+                                    "example": "vovka_art"
+                                },
+                                "facebook": {
+                                    "type": "string",
+                                    "example": "vovka_fb"
+                                },
+                                "instagram": {
+                                    "type": "string",
+                                    "example": "vovka_insta"
+                                },
+                                "linkedin": {
+                                    "type": "string",
+                                    "example": "vovka_linkedin"
+                                },
+                                "pinterest": {
+                                    "type": "string",
+                                    "example": "vovka_pins"
+                                },
+                                "telegram": {
+                                    "type": "string",
+                                    "example": "vovka_tele"
+                                },
+                                "twitter": {
+                                    "type": "string",
+                                    "example": "vovka_tweet"
+                                },
+                                "vkontakte": {
+                                    "type": "string",
+                                    "example": "vovka_vk"
+                                },
+                                "whatsapp": {
+                                    "type": "string",
+                                    "example": "+5553535"
+                                },
+                                "youtube": {
+                                    "type": "string",
+                                    "example": "vovka_channel"
+                                }
+                            }
+                        },
+                        "phone": {
+                            "type": "string",
+                            "example": "+5553535"
+                        }
+                    }
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "name": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                }
+            }
+        },
+        "dto.UpdateEventDTO": {
+            "type": "object"
+        },
+        "entity.Author": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "contact": {
+                    "$ref": "#/definitions/entity.ContactInfo"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "position": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                }
+            }
+        },
+        "entity.ContactInfo": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "vovka@sosijopa.com"
+                },
+                "links": {
+                    "$ref": "#/definitions/entity.SocialLink"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "+5553535"
+                }
+            }
+        },
+        "entity.Photo": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_main": {
+                    "type": "boolean"
+                },
+                "is_preview": {
+                    "type": "boolean"
+                },
+                "owner_id": {
+                    "type": "integer"
+                },
+                "owner_type": {
+                    "description": "\"arts\", \"event\"",
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.SocialLink": {
+            "type": "object",
+            "properties": {
+                "behance": {
+                    "type": "string",
+                    "example": "vovka_art"
+                },
+                "facebook": {
+                    "type": "string",
+                    "example": "vovka_fb"
+                },
+                "instagram": {
+                    "type": "string",
+                    "example": "vovka_insta"
+                },
+                "linkedin": {
+                    "type": "string",
+                    "example": "vovka_linkedin"
+                },
+                "pinterest": {
+                    "type": "string",
+                    "example": "vovka_pins"
+                },
+                "telegram": {
+                    "type": "string",
+                    "example": "vovka_tele"
+                },
+                "twitter": {
+                    "type": "string",
+                    "example": "vovka_tweet"
+                },
+                "vkontakte": {
+                    "type": "string",
+                    "example": "vovka_vk"
+                },
+                "whatsapp": {
+                    "type": "string",
+                    "example": "+5553535"
+                },
+                "youtube": {
+                    "type": "string",
+                    "example": "vovka_channel"
+                }
+            }
+        },
+        "entity.TranslatedText": {
+            "type": "object",
+            "properties": {
+                "en": {
+                    "type": "string",
+                    "example": "Tung, tung, tung, tung, tung, tung, tung, tung, tung, Sahur."
+                },
+                "es": {
+                    "type": "string",
+                    "example": "Golybini Shpionini"
+                },
+                "ru": {
+                    "type": "string",
+                    "example": "Тун, тун, тун, Сахур."
+                }
+            }
+        }
+    }
+}

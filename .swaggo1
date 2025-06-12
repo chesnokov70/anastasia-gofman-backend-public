@@ -1,0 +1,11 @@
+
+"replace": {
+  "anastasia_gofman_backend_internal_delivery_http_dto.TranslatedTextDTO": "TranslatedText",
+  "anastasia_gofman_backend_internal_delivery_http_dto.CreateArtDTO": "CreateArt",
+  "anastasia_gofman_backend_internal_delivery_http_dto.UpdateArtDTO": "UpdateArt",
+  "entity.TranslatedText": "TranslatedText",
+  "entity.Art": "Art",
+  "entity.Author": "Author",
+  "entity.Event": "Event",
+  "entity.Photo": "Photo"
+}
