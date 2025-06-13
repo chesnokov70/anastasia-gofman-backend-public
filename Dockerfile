@@ -25,7 +25,7 @@ WORKDIR /root/
 
 COPY --from=builder /app/main .
 
-RUN mkdir -p /root/uploads/arts_photos /root/uploads/events_photos
+RUN mkdir -p /root/uploads/arts_photos /root/uploads/events_photos /root/uploads/authors_photos
 
 EXPOSE 8010
 

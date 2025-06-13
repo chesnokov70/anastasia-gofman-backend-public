@@ -3,6 +3,7 @@ package service
 import (
 	"anastasia_gofman_backend/internal/entity"
 	"anastasia_gofman_backend/internal/repository"
+	"anastasia_gofman_backend/pkg/config"
 	"errors"
 	"fmt"
 	"io"
@@ -134,28 +135,45 @@ func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipa
 		return entity.Photo{}, err
 	}
 	defer file.Close()
+
+	var subdir string
 	var filename string
 	if OwnerType == "arts" {
-		filename = fmt.Sprintf("uploads/arts_photos/art_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+		subdir = "arts_photos"
+		filename = fmt.Sprintf("art_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
 	} else if OwnerType == "event" {
-		filename = fmt.Sprintf("uploads/events_photos/event_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+		subdir = "events_photos"
+		filename = fmt.Sprintf("event_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
 	} else {
 		return entity.Photo{}, errors.New("invalid type of photo")
 	}
 
-	out, err := os.Create(filename)
+	// Получаем полный путь для сохранения файла
+	fullPath := config.GetUploadFilePath(subdir, filename)
+
+	// Создаем директорию если её нет
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+		return entity.Photo{}, fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	out, err := os.Create(fullPath)
 	if err != nil {
-		return entity.Photo{}, err
+		return entity.Photo{}, fmt.Errorf("failed to create file: %w", err)
 	}
 	defer out.Close()
+
 	_, err = io.Copy(out, file)
 	if err != nil {
-		return entity.Photo{}, err
+		return entity.Photo{}, fmt.Errorf("failed to copy file: %w", err)
 	}
+
+	// Для базы данных сохраняем относительный путь
+	relativePath := fmt.Sprintf("/uploads/%s/%s", subdir, filename)
+
 	var res_photo entity.Photo
 	if OwnerType == "arts" {
 		res_photo = entity.Photo{
-			Path:      "/" + filename,
+			Path:      relativePath,
 			OwnerID:   OwnerID,
 			OwnerType: OwnerType,
 			IsMain:    is_main,
@@ -163,7 +181,7 @@ func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipa
 		}
 	} else if OwnerType == "event" {
 		res_photo = entity.Photo{
-			Path:      "/" + filename,
+			Path:      relativePath,
 			OwnerID:   OwnerID,
 			OwnerType: OwnerType,
 			IsMain:    is_main,
@@ -231,9 +249,15 @@ func (s *artService) DeleteAllPhotos(id uint) error {
 		return err
 	}
 	for _, photo := range photos {
-		// Убираем ведущий слеш, чтобы получить относительный путь
+		// Преобразуем путь из БД в реальный путь файла
 		filePath := photo.Path
-		if strings.HasPrefix(filePath, "/") {
+		if strings.HasPrefix(filePath, "/uploads/") {
+			// Убираем /uploads/ из начала
+			filePath = strings.TrimPrefix(filePath, "/uploads/")
+			// Получаем полный путь
+			filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
+		} else if strings.HasPrefix(filePath, "/") {
+			// Старый формат пути
 			filePath = filePath[1:]
 		}
 
@@ -255,9 +279,13 @@ func (s *artService) DeleteAllNoSpecialPhotos(id uint) error {
 		return err
 	}
 	for _, photo := range photos {
-		// Убираем ведущий слеш, чтобы получить относительный путь
 		filePath := photo.Path
-		if strings.HasPrefix(filePath, "/") {
+		if strings.HasPrefix(filePath, "/uploads/") {
+
+			filePath = strings.TrimPrefix(filePath, "/uploads/")
+
+			filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
+		} else if strings.HasPrefix(filePath, "/") {
 			filePath = filePath[1:]
 		}
 
@@ -286,7 +314,10 @@ func (s *artService) DeleteMainOrPreviewPhoto(id uint, type_of_photo string) err
 	}
 
 	filePath := photo.Path
-	if strings.HasPrefix(filePath, "/") {
+	if strings.HasPrefix(filePath, "/uploads/") {
+		filePath = strings.TrimPrefix(filePath, "/uploads/")
+		filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
+	} else if strings.HasPrefix(filePath, "/") {
 		filePath = filePath[1:]
 	}
 

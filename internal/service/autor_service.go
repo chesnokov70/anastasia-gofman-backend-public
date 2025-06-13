@@ -3,6 +3,7 @@ package service
 import (
 	"anastasia_gofman_backend/internal/entity"
 	"anastasia_gofman_backend/internal/repository"
+	"anastasia_gofman_backend/pkg/config"
 	"errors"
 	"fmt"
 	"io"
@@ -134,32 +135,36 @@ func create_photo_from_http_photo_author(OwnerID uint, OwnerType string, photo *
 	}
 	defer file.Close()
 
+	var subdir string
 	var filename string
 	if OwnerType == "authors" {
-		filename = fmt.Sprintf("uploads/authors_photos/author_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+		subdir = "authors_photos"
+		filename = fmt.Sprintf("author_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
 	} else {
 		return entity.Photo{}, errors.New("invalid type of photo")
 	}
 
-	// Create directory if it doesn't exist
-	dir := filepath.Dir(filename)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return entity.Photo{}, err
+	fullPath := config.GetUploadFilePath(subdir, filename)
+
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+		return entity.Photo{}, fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	out, err := os.Create(filename)
+	out, err := os.Create(fullPath)
 	if err != nil {
-		return entity.Photo{}, err
+		return entity.Photo{}, fmt.Errorf("failed to create file: %w", err)
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, file)
 	if err != nil {
-		return entity.Photo{}, err
+		return entity.Photo{}, fmt.Errorf("failed to copy file: %w", err)
 	}
 
+	relativePath := fmt.Sprintf("/uploads/%s/%s", subdir, filename)
+
 	res_photo := entity.Photo{
-		Path:      "/" + filename,
+		Path:      relativePath,
 		OwnerID:   OwnerID,
 		OwnerType: OwnerType,
 		IsMain:    is_main,
@@ -218,7 +223,10 @@ func (s *authorService) DeleteAllPhotos(id uint) error {
 	}
 	for _, photo := range photos {
 		filePath := photo.Path
-		if strings.HasPrefix(filePath, "/") {
+		if strings.HasPrefix(filePath, "/uploads/") {
+			filePath = strings.TrimPrefix(filePath, "/uploads/")
+			filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
+		} else if strings.HasPrefix(filePath, "/") {
 			filePath = filePath[1:]
 		}
 
@@ -241,7 +249,11 @@ func (s *authorService) DeleteAllNoSpecialPhotos(id uint) error {
 	}
 	for _, photo := range photos {
 		filePath := photo.Path
-		if strings.HasPrefix(filePath, "/") {
+		if strings.HasPrefix(filePath, "/uploads/") {
+
+			filePath = strings.TrimPrefix(filePath, "/uploads/")
+			filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
+		} else if strings.HasPrefix(filePath, "/") {
 			filePath = filePath[1:]
 		}
 
@@ -270,7 +282,13 @@ func (s *authorService) DeleteMainOrPreviewPhoto(id uint, type_of_photo string) 
 	}
 
 	filePath := photo.Path
-	if strings.HasPrefix(filePath, "/") {
+	if strings.HasPrefix(filePath, "/uploads/") {
+
+		filePath = strings.TrimPrefix(filePath, "/uploads/")
+
+		filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
+	} else if strings.HasPrefix(filePath, "/") {
+
 		filePath = filePath[1:]
 	}
 
