@@ -40,6 +40,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			authors.POST("/:id/photos", authorHandler.AddPhotosToAuthor)
 			authors.PATCH("/:id/photos", authorHandler.PatchAuthorPhotos)
 			authors.GET("/:id/with_arts", authorHandler.GetAuthorWithArts)
+			authors.DELETE("/:id/main_photo", authorHandler.DeleteMainPhotoFromAuthor)
 
 		}
 		arts := api.Group("/arts")

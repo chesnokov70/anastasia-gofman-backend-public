@@ -434,6 +434,40 @@ func (h *AuthorHandler) PatchAuthorPhotos(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(photos_result))
 }
 
+// @Summary Update main photo to author
+
+// @Description Удаляет главную фотку автора - multipart/form-data в поле main_photo
+// @Accept multipart/form-data
+// @Produce json
+// @Tags Authors
+// @Param id path int true "Author ID"
+// @Param is_preview query bool false "Is Preview"
+// @Success 200 {object} dto.AuthorResponseDTO
+// @Router /api/authors/{id}/main_photo [delete]
+func (h *AuthorHandler) DeleteMainPhotoFromAuthor(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+		return
+	}
+	is_preview_str := c.DefaultQuery("is_preview", "false")
+	is_preview, err := strconv.ParseBool(is_preview_str)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid is_preview format"})
+		return
+	}
+	err = h.authorService.DeleteMainOrPreviewPhoto(uint(id), !is_preview, is_preview)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	res_str := "main"
+	if is_preview {
+		res_str = "preview"
+	}
+	c.JSON(http.StatusOK, gin.H{"message": res_str + " photo deleted"})
+}
+
 func NewAuthorHandler(authorService service.AuthorService) *AuthorHandler {
 	return &AuthorHandler{authorService: authorService}
 }

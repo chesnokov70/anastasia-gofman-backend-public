@@ -303,23 +303,31 @@ func (s *authorService) DeleteAllNoSpecialPhotos(id uint) error {
 	return nil
 }
 
-func (s *authorService) DeleteMainOrPreviewPhoto(id uint, type_of_photo string) error {
-	var is_main bool = true
-	if type_of_photo == "preview" {
-		is_main = false
-	}
+func (s *authorService) DeleteMainOrPreviewPhoto(id uint, is_main bool, is_preview bool) error {
 	photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(id, "authors", is_main)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
-		fmt.Println("ERROR DELETING PHOTO", err)
+		fmt.Printf("Error finding photo for author %d to delete: %v\n", id, err)
 		return err
 	}
 
-	deletePhotoFile(photo.Path)
+	if err := s.authorRepository.RemoveMainOrPreviewPhotoFromAuthor(id, is_main); err != nil {
+		fmt.Printf("Error unlinking photo from author %d: %v\n", id, err)
+		return err
+	}
 
-	return s.photoRepository.DeletePhoto(photo.ID)
+	if err := s.photoRepository.DeletePhoto(photo.ID); err != nil {
+		fmt.Printf("Error deleting photo record %d: %v\n", photo.ID, err)
+		return err
+	}
+
+	if err := deletePhotoFile(photo.Path); err != nil {
+		fmt.Printf("Failed to delete photo file %s, but database record is cleaned up: %v\n", photo.Path, err)
+	}
+
+	return nil
 }
 
 func (s *authorService) GetAuthorWithArts(id uint) (entity.Author, []entity.Art, error) {

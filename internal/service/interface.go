@@ -19,6 +19,7 @@ type AuthorService interface {
 	GetMainPhoto(id uint) (entity.Photo, error)
 	UpdateAuthorsPosition(positions []int) error
 	GetAuthorWithArts(id uint) (entity.Author, []entity.Art, error)
+	DeleteMainOrPreviewPhoto(id uint, is_main bool, is_preview bool) error
 }
 
 type ArtService interface {

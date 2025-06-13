@@ -14,7 +14,7 @@ type AuthorRepository interface {
 	FullUpdateAuthor(author entity.Author) (entity.Author, error)
 	AddMainOrPreviewPhotoToAuthor(photo entity.Photo) (entity.Author, error)
 	UpdateAuthorsPosition(positions []int) error
-	RemoveMainAndPreviewPhotoFromAuthor(authorID uint) error
+	RemoveMainOrPreviewPhotoFromAuthor(authorID uint, isMain bool) error
 }
 
 type ArtRepository interface {

@@ -134,8 +134,12 @@ func (r *AuthorRepository) UpdateAuthorsPosition(positions []int) error {
 	return nil
 }
 
-func (r *AuthorRepository) RemoveMainAndPreviewPhotoFromAuthor(authorID uint) error {
-	return r.db.Model(&entity.Author{}).Where("id = ?", authorID).Updates(map[string]interface{}{"main_photo_id": nil, "preview_photo_id": nil}).Error
+func (r *AuthorRepository) RemoveMainOrPreviewPhotoFromAuthor(authorID uint, isMain bool) error {
+	field := "preview_photo_id"
+	if isMain {
+		field = "main_photo_id"
+	}
+	return r.db.Model(&entity.Author{}).Where("id = ?", authorID).Update(field, nil).Error
 }
 
 func NewAuthorRepository(db *gorm.DB) *AuthorRepository {
