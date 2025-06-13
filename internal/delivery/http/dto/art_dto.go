@@ -165,7 +165,8 @@ type ArtResponseDTO struct {
 }
 
 // TODO: to config
-const BaseURL = "http://localhost:8010"
+// const BaseURL = "http://localhost:8010"
+const BaseURL = "http://91.105.196.19:8080/"
 
 func ToArtResponseDTO(art entity.Art) ArtResponseDTO {
 	dto := ArtResponseDTO{
