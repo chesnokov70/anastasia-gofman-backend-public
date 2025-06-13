@@ -27,14 +27,32 @@ type ContactInfo struct {
 
 // @name Author
 type Author struct {
-	ID        uint           `json:"id" gorm:"primary_key" example:"1"`
-	Name      TranslatedText `json:"name" gorm:"type:jsonb"`
-	Bio       TranslatedText `json:"bio" gorm:"type:jsonb"`
-	Contact   ContactInfo    `json:"contact" gorm:"embedded"`
-	CreatedAt time.Time      `json:"created_at" example:"2021-01-01T00:00:00Z"`
-	UpdatedAt time.Time      `json:"updated_at" example:"2021-01-01T00:00:00Z"`
-	Position  int            `json:"position" example:"1"`
-	IsActive  bool           `json:"is_active" example:"true"`
+	ID   uint           `json:"id" gorm:"primary_key" example:"1"`
+	Name TranslatedText `json:"name" gorm:"type:jsonb"`
+	Bio  TranslatedText `json:"bio" gorm:"type:jsonb"`
+
+	// NEW
+	Biography             TranslatedText `json:"biography" gorm:"type:jsonb"`
+	EducationalBackground TranslatedText `json:"educational_background" gorm:"type:jsonb"`
+	Exhibitions           TranslatedText `json:"exhibitions" gorm:"type:jsonb"`
+	ContactInfo           TranslatedText `json:"contact_info" gorm:"type:jsonb"`
+
+	// NEW
+
+	Contact   ContactInfo `json:"contact" gorm:"embedded"`
+	CreatedAt time.Time   `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt time.Time   `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+	Position  int         `json:"position" example:"1"`
+	IsActive  bool        `json:"is_active" example:"true"`
 	// PhotoID   int            `json:"photo_id"`
 	// Photo     Photo          `json:"photo" gorm:"foreignKey:PhotoID"`
+
+	// PHOTOS
+	MainPhotoID *uint `json:"main_photo_id" example:"1"`
+	MainPhoto   Photo `json:"-" gorm:"foreignKey:MainPhotoID;references:ID"`
+
+	PreviewPhotoID *uint `json:"preview_photo_id" example:"2"`
+	PreviewPhoto   Photo `json:"-" gorm:"foreignKey:PreviewPhotoID;references:ID"`
+
+	Photos []Photo `json:"-" gorm:"polymorphic:Owner;polymorphicValue:authors"`
 }

@@ -87,7 +87,7 @@ func (h *ArtHandler) CreateArt(c *gin.Context) {
 // @Accept multipart/form-data
 // @Produce json
 // @Tags Arts
-// @Param data formData string true "JSON payload for Art details. All fields from CreateArtDTO are expected here." Extensions(x-example={ "author_id": 1, "name": {"en": "Art Name", "ru": "Название Картины", "es": "Nombre del Arte"}, "title": {"en": "Art Title", "ru": "Заголовок", "es": "Título"}, "description": {"en": "Detailed description", "ru": "Детальное описание", "es": "Descripción detallada"}, "medium": {"en": "Oil on canvas", "ru": "Холст, масло", "es": "Óleo sobre lienzo"}, "technique": {"en": "Impasto", "ru": "Импасто", "es": "Empaste"}, "dimension_x": 120, "dimension_y": 90, "year": 2024, "frame": {"en": "Wooden frame", "ru": "Деревянная рама", "es": "Marco de madera"}, "price": 150000 })
+// @Param data formData string true "JSON с любыми полями из CreateArtDTO" Extensions(x-example={ "author_id": 1, "name": {"en": "Art Name", "ru": "Название Картины", "es": "Nombre del Arte"}, "title": {"en": "Art Title", "ru": "Заголовок", "es": "Título"}, "description": {"en": "Detailed description", "ru": "Детальное описание", "es": "Descripción detallada"}, "medium": {"en": "Oil on canvas", "ru": "Холст, масло", "es": "Óleo sobre lienzo"}, "technique": {"en": "Impasto", "ru": "Импасто", "es": "Empaste"}, "dimension_x": 120, "dimension_y": 90, "year": 2024, "frame": {"en": "Wooden frame", "ru": "Деревянная рама", "es": "Marco de madera"}, "price": 150000 })
 // @Param main_photo formData file false "Main Photo"
 // @Param preview_photo formData file false "Preview Photo"
 // @Param photos formData []file false "Photos"
@@ -252,6 +252,7 @@ func (h *ArtHandler) DeleteArt(c *gin.Context) {
 // @Produce json
 // @Tags Arts
 // @Param id path int true "Art ID"
+// @Param is_preview query bool false "Is Preview"
 // @Param main_photo formData file true "Main Photo"
 // @Success 200 {object} dto.ArtResponseDTO
 // @Failure 400 {object} map[string]string
@@ -259,6 +260,8 @@ func (h *ArtHandler) DeleteArt(c *gin.Context) {
 // @Router /api/arts/{id}/main_photo [post]
 func (h *ArtHandler) AddMainPhotoToArt(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	is_preview_str := c.DefaultQuery("is_preview", "false")
+	is_preview, err := strconv.ParseBool(is_preview_str)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
 		return
@@ -268,7 +271,7 @@ func (h *ArtHandler) AddMainPhotoToArt(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid photo format"})
 		return
 	}
-	art, err := h.artService.AddMainOrPreviewPhotoToArt(uint(id), main_photo, true, false)
+	art, err := h.artService.AddMainOrPreviewPhotoToArt(uint(id), main_photo, !is_preview, is_preview)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

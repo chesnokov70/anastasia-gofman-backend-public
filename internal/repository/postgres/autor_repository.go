@@ -13,13 +13,17 @@ type AuthorRepository struct {
 
 func (r *AuthorRepository) GetAllAuthors() ([]entity.Author, error) {
 	var authors []entity.Author
-	err := r.db.Find(&authors).Error
+	err := r.db.Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("photos.position ASC")
+	}).Order("position ASC").Find(&authors).Error
 	return authors, err
 }
 
 func (r *AuthorRepository) GetAuthorByID(id uint) (entity.Author, error) {
 	var author entity.Author
-	err := r.db.First(&author, id).Error
+	err := r.db.Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("photos.position ASC")
+	}).First(&author, id).Error
 	return author, err
 }
 
@@ -37,9 +41,30 @@ func (r *AuthorRepository) CreateAuthor(author entity.Author) (entity.Author, er
 }
 
 func (r *AuthorRepository) PartialUpdateAuthor(id uint, kwargs map[string]interface{}) (entity.Author, error) {
-	var author entity.Author
-	err := r.db.Model(&author).Where("id = ?", id).Updates(kwargs).Error
-	return author, err
+	if contact, ok := kwargs["contact"]; ok {
+		if contactMap, ok := contact.(map[string]interface{}); ok {
+			if email, ok := contactMap["email"]; ok {
+				kwargs["email"] = email
+			}
+			if phone, ok := contactMap["phone"]; ok {
+				kwargs["phone"] = phone
+			}
+			if links, ok := contactMap["links"]; ok {
+				if linksMap, ok := links.(map[string]interface{}); ok {
+					for key, value := range linksMap {
+						kwargs[key] = value
+					}
+				}
+			}
+		}
+		delete(kwargs, "contact")
+	}
+
+	err := r.db.Model(&entity.Author{}).Where("id = ?", id).Updates(kwargs).Error
+	if err != nil {
+		return entity.Author{}, err
+	}
+	return r.GetAuthorByID(id)
 }
 
 func (r *AuthorRepository) FullUpdateAuthor(author entity.Author) (entity.Author, error) {
@@ -50,10 +75,15 @@ func (r *AuthorRepository) FullUpdateAuthor(author entity.Author) (entity.Author
 	}
 
 	var existingAuthor entity.Author
-	if err := r.db.First(&existingAuthor, author.ID).Error; err != nil {
+	if err := r.db.Preload("Photos").Preload("MainPhoto").Preload("PreviewPhoto").First(&existingAuthor, author.ID).Error; err != nil {
 		return author, err
 	}
 	author.CreatedAt = existingAuthor.CreatedAt
+	author.Photos = existingAuthor.Photos
+	author.MainPhoto = existingAuthor.MainPhoto
+	author.PreviewPhoto = existingAuthor.PreviewPhoto
+	author.MainPhotoID = existingAuthor.MainPhotoID
+	author.PreviewPhotoID = existingAuthor.PreviewPhotoID
 	err := r.db.Save(&author).Error
 	return author, err
 }
@@ -65,6 +95,35 @@ func (r *AuthorRepository) UpdateAuthor(author entity.Author) (entity.Author, er
 
 func (r *AuthorRepository) DeleteAuthor(id uint) error {
 	return r.db.Delete(&entity.Author{}, id).Error
+}
+
+func (r *AuthorRepository) AddMainOrPreviewPhotoToAuthor(photo entity.Photo) (entity.Author, error) {
+	var author entity.Author
+	which_photo := "main_photo_id"
+	if photo.IsPreview {
+		which_photo = "preview_photo_id"
+	}
+	err := r.db.Model(&entity.Author{}).Where("id = ?", photo.OwnerID).
+		Update(which_photo, photo.ID).
+		First(&author).Error
+	if err != nil {
+		return entity.Author{}, err
+	}
+	return r.GetAuthorByID(author.ID)
+}
+
+func (r *AuthorRepository) UpdateAuthorsPosition(positions []int) error {
+	for i, position := range positions {
+		err := r.db.Model(&entity.Author{}).Where("id = ?", i+1).Update("position", position).Error
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *AuthorRepository) RemoveMainAndPreviewPhotoFromAuthor(authorID uint) error {
+	return r.db.Model(&entity.Author{}).Where("id = ?", authorID).Updates(map[string]interface{}{"main_photo_id": nil, "preview_photo_id": nil}).Error
 }
 
 func NewAuthorRepository(db *gorm.DB) *AuthorRepository {

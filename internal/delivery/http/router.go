@@ -31,6 +31,13 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			authors.PUT("/:id", authorHandler.FullUpdateAuthor)
 			authors.PATCH("/:id", authorHandler.PartialUpdateAuthor)
 			authors.DELETE("/:id", authorHandler.DeleteAuthor)
+			authors.POST("/with_photos", authorHandler.CreateAuthorWithPhotos)
+			authors.POST("/:id/main_photo", authorHandler.AddMainPhotoToAuthor)
+			// authors.POST("/:id/preview_photo", authorHandler.AddPreviewPhotoToAuthor)
+			authors.POST("/:id/photos", authorHandler.AddPhotosToAuthor)
+			authors.PATCH("/:id/photos", authorHandler.PatchAuthorPhotos)
+			authors.GET("/:id/with_arts", authorHandler.GetAuthorWithArts)
+
 		}
 		arts := api.Group("/arts")
 		{

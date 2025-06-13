@@ -86,6 +86,14 @@ compose-up:
 	@echo "${GREEN}Запуск проекта с Docker Compose...${NC}"
 	@docker-compose up --build -d
 
+compose-up-nonginx:
+	@echo "${GREEN}Запуск проекта с Docker Compose без Nginx...${NC}"
+	@docker-compose up --build -d backend
+	
+compose-up-nonginx-nocache:
+	@echo "${GREEN}Запуск проекта с Docker Compose без Nginx...${NC}"
+	@docker-compose down && docker-compose build --no-cache backend && docker-compose up -d backend
+
 compose-down:
 	@echo "${GREEN}Остановка проекта Docker Compose...${NC}"
 	@docker-compose down

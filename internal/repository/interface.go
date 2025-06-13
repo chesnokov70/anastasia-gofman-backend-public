@@ -6,11 +6,15 @@ import "anastasia_gofman_backend/internal/entity"
 type AuthorRepository interface {
 	GetAllAuthors() ([]entity.Author, error)
 	GetAuthorByID(id uint) (entity.Author, error)
+	GetCountOfAuthors() (int, error)
 	CreateAuthor(author entity.Author) (entity.Author, error)
 	UpdateAuthor(author entity.Author) (entity.Author, error)
 	DeleteAuthor(id uint) error
 	PartialUpdateAuthor(id uint, kwargs map[string]interface{}) (entity.Author, error)
 	FullUpdateAuthor(author entity.Author) (entity.Author, error)
+	AddMainOrPreviewPhotoToAuthor(photo entity.Photo) (entity.Author, error)
+	UpdateAuthorsPosition(positions []int) error
+	RemoveMainAndPreviewPhotoFromAuthor(authorID uint) error
 }
 
 type ArtRepository interface {
@@ -26,6 +30,8 @@ type ArtRepository interface {
 	AddAuthorToArt(id uint, author_id uint) (entity.Art, error)
 	UpdateArtsPosition(positions []int) error
 	RemoveMainAndPreviewPhotoFromArt(artID uint) error
+	GetArtsByAuthorID(authorID uint) ([]entity.Art, error)
+	SplitArtsByAuthors(authors []entity.Author) (map[uint][]entity.Art, error)
 
 	// AddPhotoToArt(photo entity.Photo) (entity.Art, error)
 	// GetCountOfPhotos(artID uint) int

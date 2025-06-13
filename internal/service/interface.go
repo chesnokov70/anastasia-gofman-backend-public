@@ -6,13 +6,19 @@ import (
 )
 
 type AuthorService interface {
-	GetAllAuthors() ([]entity.Author, error)
+	GetAllAuthors(with_arts bool) ([]entity.Author, map[uint][]entity.Art, error)
 	GetAuthorByID(id uint) (entity.Author, error)
 	CreateAuthor(author entity.Author) (entity.Author, error)
 	UpdateAuthor(author entity.Author) (entity.Author, error)
 	DeleteAuthor(id uint) error
 	PartialUpdateAuthor(id uint, kwargs map[string]interface{}) (entity.Author, error)
 	FullUpdateAuthor(author entity.Author) (entity.Author, error)
+	AddMainOrPreviewPhotoToAuthor(authorID uint, fileHeader *multipart.FileHeader, is_main bool, is_preview bool) (entity.Author, error)
+	AddPhotosToAuthor(id uint, photos []*multipart.FileHeader) (entity.Author, error)
+	PatchAuthorPhotos(id uint, photos []*multipart.FileHeader) (entity.Author, error)
+	GetMainPhoto(id uint) (entity.Photo, error)
+	UpdateAuthorsPosition(positions []int) error
+	GetAuthorWithArts(id uint) (entity.Author, []entity.Art, error)
 }
 
 type ArtService interface {

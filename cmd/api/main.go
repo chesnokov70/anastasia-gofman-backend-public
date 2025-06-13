@@ -39,7 +39,7 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Миграция таблиц
+	// имиграция
 	err = db.AutoMigrate(
 		&entity.Author{},
 		&entity.Photo{},
@@ -50,29 +50,27 @@ func main() {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
-	// Clean up orphan arts after migration (when table exists)
 	if err := db.Exec(`
 		UPDATE arts
 		SET author_id = NULL
 		WHERE author_id IS NOT NULL AND author_id NOT IN (SELECT id FROM authors)
 	`).Error; err != nil {
-		// Just log the error, don't fail - this is a cleanup operation
 		log.Printf("Warning: Failed to clean up orphan arts: %v", err)
 	}
 
-	authorRepository := postgres.NewAuthorRepository(db)
-	authorService := service.NewAuthorService(authorRepository)
-	authorHandler := handler.NewAuthorHandler(authorService)
-
 	photoRepository := postgres.NewPhotoRepository(db)
+	artRepository := postgres.NewArtRepository(db)
+	artService := service.NewArtService(artRepository, photoRepository)
+	artHandler := handler.NewArtHandler(artService)
+
+	authorRepository := postgres.NewAuthorRepository(db)
+	authorService := service.NewAuthorService(authorRepository, photoRepository, artRepository)
+	authorHandler := handler.NewAuthorHandler(authorService)
 
 	eventRepository := postgres.NewEventRepository(db)
 	eventService := service.NewEventService(eventRepository, photoRepository)
 	eventHandler := handler.NewEventHandler(eventService)
 
-	artRepository := postgres.NewArtRepository(db)
-	artService := service.NewArtService(artRepository, photoRepository)
-	artHandler := handler.NewArtHandler(artService)
 	welcomeHandler := handler.NewWelcomeHandler()
 
 	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler)

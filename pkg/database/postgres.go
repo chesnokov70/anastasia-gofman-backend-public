@@ -18,6 +18,7 @@ func NewPostgresDB(cfg *config.Config) (*gorm.DB, error) {
 		cfg.Database.DBName,
 		cfg.Database.SSLMode,
 	)
+	fmt.Println(dsn)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
