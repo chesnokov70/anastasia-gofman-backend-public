@@ -124,6 +124,8 @@ func ToAuthorResponseDTO(author entity.Author) AuthorResponseDTO {
 		IsActive:              author.IsActive,
 		CreatedAt:             author.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:             author.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		MainPhotoPath:         "",
+		PreviewPhotoPath:      "",
 		Photos:                []PhotoResponseDTO{},
 	}
 

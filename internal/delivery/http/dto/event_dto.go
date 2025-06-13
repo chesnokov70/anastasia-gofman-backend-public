@@ -164,16 +164,18 @@ type EventResponseDTO struct {
 
 func ToEventResponseDTO(event entity.Event) EventResponseDTO {
 	dto := EventResponseDTO{
-		ID:          event.ID,
-		Title:       event.Title,
-		Description: event.Description,
-		Location:    event.Location,
-		StartDate:   event.StartDate.Format("2006-01-02T15:04:05Z07:00"),
-		EndDate:     event.EndDate.Format("2006-01-02T15:04:05Z07:00"),
-		Position:    event.Position,
-		CreatedAt:   event.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:   event.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		Photos:      []PhotoResponseDTO{}, // Initialize with empty slice
+		ID:               event.ID,
+		Title:            event.Title,
+		Description:      event.Description,
+		Location:         event.Location,
+		StartDate:        event.StartDate.Format("2006-01-02T15:04:05Z07:00"),
+		EndDate:          event.EndDate.Format("2006-01-02T15:04:05Z07:00"),
+		Position:         event.Position,
+		CreatedAt:        event.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:        event.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		MainPhotoPath:    "",
+		PreviewPhotoPath: "",
+		Photos:           []PhotoResponseDTO{}, // Initialize with empty slice
 	}
 
 	if event.MainPhotoID != nil && event.MainPhoto.Path != "" {

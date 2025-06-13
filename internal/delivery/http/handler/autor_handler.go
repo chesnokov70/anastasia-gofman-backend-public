@@ -25,7 +25,7 @@ type AuthorHandler struct {
 // @Accept json
 // @Produce json
 // @Param with_arts query bool false "With Arts"
-// @Success 200 {array} []entity.Author
+// @Success 200 {array} dto.AuthorResponseWithArtsDTO
 // @Router /api/authors [get]
 func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 	with_arts_str := c.DefaultQuery("with_arts", "false")
@@ -48,6 +48,7 @@ func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Author ID"
+// @Success 200 {object} dto.AuthorResponseDTO
 // @Router /api/authors/{id} [get]
 func (h *AuthorHandler) GetAuthorByID(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -69,7 +70,7 @@ func (h *AuthorHandler) GetAuthorByID(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param data body dto.CreateAuthorDTO true "Author data"
-// @Success 201 {object} entity.Author
+// @Success 201 {object} dto.AuthorResponseDTO
 // @Failure 400 {object} map[string]string
 // @Router /api/authors [post]
 func (h *AuthorHandler) CreateAuthor(c *gin.Context) {
@@ -141,7 +142,7 @@ func (h *AuthorHandler) DeleteAuthor(c *gin.Context) {
 // @Produce json
 // @Param id path uint true "Author ID"
 // @Param data body dto.UpdateAuthorDTO true "Update data"
-// @Success 200 {object} entity.Author
+// @Success 200 {object} dto.AuthorResponseDTO
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /api/authors/{id} [patch]
@@ -173,7 +174,7 @@ func (h *AuthorHandler) PartialUpdateAuthor(c *gin.Context) {
 // @Produce json
 // @Param id path int true "Author ID"
 // @Param data body dto.UpdateAuthorDTO true "Author data"
-// @Success 200 {object} entity.Author
+// @Success 200 {object} dto.AuthorResponseDTO
 // @Failure 400 {object} map[string]string
 // @Router /api/authors/{id} [put]
 func (h *AuthorHandler) FullUpdateAuthor(c *gin.Context) {
@@ -317,7 +318,7 @@ func (h *AuthorHandler) CreateAuthorWithPhotos(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(finalAuthor))
+	c.JSON(http.StatusCreated, dto.ToAuthorResponseDTO(finalAuthor))
 }
 
 // @Summary Add main photo to author
