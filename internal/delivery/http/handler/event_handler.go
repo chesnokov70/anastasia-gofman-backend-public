@@ -126,8 +126,13 @@ func (h *EventHandler) CreateEventWithPhotos(c *gin.Context) {
 
 	mainPhotoFileHeader, err1 := c.FormFile("main_photo")
 	previewPhotoFileHeader, err2 := c.FormFile("preview_photo")
-	if err1 != nil && err1 != http.ErrMissingFile && err2 != nil && err2 != http.ErrMissingFile {
+
+	if err1 != nil && err1 != http.ErrMissingFile {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Error processing main_photo: " + err1.Error()})
+		return
+	}
+	if err2 != nil && err2 != http.ErrMissingFile {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Error processing preview_photo: " + err2.Error()})
 		return
 	}
 

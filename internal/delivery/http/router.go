@@ -2,6 +2,7 @@ package http
 
 import (
 	"anastasia_gofman_backend/internal/delivery/http/handler"
+	"anastasia_gofman_backend/internal/delivery/http/middleware"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,8 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 	router := gin.Default()
 	router.RedirectTrailingSlash = false // Disable automatic redirect for trailing slashes
 
-	// Add CORS middleware with a more explicit configuration
+	router.Use(middleware.DetailedLogging())
+
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true                                                       // Allows all origins
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}  // Specify methods

@@ -123,21 +123,27 @@ func (h *ArtHandler) CreateArtWithPhotos(c *gin.Context) {
 
 	mainPhotoFileHeader, err1 := c.FormFile("main_photo")
 	previewPhotoFileHeader, err2 := c.FormFile("preview_photo")
-	if err1 != nil && err1 != http.ErrMissingFile && err2 != nil && err2 != http.ErrMissingFile {
+
+	// Проверяем только если есть реальные ошибки (не просто отсутствие файла)
+	if err1 != nil && err1 != http.ErrMissingFile {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Error processing main_photo: " + err1.Error()})
+		return
+	}
+	if err2 != nil && err2 != http.ErrMissingFile {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Error processing preview_photo: " + err2.Error()})
 		return
 	}
 
 	if mainPhotoFileHeader != nil {
 		if _, err := h.artService.AddMainOrPreviewPhotoToArt(currentArtID, mainPhotoFileHeader, true, false); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add main photo: " + err1.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add main photo: " + err.Error()})
 			return
 		}
 	}
 
 	if previewPhotoFileHeader != nil {
 		if _, err := h.artService.AddMainOrPreviewPhotoToArt(currentArtID, previewPhotoFileHeader, false, true); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add preview photo: " + err2.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add preview photo: " + err.Error()})
 			return
 		}
 	}
