@@ -25,21 +25,30 @@ type AuthorHandler struct {
 // @Accept json
 // @Produce json
 // @Param with_arts query bool false "With Arts"
+// @Param page query int false "Page number" default(1)
+// @Param size query int false "Page size" default(10)
 // @Success 200 {array} dto.AuthorResponseWithArtsDTO
 // @Router /api/authors [get]
 func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
+	page := c.GetInt("page")
+	size := c.GetInt("size")
 	with_arts_str := c.DefaultQuery("with_arts", "false")
 	with_arts, err := strconv.ParseBool(with_arts_str)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_arts format"})
 		return
 	}
-	authors, arts, err := h.authorService.GetAllAuthors(with_arts)
+	authors, arts, total_pages, err := h.authorService.GetAllAuthors(with_arts, page, size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToAuthorResponseWithAllArtsDTOs(authors, arts))
+
+	response := gin.H{
+		"data":       dto.ToAuthorResponseWithAllArtsDTOs(authors, arts),
+		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size},
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 // @Summary Get author by ID

@@ -14,12 +14,24 @@ func NewArtRepository(db *gorm.DB) *ArtRepository {
 	return &ArtRepository{db: db}
 }
 
-func (r *ArtRepository) GetAllArts() ([]entity.Art, error) {
+func (r *ArtRepository) GetAllArts(offset int, limit int) ([]entity.Art, int64, error) {
 	var arts []entity.Art
-	err := r.db.Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+	var count int64
+	query := r.db.Model(&entity.Art{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
-	}).Order("position ASC").Find(&arts).Error
-	return arts, err
+	}).Order("position ASC")
+
+	err := query.Count(&count).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+
+	err = query.Find(&arts).Error
+	return arts, count, err
 }
 
 func (r *ArtRepository) GetArtByID(id uint) (entity.Art, error) {

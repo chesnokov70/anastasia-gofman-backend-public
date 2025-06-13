@@ -4,7 +4,7 @@ package repository
 import "anastasia_gofman_backend/internal/entity"
 
 type AuthorRepository interface {
-	GetAllAuthors() ([]entity.Author, error)
+	GetAllAuthors(offset int, limit int) ([]entity.Author, int64, error)
 	GetAuthorByID(id uint) (entity.Author, error)
 	GetCountOfAuthors() (int, error)
 	CreateAuthor(author entity.Author) (entity.Author, error)
@@ -18,7 +18,7 @@ type AuthorRepository interface {
 }
 
 type ArtRepository interface {
-	GetAllArts() ([]entity.Art, error)
+	GetAllArts(offset int, limit int) ([]entity.Art, int64, error)
 	GetArtByID(id uint) (entity.Art, error)
 	GetCountOfArts() (int, error)
 	CreateArt(art entity.Art) (entity.Art, error)
@@ -43,7 +43,7 @@ type ArtRepository interface {
 }
 
 type EventRepository interface {
-	GetAllEvents() ([]entity.Event, error)
+	GetAllEvents(offset int, limit int) ([]entity.Event, int64, error)
 	GetEventByID(id uint) (entity.Event, error)
 	GetCountOfEvents() (int, error)
 

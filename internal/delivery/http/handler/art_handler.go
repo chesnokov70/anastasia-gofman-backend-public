@@ -23,16 +23,23 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 // @Accept json
 // @Produce json
 // @Tags Arts
-// @Success 200 {array} []dto.ArtResponseDTO
+// @Param page query int false "Page number" default(1)
+// @Param size query int false "Page size" default(10)
+// @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
 // @Router /api/arts [get]
 func (h *ArtHandler) GetAllArts(c *gin.Context) {
-	arts, err := h.artService.GetAllArts()
+	page := c.GetInt("page")
+	size := c.GetInt("size")
+	arts, total_pages, err := h.artService.GetAllArts(page, size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToArtResponseDTOs(arts))
+	c.JSON(http.StatusOK, gin.H{
+		"data":       dto.ToArtResponseDTOs(arts),
+		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size},
+	})
 }
 
 // @Summary Get art by id

@@ -23,16 +23,23 @@ func NewEventHandler(eventService service.EventService) *EventHandler {
 // @Accept json
 // @Produce json
 // @Tags Events
-// @Success 200 {array} []dto.EventResponseDTO
+// @Param page query int false "Page number" default(1)
+// @Param size query int false "Page size" default(10)
+// @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
 // @Router /api/events [get]
 func (h *EventHandler) GetAllEvents(c *gin.Context) {
-	events, err := h.eventService.GetAllEvents()
+	page := c.GetInt("page")
+	size := c.GetInt("size")
+	events, total_pages, err := h.eventService.GetAllEvents(page, size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToEventResponseDTOs(events))
+	c.JSON(http.StatusOK, gin.H{
+		"data":       dto.ToEventResponseDTOs(events),
+		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size},
+	})
 }
 
 // @Summary Get event by ID
@@ -381,5 +388,6 @@ func (h *EventHandler) AddMainPhotoToEvent(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent))
 }

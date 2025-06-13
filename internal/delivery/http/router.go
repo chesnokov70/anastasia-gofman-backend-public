@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
 )
 
 func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler) *gin.Engine {
@@ -27,7 +28,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 	{
 		authors := api.Group("/authors")
 		{
-			authors.GET("", authorHandler.GetAllAuthors)
+			authors.GET("", pagination.New(), authorHandler.GetAllAuthors)
 			authors.GET("/:id", authorHandler.GetAuthorByID)
 			authors.POST("", authorHandler.CreateAuthor)
 			authors.PUT("/:id", authorHandler.FullUpdateAuthor)
@@ -43,7 +44,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		}
 		arts := api.Group("/arts")
 		{
-			arts.GET("", artHandler.GetAllArts)
+			arts.GET("", pagination.New(), artHandler.GetAllArts)
 			arts.GET("/:id", artHandler.GetArtByID)
 			arts.POST("", artHandler.CreateArt)
 			arts.POST("/with_photos", artHandler.CreateArtWithPhotos)
@@ -61,7 +62,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		}
 		events := api.Group("/events")
 		{
-			events.GET("", eventHandler.GetAllEvents)
+			events.GET("", pagination.New(), eventHandler.GetAllEvents)
 			events.GET("/:id", eventHandler.GetEventByID)
 			events.POST("", eventHandler.CreateEvent)
 			events.POST("/with_photos", eventHandler.CreateEventWithPhotos)

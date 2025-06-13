@@ -6,7 +6,7 @@ import (
 )
 
 type AuthorService interface {
-	GetAllAuthors(with_arts bool) ([]entity.Author, map[uint][]entity.Art, error)
+	GetAllAuthors(with_arts bool, page int, size int) ([]entity.Author, map[uint][]entity.Art, int64, error)
 	GetAuthorByID(id uint) (entity.Author, error)
 	CreateAuthor(author entity.Author) (entity.Author, error)
 	UpdateAuthor(author entity.Author) (entity.Author, error)
@@ -22,7 +22,7 @@ type AuthorService interface {
 }
 
 type ArtService interface {
-	GetAllArts() ([]entity.Art, error)
+	GetAllArts(page int, size int) ([]entity.Art, int64, error)
 	GetArtByID(id uint) (entity.Art, error)
 	CreateArt(art entity.Art) (entity.Art, error)
 	UpdateArt(art entity.Art) (entity.Art, error)
@@ -39,7 +39,7 @@ type ArtService interface {
 }
 
 type EventService interface {
-	GetAllEvents() ([]entity.Event, error)
+	GetAllEvents(page int, size int) ([]entity.Event, int64, error)
 	GetEventByID(id uint) (entity.Event, error)
 	GetMainPhoto(id uint) (entity.Photo, error)
 

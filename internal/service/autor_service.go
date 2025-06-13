@@ -21,22 +21,42 @@ type authorService struct {
 	artRepository    repository.ArtRepository
 }
 
-func (s *authorService) GetAllAuthors(with_arts bool) ([]entity.Author, map[uint][]entity.Art, error) {
+func (s *authorService) GetAllAuthors(with_arts bool, page int, size int) ([]entity.Author, map[uint][]entity.Art, int64, error) {
+	offset, limit := 0, 0
+	if page > 0 && size > 0 {
+		offset = (page - 1) * size
+		limit = size
+	}
 	if !with_arts {
-		all_autors, err := s.authorRepository.GetAllAuthors()
+		all_autors, total, err := s.authorRepository.GetAllAuthors(offset, limit)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, 0, err
 		}
-		return all_autors, nil, nil
+		var total_pages int64
+		if total == 0 {
+			total_pages = 0
+		} else {
+			total_pages = max(int64(total/int64(size)), 1)
+		}
+		return all_autors, nil, total_pages, nil
 	}
 
-	authors, err := s.authorRepository.GetAllAuthors()
+	authors, total, err := s.authorRepository.GetAllAuthors(offset, limit)
+	if err != nil {
+		return nil, nil, 0, err
+	}
 	arts := make(map[uint][]entity.Art)
 	arts, err = s.artRepository.SplitArtsByAuthors(authors)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
-	return authors, arts, nil
+	var total_pages int64
+	if total == 0 {
+		total_pages = 0
+	} else {
+		total_pages = max(int64(total/int64(size)), 1)
+	}
+	return authors, arts, total_pages, nil
 }
 
 func (s *authorService) GetAuthorByID(id uint) (entity.Author, error) {
@@ -105,27 +125,46 @@ func (s *authorService) FullUpdateAuthor(author entity.Author) (entity.Author, e
 }
 
 func (s *authorService) AddMainOrPreviewPhotoToAuthor(authorID uint, fileHeader *multipart.FileHeader, is_main bool, is_preview bool) (entity.Author, error) {
+	var oldPhoto entity.Photo
+	var err error
+
 	if is_main {
-		if err := s.DeleteMainOrPreviewPhoto(authorID, "main"); err != nil {
-			return entity.Author{}, err
-		}
-		s.photoRepository.DeleteMainPhoto(authorID, "authors")
+		oldPhoto, _ = s.photoRepository.GetMainOrPreviewPhotoByOwnerID(authorID, "authors", true)
 	} else if is_preview {
-		if err := s.DeleteMainOrPreviewPhoto(authorID, "preview"); err != nil {
-			return entity.Author{}, err
-		}
-		s.photoRepository.DeletePreviewPhoto(authorID, "authors")
+		oldPhoto, _ = s.photoRepository.GetMainOrPreviewPhotoByOwnerID(authorID, "authors", false)
 	}
+
 	pos, _ := s.photoRepository.GetCountOfPhotos(authorID, "authors")
-	main_photo, err := create_photo_from_http_photo_author(authorID, "authors", fileHeader, is_main, is_preview, pos)
+	newPhoto, err := create_photo_from_http_photo_author(authorID, "authors", fileHeader, is_main, is_preview, pos)
 	if err != nil {
 		return entity.Author{}, err
 	}
-	main_photo, err = s.photoRepository.CreatePhoto(main_photo)
+
+	createdPhoto, err := s.photoRepository.CreatePhoto(newPhoto)
 	if err != nil {
+		deletePhotoFile(newPhoto.Path)
 		return entity.Author{}, err
 	}
-	return s.authorRepository.AddMainOrPreviewPhotoToAuthor(main_photo)
+
+	author, err := s.authorRepository.AddMainOrPreviewPhotoToAuthor(createdPhoto)
+	if err != nil {
+		s.photoRepository.DeletePhoto(createdPhoto.ID)
+		deletePhotoFile(createdPhoto.Path)
+		return entity.Author{}, err
+	}
+
+	if oldPhoto.ID != 0 {
+		err := s.photoRepository.DeletePhoto(oldPhoto.ID)
+		if err != nil {
+			fmt.Printf("Failed to delete old photo record %d: %v\n", oldPhoto.ID, err)
+		}
+		err = deletePhotoFile(oldPhoto.Path)
+		if err != nil {
+			fmt.Printf("Failed to delete old photo file %s: %v\n", oldPhoto.Path, err)
+		}
+	}
+
+	return author, nil
 }
 
 func create_photo_from_http_photo_author(OwnerID uint, OwnerType string, photo *multipart.FileHeader, is_main bool, is_preview bool, position_of_photo int) (entity.Photo, error) {
@@ -171,6 +210,30 @@ func create_photo_from_http_photo_author(OwnerID uint, OwnerType string, photo *
 		IsPreview: is_preview,
 	}
 	return res_photo, nil
+}
+
+func deletePhotoFile(path string) error {
+	filePath := path
+	if strings.HasPrefix(filePath, "/uploads/") {
+		filePath = strings.TrimPrefix(filePath, "/uploads/")
+		parts := strings.Split(filePath, "/")
+		filePath = config.GetUploadFilePath(parts[0], strings.Join(parts[1:], "/"))
+	} else if strings.HasPrefix(filePath, "/") {
+		filePath = filePath[1:]
+	}
+
+	err := os.Remove(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("PHOTO FILE NOT FOUND (already deleted?): %s\n", filePath)
+			return nil
+		}
+		fmt.Printf("ERROR DELETING PHOTO FILE %s: %v\n", filePath, err)
+		return err
+	}
+
+	fmt.Printf("PHOTO FILE DELETED: %s\n", filePath)
+	return nil
 }
 
 func (s *authorService) AddPhotosToAuthor(id uint, photos []*multipart.FileHeader) (entity.Author, error) {
@@ -222,21 +285,7 @@ func (s *authorService) DeleteAllPhotos(id uint) error {
 		return err
 	}
 	for _, photo := range photos {
-		filePath := photo.Path
-		if strings.HasPrefix(filePath, "/uploads/") {
-			filePath = strings.TrimPrefix(filePath, "/uploads/")
-			filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
-		} else if strings.HasPrefix(filePath, "/") {
-			filePath = filePath[1:]
-		}
-
-		err := os.Remove(filePath)
-		if err != nil {
-			fmt.Printf("ERROR DELETING PHOTO %s: %v\n", filePath, err)
-		} else {
-			fmt.Printf("PHOTO DELETED: %s\n", filePath)
-		}
-
+		deletePhotoFile(photo.Path)
 		s.photoRepository.DeletePhoto(photo.ID)
 	}
 	return nil
@@ -248,20 +297,7 @@ func (s *authorService) DeleteAllNoSpecialPhotos(id uint) error {
 		return err
 	}
 	for _, photo := range photos {
-		filePath := photo.Path
-		if strings.HasPrefix(filePath, "/uploads/") {
-
-			filePath = strings.TrimPrefix(filePath, "/uploads/")
-			filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
-		} else if strings.HasPrefix(filePath, "/") {
-			filePath = filePath[1:]
-		}
-
-		err := os.Remove(filePath)
-		if err != nil {
-			fmt.Printf("ERROR DELETING PHOTO %s: %v\n", filePath, err)
-		}
-
+		deletePhotoFile(photo.Path)
 		s.photoRepository.DeletePhoto(photo.ID)
 	}
 	return nil
@@ -281,21 +317,7 @@ func (s *authorService) DeleteMainOrPreviewPhoto(id uint, type_of_photo string) 
 		return err
 	}
 
-	filePath := photo.Path
-	if strings.HasPrefix(filePath, "/uploads/") {
-
-		filePath = strings.TrimPrefix(filePath, "/uploads/")
-
-		filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
-	} else if strings.HasPrefix(filePath, "/") {
-
-		filePath = filePath[1:]
-	}
-
-	err = os.Remove(filePath)
-	if err != nil {
-		fmt.Printf("ERROR DELETING PHOTO %s: %v\n", filePath, err)
-	}
+	deletePhotoFile(photo.Path)
 
 	return s.photoRepository.DeletePhoto(photo.ID)
 }

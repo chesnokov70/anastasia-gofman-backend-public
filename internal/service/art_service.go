@@ -24,9 +24,23 @@ func NewArtService(artRepository repository.ArtRepository, photoRepository repos
 	return &artService{artRepository: artRepository, photoRepository: photoRepository}
 }
 
-func (s *artService) GetAllArts() ([]entity.Art, error) {
-
-	return s.artRepository.GetAllArts()
+func (s *artService) GetAllArts(page int, size int) ([]entity.Art, int64, error) {
+	offset, limit := 0, 0
+	if page > 0 && size > 0 {
+		offset = (page - 1) * size
+		limit = size
+	}
+	arts, total, err := s.artRepository.GetAllArts(offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	var total_pages int64
+	if total == 0 {
+		total_pages = 0
+	} else {
+		total_pages = max(int64(total/int64(size)), 1)
+	}
+	return arts, total_pages, nil
 }
 
 func (s *artService) GetArtByID(id uint) (entity.Art, error) {

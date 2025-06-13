@@ -11,12 +11,24 @@ type AuthorRepository struct {
 	db *gorm.DB
 }
 
-func (r *AuthorRepository) GetAllAuthors() ([]entity.Author, error) {
+func (r *AuthorRepository) GetAllAuthors(offset int, limit int) ([]entity.Author, int64, error) {
 	var authors []entity.Author
-	err := r.db.Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+	var count int64
+	query := r.db.Model(&entity.Author{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
-	}).Order("position ASC").Find(&authors).Error
-	return authors, err
+	}).Order("position ASC")
+
+	err := query.Count(&count).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+
+	err = query.Find(&authors).Error
+	return authors, count, err
 }
 
 func (r *AuthorRepository) GetAuthorByID(id uint) (entity.Author, error) {
