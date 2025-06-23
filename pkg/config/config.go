@@ -128,5 +128,8 @@ func (c *DatabaseConfig) GetDSN() string {
 }
 
 func GetBaseURL() string {
+	if viper.GetString("base_url") == "" {
+		return "http://91.105.196.19:8080/"
+	}
 	return viper.GetString("base_url")
 }
