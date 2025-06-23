@@ -38,7 +38,7 @@ func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_arts format"})
 		return
 	}
-	authors, arts, total_pages, err := h.authorService.GetAllAuthors(with_arts, page, size)
+	authors, arts, total_pages, total_items, err := h.authorService.GetAllAuthors(with_arts, page, size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -46,7 +46,7 @@ func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 
 	response := gin.H{
 		"data":       dto.ToAuthorResponseWithAllArtsDTOs(authors, arts),
-		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size},
+		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
 	}
 	c.JSON(http.StatusOK, response)
 }

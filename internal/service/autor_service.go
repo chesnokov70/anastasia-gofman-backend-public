@@ -21,7 +21,7 @@ type authorService struct {
 	artRepository    repository.ArtRepository
 }
 
-func (s *authorService) GetAllAuthors(with_arts bool, page int, size int) ([]entity.Author, map[uint][]entity.Art, int64, error) {
+func (s *authorService) GetAllAuthors(with_arts bool, page int, size int) ([]entity.Author, map[uint][]entity.Art, int64, int64, error) {
 	offset, limit := 0, 0
 	if page > 0 && size > 0 {
 		offset = (page - 1) * size
@@ -30,7 +30,7 @@ func (s *authorService) GetAllAuthors(with_arts bool, page int, size int) ([]ent
 	if !with_arts {
 		all_autors, total, err := s.authorRepository.GetAllAuthors(offset, limit)
 		if err != nil {
-			return nil, nil, 0, err
+			return nil, nil, 0, 0, err
 		}
 		var total_pages int64
 		if total == 0 {
@@ -38,17 +38,17 @@ func (s *authorService) GetAllAuthors(with_arts bool, page int, size int) ([]ent
 		} else {
 			total_pages = max(int64(total/int64(size)), 1)
 		}
-		return all_autors, nil, total_pages, nil
+		return all_autors, nil, total_pages, int64(total), nil
 	}
 
 	authors, total, err := s.authorRepository.GetAllAuthors(offset, limit)
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, nil, 0, 0, err
 	}
 	arts := make(map[uint][]entity.Art)
 	arts, err = s.artRepository.SplitArtsByAuthors(authors)
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, nil, 0, 0, err
 	}
 	var total_pages int64
 	if total == 0 {
@@ -56,7 +56,7 @@ func (s *authorService) GetAllAuthors(with_arts bool, page int, size int) ([]ent
 	} else {
 		total_pages = max(int64(total/int64(size)), 1)
 	}
-	return authors, arts, total_pages, nil
+	return authors, arts, total_pages, int64(total), nil
 }
 
 func (s *authorService) GetAuthorByID(id uint) (entity.Author, error) {

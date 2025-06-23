@@ -32,14 +32,14 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 func (h *ArtHandler) GetAllArts(c *gin.Context) {
 	page := c.GetInt("page")
 	size := c.GetInt("size")
-	arts, total_pages, err := h.artService.GetAllArts(page, size)
+	arts, total_pages, total_items, err := h.artService.GetAllArts(page, size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data":       dto.ToArtResponseDTOs(arts),
-		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size},
+		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
 	})
 }
 

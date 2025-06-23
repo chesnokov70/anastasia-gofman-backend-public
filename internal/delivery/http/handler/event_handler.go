@@ -31,14 +31,14 @@ func NewEventHandler(eventService service.EventService) *EventHandler {
 func (h *EventHandler) GetAllEvents(c *gin.Context) {
 	page := c.GetInt("page")
 	size := c.GetInt("size")
-	events, total_pages, err := h.eventService.GetAllEvents(page, size)
+	events, total_pages, total_items, err := h.eventService.GetAllEvents(page, size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data":       dto.ToEventResponseDTOs(events),
-		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size},
+		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
 	})
 }
 
