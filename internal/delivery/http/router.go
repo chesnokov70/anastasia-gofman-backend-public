@@ -22,13 +22,18 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 	config.AllowCredentials = true
 	router.Use(cors.New(config))
 
+	paginationMiddleware := pagination.New(
+		pagination.WithMinPageSize(2),
+		pagination.WithMaxPageSize(100),
+	)
+
 	welcom := router.Group("/")
 	welcom.GET("/", welcomeHandler.Welcome)
 	api := router.Group("/api")
 	{
 		authors := api.Group("/authors")
 		{
-			authors.GET("", pagination.New(), authorHandler.GetAllAuthors)
+			authors.GET("", paginationMiddleware, authorHandler.GetAllAuthors)
 			authors.GET("/:id", authorHandler.GetAuthorByID)
 			authors.POST("", authorHandler.CreateAuthor)
 			authors.PUT("/:id", authorHandler.FullUpdateAuthor)
@@ -45,7 +50,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		}
 		arts := api.Group("/arts")
 		{
-			arts.GET("", pagination.New(), artHandler.GetAllArts)
+			arts.GET("", paginationMiddleware, artHandler.GetAllArts)
 			arts.GET("/:id", artHandler.GetArtByID)
 
 			arts.POST("", artHandler.CreateArt)
@@ -65,7 +70,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		}
 		events := api.Group("/events")
 		{
-			events.GET("", pagination.New(), eventHandler.GetAllEvents)
+			events.GET("", paginationMiddleware, eventHandler.GetAllEvents)
 			events.GET("/:id", eventHandler.GetEventByID)
 			events.POST("", eventHandler.CreateEvent)
 			events.POST("/with_photos", eventHandler.CreateEventWithPhotos)

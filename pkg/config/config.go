@@ -56,9 +56,10 @@ func LoadConfig() (*Config, error) {
 	viper.BindEnv("server.mode", "GIN_MODE")
 	viper.BindEnv("stripe.secret_key", "STRIPE_SECRET_KEY")
 	viper.BindEnv("stripe.public_key", "STRIPE_PUBLIC_KEY")
-	viper.BindEnv("base_url", "BASE_URL")
+	viper.BindEnv("base_url", "http://91.105.196.19:8080/")
 	log.Printf("!!!Stripe secret key: %s", viper.GetString("stripe.secret_key"))
 	log.Printf("!!!Stripe public key: %s", viper.GetString("stripe.public_key"))
+	log.Printf("!!!Base URL: %s", viper.GetString("base_url"))
 
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 5432)
