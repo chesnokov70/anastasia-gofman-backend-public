@@ -28,17 +28,28 @@ const docTemplate = `{
                     "Arts"
                 ],
                 "summary": "Get all arts",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/dto.ArtResponseDTO"
-                                }
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
@@ -53,7 +64,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Создает новую картину, все поля необязательные кроме имени, по этому пути нельзя передавать ФОТО",
+                "description": "Создает новую картину, все поля необязательные кроме имени, по этому пути нельзя передавать ФОТО, но если передаешь id автора - убедись, что такой есть!",
                 "consumes": [
                     "application/json"
                 ],
@@ -111,7 +122,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "x-example": "{ \"author_id\": 1, \"name\": {\"en\": \"Art Name\", \"ru\": \"Название Картины\", \"es\": \"Nombre del Arte\"}, \"title\": {\"en\": \"Art Title\", \"ru\": \"Заголовок\", \"es\": \"Título\"}, \"description\": {\"en\": \"Detailed description\", \"ru\": \"Детальное описание\", \"es\": \"Descripción detallada\"}, \"medium\": {\"en\": \"Oil on canvas\", \"ru\": \"Холст, масло\", \"es\": \"Óleo sobre lienzo\"}, \"technique\": {\"en\": \"Impasto\", \"ru\": \"Импасто\", \"es\": \"Empaste\"}, \"dimension_x\": 120, \"dimension_y\": 90, \"year\": 2024, \"frame\": {\"en\": \"Wooden frame\", \"ru\": \"Деревянная рама\", \"es\": \"Marco de madera\"}, \"price\": 150000 }",
-                        "description": "JSON payload for Art details. All fields from CreateArtDTO are expected here.",
+                        "description": "JSON с любыми полями из CreateArtDTO",
                         "name": "data",
                         "in": "formData",
                         "required": true
@@ -416,6 +427,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "boolean",
+                        "description": "Is Preview",
+                        "name": "is_preview",
+                        "in": "query"
+                    },
+                    {
                         "type": "file",
                         "description": "Main Photo",
                         "name": "main_photo",
@@ -525,16 +542,35 @@ const docTemplate = `{
                     "Authors"
                 ],
                 "summary": "Get all authors",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "With Arts",
+                        "name": "with_arts",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/entity.Author"
-                                }
+                                "$ref": "#/definitions/dto.AuthorResponseWithArtsDTO"
                             }
                         }
                     }
@@ -567,7 +603,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/entity.Author"
+                            "$ref": "#/definitions/dto.AuthorResponseDTO"
                         }
                     },
                     "400": {
@@ -582,11 +618,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/authors/:id": {
-            "patch": {
-                "description": "Обновляем автора частично, все поля необязательные, не передал = осталось прежним",
+        "/api/authors/with_photos": {
+            "post": {
+                "description": "Создает мальчишку c фотками - все пихается в multipart/form-data в поле main_photo, preview_photo, photos(массив)",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -594,43 +630,48 @@ const docTemplate = `{
                 "tags": [
                     "Authors"
                 ],
-                "summary": "Partial update author",
+                "summary": "Create author with photos",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Author ID",
-                        "name": "id",
-                        "in": "path",
+                        "type": "string",
+                        "x-example": "{\"name\": {\"en\": \"John Doe\", \"es\": \"Juan Pérez\", \"ru\": \"Иван Иванов\"}, \"bio\": {\"en\": \"Some information\", \"es\":\"tralalelo tralala\", \"ru\": \"Инфа про мальчишку\"}, \"biography\": {\"en\": \"Some information\", \"es\":\"tralalelo tralala\", \"ru\": \"Инфа про мальчишку\"}, \"educational_background\": {\"en\": \"Some information\", \"es\":\"tralalelo tralala\", \"ru\": \"Инфа про мальчишку\"}, \"exhibitions\": {\"en\": \"Some information\", \"es\":\"tralalelo tralala\", \"ru\": \"Инфа про мальчишку\"}, \"contact_info\": {\"en\": \"Some information\", \"es\":\"tralalelo tralala\", \"ru\": \"Инфа про мальчишку\"}, \"contact\": {\"email\": \"author@example.com\", \"phone\": \"+1234567890\", \"links\": {\"instagram\": \"https://instagram.com/author\", \"telegram\": \"https://t.me/author\", \"vkontakte\": \"https://vk.com/author\", \"facebook\": \"https://facebook.com/author\", \"twitter\": \"https://twitter.com/author\", \"youtube\": \"https://youtube.com/author\", \"linkedin\": \"https://linkedin.com/in/author\", \"whatsapp\": \"+1234567890\", \"pinterest\": \"https://pinterest.com/author\", \"behance\": \"https://behance.net/author\"}}, \"is_active\": true}",
+                        "description": "JSON который совпадает частично с CreateAuthorDTO",
+                        "name": "data",
+                        "in": "formData",
                         "required": true
                     },
                     {
-                        "description": "Update data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateAuthorDTO"
-                        }
+                        "type": "file",
+                        "description": "Main Photo",
+                        "name": "main_photo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Preview Photo",
+                        "name": "preview_photo",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Photos",
+                        "name": "photos",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/entity.Author"
+                            "$ref": "#/definitions/dto.AuthorResponseDTO"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -663,7 +704,14 @@ const docTemplate = `{
                         "required": true
                     }
                 ],
-                "responses": {}
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthorResponseDTO"
+                        }
+                    }
+                }
             },
             "put": {
                 "description": "Обновляем автора полностью, все поля необязательные, но сотрется вся инфа, которая была раньше и которая не передана",
@@ -699,7 +747,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/entity.Author"
+                            "$ref": "#/definitions/dto.AuthorResponseDTO"
                         }
                     },
                     "400": {
@@ -709,6 +757,328 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Удаляем автора",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Delete author",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Обновляем автора частично, все поля необязательные, не передал = осталось прежним",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Partial update author",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateAuthorDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthorResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/authors/{id}/main_photo": {
+            "post": {
+                "description": "Добавляет/обновляет главную фотку - multipart/form-data в поле main_photo",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Add main photo to author",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is Preview",
+                        "name": "is_preview",
+                        "in": "query"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Main Photo",
+                        "name": "main_photo",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthorResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Удаляет главную фотку автора - multipart/form-data в поле main_photo",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is Preview",
+                        "name": "is_preview",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthorResponseDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/authors/{id}/photos": {
+            "post": {
+                "description": "Добавляет фотографии к автору(имеющиеся не трогаются) - передается []base64 в формате multipart/form-data в поле photos",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Add photos to author",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Photos",
+                        "name": "photos",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Author",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthorResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Обновляет фотографии к автору(имеющиеся удаляются) - multipart/form-data в поле photos",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Patch author photos",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Photos",
+                        "name": "photos",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Author",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthorResponseDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/authors/{id}/with_arts": {
+            "get": {
+                "description": "Получаем автора с его работами",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Get author with arts",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Author ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthorResponseWithArtsDTO"
                         }
                     }
                 }
@@ -727,17 +1097,28 @@ const docTemplate = `{
                     "Events"
                 ],
                 "summary": "Get all events",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/dto.EventResponseDTO"
-                                }
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
@@ -752,7 +1133,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Создает новое событие без фотографий - принимает JSON. Поддерживаемые форматы дат: \"2024-01-01T00:00:00Z\", \"01.01.2024\", \"01.01.2024 15:30\"",
+                "description": "Создает новое событие без фотографий - принимает JSON. Поддерживаемые форматы дат: \"2024-01-01T00:00:00Z\", \"01.01.2024\", \"01.01.2024 15:30\", 2006-01-02 15:04:05",
                 "consumes": [
                     "application/json"
                 ],
@@ -765,7 +1146,7 @@ const docTemplate = `{
                 "summary": "Create event",
                 "parameters": [
                     {
-                        "description": "Event data with flexible date formats",
+                        "description": "Event",
                         "name": "event",
                         "in": "body",
                         "required": true,
@@ -1245,6 +1626,543 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/payments/balance": {
+            "get": {
+                "description": "Get the account balance from Stripe.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get balance",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/payments/customers": {
+            "get": {
+                "description": "Get a list of customers from Stripe.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get customers",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a customer in Stripe.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create a customer",
+                "parameters": [
+                    {
+                        "description": "Customer info",
+                        "name": "customer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateCustomerDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/payments/payment-intents": {
+            "get": {
+                "description": "Get a list of payment intents from Stripe.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get payments",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by customer ID",
+                        "name": "customer_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/payments/payment-links": {
+            "post": {
+                "description": "Creates a payment link for a product.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create a payment link",
+                "parameters": [
+                    {
+                        "description": "Payment link request",
+                        "name": "link_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreatePaymentLinkDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/payments/products": {
+            "get": {
+                "description": "Get a list of products with prices from Stripe.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get products",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by active status",
+                        "name": "active",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a product in Stripe with a price.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create a product",
+                "parameters": [
+                    {
+                        "description": "Product info",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateProductDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/payments/products/{id}": {
+            "get": {
+                "description": "Get a product by ID with its price from Stripe.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get a product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates a product in Stripe.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Update a product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Product update data",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateProductDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes (archives) a product in Stripe.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Delete a product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/payments/refunds": {
+            "post": {
+                "description": "Creates a refund for a payment in Stripe.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create a refund",
+                "parameters": [
+                    {
+                        "description": "Refund request",
+                        "name": "refund_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateRefundDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1310,6 +2228,118 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.AuthorResponseDTO": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "biography": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "contact": {
+                    "$ref": "#/definitions/entity.ContactInfo"
+                },
+                "contact_info": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "educational_background": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "exhibitions": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "main_photo_path": {
+                    "type": "string"
+                },
+                "name": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PhotoResponseDTO"
+                    }
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "preview_photo_path": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.AuthorResponseWithArtsDTO": {
+            "type": "object",
+            "properties": {
+                "arts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ArtResponseDTO"
+                    }
+                },
+                "bio": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "biography": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "contact": {
+                    "$ref": "#/definitions/entity.ContactInfo"
+                },
+                "contact_info": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "educational_background": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "exhibitions": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "main_photo_path": {
+                    "type": "string"
+                },
+                "name": {
+                    "$ref": "#/definitions/entity.TranslatedText"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PhotoResponseDTO"
+                    }
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "preview_photo_path": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateArtDTO": {
             "type": "object",
             "required": [
@@ -1363,6 +2393,9 @@ const docTemplate = `{
             ],
             "properties": {
                 "bio": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "biography": {
                     "$ref": "#/definitions/dto.TranslatedTextDTO"
                 },
                 "contact": {
@@ -1423,6 +2456,15 @@ const docTemplate = `{
                         }
                     }
                 },
+                "contact_info": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "educational_background": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "exhibitions": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
                 "is_active": {
                     "type": "boolean",
                     "example": true
@@ -1432,8 +2474,74 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateCustomerDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateEventDTO": {
             "type": "object"
+        },
+        "dto.CreatePaymentLinkDTO": {
+            "type": "object",
+            "required": [
+                "product_id"
+            ],
+            "properties": {
+                "product_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CreateProductDTO": {
+            "type": "object",
+            "required": [
+                "name",
+                "price"
+            ],
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "image_urls": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CreateRefundDTO": {
+            "type": "object",
+            "required": [
+                "payment_intent_id"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "payment_intent_id": {
+                    "type": "string"
+                }
+            }
         },
         "dto.EventResponseDTO": {
             "type": "object",
@@ -1567,6 +2675,9 @@ const docTemplate = `{
                 "bio": {
                     "$ref": "#/definitions/dto.TranslatedTextDTO"
                 },
+                "biography": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
                 "contact": {
                     "type": "object",
                     "properties": {
@@ -1625,6 +2736,15 @@ const docTemplate = `{
                         }
                     }
                 },
+                "contact_info": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "educational_background": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
+                "exhibitions": {
+                    "$ref": "#/definitions/dto.TranslatedTextDTO"
+                },
                 "is_active": {
                     "type": "boolean",
                     "example": false
@@ -1637,37 +2757,29 @@ const docTemplate = `{
         "dto.UpdateEventDTO": {
             "type": "object"
         },
-        "entity.Author": {
+        "dto.UpdateProductDTO": {
             "type": "object",
             "properties": {
-                "bio": {
-                    "$ref": "#/definitions/entity.TranslatedText"
+                "active": {
+                    "type": "boolean"
                 },
-                "contact": {
-                    "$ref": "#/definitions/entity.ContactInfo"
+                "currency": {
+                    "type": "string"
                 },
-                "created_at": {
-                    "type": "string",
-                    "example": "2021-01-01T00:00:00Z"
+                "description": {
+                    "type": "string"
                 },
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "is_active": {
-                    "type": "boolean",
-                    "example": true
+                "image_urls": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "name": {
-                    "$ref": "#/definitions/entity.TranslatedText"
+                    "type": "string"
                 },
-                "position": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "updated_at": {
-                    "type": "string",
-                    "example": "2021-01-01T00:00:00Z"
+                "price": {
+                    "type": "integer"
                 }
             }
         },
@@ -1788,7 +2900,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8010",
+	Host:             "",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Art Gallery API",

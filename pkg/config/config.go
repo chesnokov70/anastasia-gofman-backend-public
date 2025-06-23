@@ -5,12 +5,15 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Server   ServerConfig   `mapstructure:"server"`
+	Stripe   StripeConfig   `mapstructure:"stripe"`
+	BaseURL  string         `mapstructure:"base_url"`
 }
 
 type DatabaseConfig struct {
@@ -27,7 +30,19 @@ type ServerConfig struct {
 	Mode string `mapstructure:"mode"`
 }
 
+type StripeConfig struct {
+	SecretKey string `mapstructure:"secret_key"`
+	PublicKey string `mapstructure:"public_key"`
+}
+
 func LoadConfig() (*Config, error) {
+	// Try loading docker.env first, then .env
+	if err := godotenv.Load("docker.env"); err != nil {
+		log.Println("Warning: Could not find docker.env file, trying .env")
+		if err := godotenv.Load(); err != nil {
+			log.Println("Warning: Could not find .env file, relying on system environment variables and defaults.")
+		}
+	}
 
 	viper.AutomaticEnv()
 
@@ -39,6 +54,11 @@ func LoadConfig() (*Config, error) {
 	viper.BindEnv("database.sslmode", "DB_SSLMODE")
 	viper.BindEnv("server.port", "APP_PORT")
 	viper.BindEnv("server.mode", "GIN_MODE")
+	viper.BindEnv("stripe.secret_key", "STRIPE_SECRET_KEY")
+	viper.BindEnv("stripe.public_key", "STRIPE_PUBLIC_KEY")
+	viper.BindEnv("base_url", "BASE_URL")
+	log.Printf("!!!Stripe secret key: %s", viper.GetString("stripe.secret_key"))
+	log.Printf("!!!Stripe public key: %s", viper.GetString("stripe.public_key"))
 
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 5432)
@@ -48,6 +68,8 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("database.sslmode", "disable")
 	viper.SetDefault("server.port", "8010")
 	viper.SetDefault("server.mode", "debug")
+	viper.SetDefault("stripe.secret_key", "sk_test_")
+	viper.SetDefault("stripe.public_key", "pk_test_")
 
 	viper.AddConfigPath("./configs")
 	viper.SetConfigName("config")
@@ -102,4 +124,8 @@ func validateConfig(cfg *Config) error {
 func (c *DatabaseConfig) GetDSN() string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.User, c.Password, c.DBName, c.SSLMode)
+}
+
+func GetBaseURL() string {
+	return viper.GetString("base_url")
 }

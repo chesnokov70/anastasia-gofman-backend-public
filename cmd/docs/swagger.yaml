@@ -41,6 +41,80 @@ definitions:
       year:
         type: integer
     type: object
+  dto.AuthorResponseDTO:
+    properties:
+      bio:
+        $ref: '#/definitions/entity.TranslatedText'
+      biography:
+        $ref: '#/definitions/entity.TranslatedText'
+      contact:
+        $ref: '#/definitions/entity.ContactInfo'
+      contact_info:
+        $ref: '#/definitions/entity.TranslatedText'
+      created_at:
+        type: string
+      educational_background:
+        $ref: '#/definitions/entity.TranslatedText'
+      exhibitions:
+        $ref: '#/definitions/entity.TranslatedText'
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      main_photo_path:
+        type: string
+      name:
+        $ref: '#/definitions/entity.TranslatedText'
+      photos:
+        items:
+          $ref: '#/definitions/dto.PhotoResponseDTO'
+        type: array
+      position:
+        type: integer
+      preview_photo_path:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.AuthorResponseWithArtsDTO:
+    properties:
+      arts:
+        items:
+          $ref: '#/definitions/dto.ArtResponseDTO'
+        type: array
+      bio:
+        $ref: '#/definitions/entity.TranslatedText'
+      biography:
+        $ref: '#/definitions/entity.TranslatedText'
+      contact:
+        $ref: '#/definitions/entity.ContactInfo'
+      contact_info:
+        $ref: '#/definitions/entity.TranslatedText'
+      created_at:
+        type: string
+      educational_background:
+        $ref: '#/definitions/entity.TranslatedText'
+      exhibitions:
+        $ref: '#/definitions/entity.TranslatedText'
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      main_photo_path:
+        type: string
+      name:
+        $ref: '#/definitions/entity.TranslatedText'
+      photos:
+        items:
+          $ref: '#/definitions/dto.PhotoResponseDTO'
+        type: array
+      position:
+        type: integer
+      preview_photo_path:
+        type: string
+      updated_at:
+        type: string
+    type: object
   dto.CreateArtDTO:
     properties:
       author_id:
@@ -76,6 +150,8 @@ definitions:
   dto.CreateAuthorDTO:
     properties:
       bio:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      biography:
         $ref: '#/definitions/dto.TranslatedTextDTO'
       contact:
         properties:
@@ -119,6 +195,12 @@ definitions:
             example: "+5553535"
             type: string
         type: object
+      contact_info:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      educational_background:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      exhibitions:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
       is_active:
         example: true
         type: boolean
@@ -127,7 +209,50 @@ definitions:
     required:
     - name
     type: object
+  dto.CreateCustomerDTO:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    type: object
   dto.CreateEventDTO:
+    type: object
+  dto.CreatePaymentLinkDTO:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - product_id
+    type: object
+  dto.CreateProductDTO:
+    properties:
+      currency:
+        type: string
+      description:
+        type: string
+      image_urls:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      price:
+        type: integer
+    required:
+    - name
+    - price
+    type: object
+  dto.CreateRefundDTO:
+    properties:
+      amount:
+        type: integer
+      payment_intent_id:
+        type: string
+    required:
+    - payment_intent_id
     type: object
   dto.EventResponseDTO:
     properties:
@@ -218,6 +343,8 @@ definitions:
     properties:
       bio:
         $ref: '#/definitions/dto.TranslatedTextDTO'
+      biography:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
       contact:
         properties:
           email:
@@ -260,6 +387,12 @@ definitions:
             example: "+5553535"
             type: string
         type: object
+      contact_info:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      educational_background:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
+      exhibitions:
+        $ref: '#/definitions/dto.TranslatedTextDTO'
       is_active:
         example: false
         type: boolean
@@ -268,29 +401,22 @@ definitions:
     type: object
   dto.UpdateEventDTO:
     type: object
-  entity.Author:
+  dto.UpdateProductDTO:
     properties:
-      bio:
-        $ref: '#/definitions/entity.TranslatedText'
-      contact:
-        $ref: '#/definitions/entity.ContactInfo'
-      created_at:
-        example: "2021-01-01T00:00:00Z"
-        type: string
-      id:
-        example: 1
-        type: integer
-      is_active:
-        example: true
+      active:
         type: boolean
-      name:
-        $ref: '#/definitions/entity.TranslatedText'
-      position:
-        example: 1
-        type: integer
-      updated_at:
-        example: "2021-01-01T00:00:00Z"
+      currency:
         type: string
+      description:
+        type: string
+      image_urls:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      price:
+        type: integer
     type: object
   entity.ContactInfo:
     properties:
@@ -370,7 +496,6 @@ definitions:
         example: Тун, тун, тун, Сахур.
         type: string
     type: object
-host: localhost:8010
 info:
   contact: {}
   description: Backend для галереи anastasii_gofman
@@ -382,17 +507,25 @@ paths:
       consumes:
       - application/json
       description: Получает все картины
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              items:
-                $ref: '#/definitions/dto.ArtResponseDTO'
-              type: array
-            type: array
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -406,7 +539,8 @@ paths:
       consumes:
       - application/json
       description: Создает новую картину, все поля необязательные кроме имени, по
-        этому пути нельзя передавать ФОТО
+        этому пути нельзя передавать ФОТО, но если передаешь id автора - убедись,
+        что такой есть!
       parameters:
       - description: Art
         in: body
@@ -601,6 +735,10 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Is Preview
+        in: query
+        name: is_preview
+        type: boolean
       - description: Main Photo
         in: formData
         name: main_photo
@@ -677,8 +815,7 @@ paths:
       description: Создает картину и фотографии к ней - передается в формате multipart/form-data
         в поле main_photo, preview_photo, photos(массив)
       parameters:
-      - description: JSON payload for Art details. All fields from CreateArtDTO are
-          expected here.
+      - description: JSON с любыми полями из CreateArtDTO
         in: formData
         name: data
         required: true
@@ -727,6 +864,21 @@ paths:
       consumes:
       - application/json
       description: Получаем всех авторов
+      parameters:
+      - description: With Arts
+        in: query
+        name: with_arts
+        type: boolean
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: size
+        type: integer
       produces:
       - application/json
       responses:
@@ -734,9 +886,7 @@ paths:
           description: OK
           schema:
             items:
-              items:
-                $ref: '#/definitions/entity.Author'
-              type: array
+              $ref: '#/definitions/dto.AuthorResponseWithArtsDTO'
             type: array
       summary: Get all authors
       tags:
@@ -759,7 +909,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/entity.Author'
+            $ref: '#/definitions/dto.AuthorResponseDTO'
         "400":
           description: Bad Request
           schema:
@@ -769,7 +919,49 @@ paths:
       summary: Create author
       tags:
       - Authors
-  /api/authors/:id:
+  /api/authors/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляем автора
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete author
+      tags:
+      - Authors
+    get:
+      consumes:
+      - application/json
+      description: Получаем автора по ID
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthorResponseDTO'
+      summary: Get author by ID
+      tags:
+      - Authors
     patch:
       consumes:
       - application/json
@@ -793,7 +985,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/entity.Author'
+            $ref: '#/definitions/dto.AuthorResponseDTO'
         "400":
           description: Bad Request
           schema:
@@ -807,23 +999,6 @@ paths:
               type: string
             type: object
       summary: Partial update author
-      tags:
-      - Authors
-  /api/authors/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Получаем автора по ID
-      parameters:
-      - description: Author ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses: {}
-      summary: Get author by ID
       tags:
       - Authors
     put:
@@ -849,7 +1024,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/entity.Author'
+            $ref: '#/definitions/dto.AuthorResponseDTO'
         "400":
           description: Bad Request
           schema:
@@ -859,22 +1034,245 @@ paths:
       summary: Update author
       tags:
       - Authors
-  /api/events:
-    get:
+  /api/authors/{id}/main_photo:
+    delete:
       consumes:
-      - application/json
-      description: Получает все события
+      - multipart/form-data
+      description: Удаляет главную фотку автора - multipart/form-data в поле main_photo
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Is Preview
+        in: query
+        name: is_preview
+        type: boolean
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              items:
-                $ref: '#/definitions/dto.EventResponseDTO'
-              type: array
-            type: array
+            $ref: '#/definitions/dto.AuthorResponseDTO'
+      tags:
+      - Authors
+    post:
+      consumes:
+      - multipart/form-data
+      description: Добавляет/обновляет главную фотку - multipart/form-data в поле
+        main_photo
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Is Preview
+        in: query
+        name: is_preview
+        type: boolean
+      - description: Main Photo
+        in: formData
+        name: main_photo
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthorResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add main photo to author
+      tags:
+      - Authors
+  /api/authors/{id}/photos:
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Обновляет фотографии к автору(имеющиеся удаляются) - multipart/form-data
+        в поле photos
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Photos
+        in: formData
+        items:
+          type: file
+        name: photos
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Author
+          schema:
+            $ref: '#/definitions/dto.AuthorResponseDTO'
+      summary: Patch author photos
+      tags:
+      - Authors
+    post:
+      consumes:
+      - multipart/form-data
+      description: Добавляет фотографии к автору(имеющиеся не трогаются) - передается
+        []base64 в формате multipart/form-data в поле photos
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Photos
+        in: formData
+        items:
+          type: file
+        name: photos
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Author
+          schema:
+            $ref: '#/definitions/dto.AuthorResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add photos to author
+      tags:
+      - Authors
+  /api/authors/{id}/with_arts:
+    get:
+      consumes:
+      - application/json
+      description: Получаем автора с его работами
+      parameters:
+      - description: Author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthorResponseWithArtsDTO'
+      summary: Get author with arts
+      tags:
+      - Authors
+  /api/authors/with_photos:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Создает мальчишку c фотками - все пихается в multipart/form-data
+        в поле main_photo, preview_photo, photos(массив)
+      parameters:
+      - description: JSON который совпадает частично с CreateAuthorDTO
+        in: formData
+        name: data
+        required: true
+        type: string
+        x-example: '{"name": {"en": "John Doe", "es": "Juan Pérez", "ru": "Иван Иванов"},
+          "bio": {"en": "Some information", "es":"tralalelo tralala", "ru": "Инфа
+          про мальчишку"}, "biography": {"en": "Some information", "es":"tralalelo
+          tralala", "ru": "Инфа про мальчишку"}, "educational_background": {"en":
+          "Some information", "es":"tralalelo tralala", "ru": "Инфа про мальчишку"},
+          "exhibitions": {"en": "Some information", "es":"tralalelo tralala", "ru":
+          "Инфа про мальчишку"}, "contact_info": {"en": "Some information", "es":"tralalelo
+          tralala", "ru": "Инфа про мальчишку"}, "contact": {"email": "author@example.com",
+          "phone": "+1234567890", "links": {"instagram": "https://instagram.com/author",
+          "telegram": "https://t.me/author", "vkontakte": "https://vk.com/author",
+          "facebook": "https://facebook.com/author", "twitter": "https://twitter.com/author",
+          "youtube": "https://youtube.com/author", "linkedin": "https://linkedin.com/in/author",
+          "whatsapp": "+1234567890", "pinterest": "https://pinterest.com/author",
+          "behance": "https://behance.net/author"}}, "is_active": true}'
+      - description: Main Photo
+        in: formData
+        name: main_photo
+        type: file
+      - description: Preview Photo
+        in: formData
+        name: preview_photo
+        type: file
+      - collectionFormat: csv
+        description: Photos
+        in: formData
+        items:
+          type: file
+        name: photos
+        type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.AuthorResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create author with photos
+      tags:
+      - Authors
+  /api/events:
+    get:
+      consumes:
+      - application/json
+      description: Получает все события
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -888,9 +1286,10 @@ paths:
       consumes:
       - application/json
       description: 'Создает новое событие без фотографий - принимает JSON. Поддерживаемые
-        форматы дат: "2024-01-01T00:00:00Z", "01.01.2024", "01.01.2024 15:30"'
+        форматы дат: "2024-01-01T00:00:00Z", "01.01.2024", "01.01.2024 15:30", 2006-01-02
+        15:04:05'
       parameters:
-      - description: Event data with flexible date formats
+      - description: Event
         in: body
         name: event
         required: true
@@ -1226,4 +1625,362 @@ paths:
       summary: Create event with photos
       tags:
       - Events
+  /api/payments/balance:
+    get:
+      consumes:
+      - application/json
+      description: Get the account balance from Stripe.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get balance
+      tags:
+      - Payments
+  /api/payments/customers:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of customers from Stripe.
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get customers
+      tags:
+      - Payments
+    post:
+      consumes:
+      - application/json
+      description: Creates a customer in Stripe.
+      parameters:
+      - description: Customer info
+        in: body
+        name: customer
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCustomerDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a customer
+      tags:
+      - Payments
+  /api/payments/payment-intents:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of payment intents from Stripe.
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by customer ID
+        in: query
+        name: customer_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get payments
+      tags:
+      - Payments
+  /api/payments/payment-links:
+    post:
+      consumes:
+      - application/json
+      description: Creates a payment link for a product.
+      parameters:
+      - description: Payment link request
+        in: body
+        name: link_request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePaymentLinkDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a payment link
+      tags:
+      - Payments
+  /api/payments/products:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of products with prices from Stripe.
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by active status
+        in: query
+        name: active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get products
+      tags:
+      - Payments
+    post:
+      consumes:
+      - application/json
+      description: Creates a product in Stripe with a price.
+      parameters:
+      - description: Product info
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateProductDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a product
+      tags:
+      - Payments
+  /api/payments/products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes (archives) a product in Stripe.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a product
+      tags:
+      - Payments
+    get:
+      consumes:
+      - application/json
+      description: Get a product by ID with its price from Stripe.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a product
+      tags:
+      - Payments
+    put:
+      consumes:
+      - application/json
+      description: Updates a product in Stripe.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product update data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateProductDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a product
+      tags:
+      - Payments
+  /api/payments/refunds:
+    post:
+      consumes:
+      - application/json
+      description: Creates a refund for a payment in Stripe.
+      parameters:
+      - description: Refund request
+        in: body
+        name: refund_request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateRefundDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a refund
+      tags:
+      - Payments
 swagger: "2.0"

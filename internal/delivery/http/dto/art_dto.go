@@ -3,6 +3,7 @@ package dto
 
 import (
 	"anastasia_gofman_backend/internal/entity"
+	"anastasia_gofman_backend/pkg/config"
 	"fmt"
 	"strings"
 )
@@ -26,33 +27,37 @@ func (t TranslatedTextDTO) ToEntity() entity.TranslatedText {
 // @name CreateArt
 // CreateArtDTO defines the structure for creating a new art piece.
 type CreateArtDTO struct {
-	AuthorID    *uint             `json:"author_id" example:"1"`
-	Name        TranslatedTextDTO `json:"name" binding:"required"`
-	Title       TranslatedTextDTO `json:"title"`
-	Description TranslatedTextDTO `json:"description"`
-	Medium      TranslatedTextDTO `json:"medium"`
-	Technique   TranslatedTextDTO `json:"technique"`
-	DimensionX  int               `json:"dimension_x" example:"100"`
-	DimensionY  int               `json:"dimension_y" example:"100"`
-	Year        int               `json:"year" example:"2021"`
-	Frame       TranslatedTextDTO `json:"frame"`
-	Price       int               `json:"price" example:"100000"`
+	AuthorID             *uint             `json:"author_id" example:"1"`
+	Name                 TranslatedTextDTO `json:"name" binding:"required"`
+	Title                TranslatedTextDTO `json:"title"`
+	Description          TranslatedTextDTO `json:"description"`
+	Medium               TranslatedTextDTO `json:"medium"`
+	Technique            TranslatedTextDTO `json:"technique"`
+	DimensionX           int               `json:"dimension_x" example:"100"`
+	DimensionY           int               `json:"dimension_y" example:"100"`
+	Year                 int               `json:"year" example:"2021"`
+	Frame                TranslatedTextDTO `json:"frame"`
+	Price                int               `json:"price" example:"100000"`
+	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
+	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
 }
 
 // @name CreateArt
 // CreateArtDTO defines the structure for creating a new art piece.
 type CreateArtWithPhotosDTO struct {
-	AuthorID    *uint             `json:"author_id" example:"1"`
-	Name        TranslatedTextDTO `json:"name" binding:"required"`
-	Title       TranslatedTextDTO `json:"title"`
-	Description TranslatedTextDTO `json:"description"`
-	Medium      TranslatedTextDTO `json:"medium"`
-	Technique   TranslatedTextDTO `json:"technique"`
-	DimensionX  int               `json:"dimension_x" example:"100"`
-	DimensionY  int               `json:"dimension_y" example:"100"`
-	Year        int               `json:"year" example:"2021"`
-	Frame       TranslatedTextDTO `json:"frame"`
-	Price       int               `json:"price" example:"100000"`
+	AuthorID             *uint             `json:"author_id" example:"1"`
+	Name                 TranslatedTextDTO `json:"name" binding:"required"`
+	Title                TranslatedTextDTO `json:"title"`
+	Description          TranslatedTextDTO `json:"description"`
+	Medium               TranslatedTextDTO `json:"medium"`
+	Technique            TranslatedTextDTO `json:"technique"`
+	DimensionX           int               `json:"dimension_x" example:"100"`
+	DimensionY           int               `json:"dimension_y" example:"100"`
+	Year                 int               `json:"year" example:"2021"`
+	Frame                TranslatedTextDTO `json:"frame"`
+	Price                int               `json:"price" example:"100000"`
+	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
+	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
 	// MainPhoto    *multipart.FileHeader   `json:"main_photo"`
 	// PreviewPhoto *multipart.FileHeader   `json:"preview_photo"`
 	// Photos       []*multipart.FileHeader `json:"photos"`
@@ -61,33 +66,37 @@ type CreateArtWithPhotosDTO struct {
 // UpdateArtDTO defines the structure for updating an existing art piece.
 // @name UpdateArt
 type UpdateArtDTO struct {
-	AuthorID    *uint             `json:"author_id" example:"1"`
-	Name        TranslatedTextDTO `json:"name"`
-	Title       TranslatedTextDTO `json:"title"`
-	Description TranslatedTextDTO `json:"description"`
-	Medium      TranslatedTextDTO `json:"medium"`
-	Technique   TranslatedTextDTO `json:"technique"`
-	DimensionX  int               `json:"dimension_x" example:"100"`
-	DimensionY  int               `json:"dimension_y" example:"100"`
-	Year        int               `json:"year" example:"2021"`
-	Frame       TranslatedTextDTO `json:"frame"`
-	Price       int               `json:"price" example:"100000"`
+	AuthorID             *uint             `json:"author_id" example:"1"`
+	Name                 TranslatedTextDTO `json:"name"`
+	Title                TranslatedTextDTO `json:"title"`
+	Description          TranslatedTextDTO `json:"description"`
+	Medium               TranslatedTextDTO `json:"medium"`
+	Technique            TranslatedTextDTO `json:"technique"`
+	DimensionX           int               `json:"dimension_x" example:"100"`
+	DimensionY           int               `json:"dimension_y" example:"100"`
+	Year                 int               `json:"year" example:"2021"`
+	Frame                TranslatedTextDTO `json:"frame"`
+	Price                int               `json:"price" example:"100000"`
+	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
+	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
 }
 
 func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
 	art := entity.Art{
 		// ID:          id,
-		AuthorID:    dto.AuthorID,
-		Name:        dto.Name.ToEntity(),
-		Title:       dto.Title.ToEntity(),
-		Description: dto.Description.ToEntity(),
-		Medium:      dto.Medium.ToEntity(),
-		Technique:   dto.Technique.ToEntity(),
-		DimensionX:  dto.DimensionX,
-		DimensionY:  dto.DimensionY,
-		Year:        dto.Year,
-		Frame:       dto.Frame.ToEntity(),
-		Price:       dto.Price,
+		AuthorID:             dto.AuthorID,
+		Name:                 dto.Name.ToEntity(),
+		Title:                dto.Title.ToEntity(),
+		Description:          dto.Description.ToEntity(),
+		Medium:               dto.Medium.ToEntity(),
+		Technique:            dto.Technique.ToEntity(),
+		DimensionX:           dto.DimensionX,
+		DimensionY:           dto.DimensionY,
+		Year:                 dto.Year,
+		Frame:                dto.Frame.ToEntity(),
+		Price:                dto.Price,
+		NameForStripe:        dto.NameForStripe,
+		DescriptionForStripe: dto.DescriptionForStripe,
 	}
 	if id != nil {
 		art.ID = *id
@@ -98,17 +107,19 @@ func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
 func (dto *CreateArtWithPhotosDTO) ToEntity(id *uint) entity.Art {
 	art := entity.Art{
 		// ID:          id,
-		AuthorID:    dto.AuthorID,
-		Name:        dto.Name.ToEntity(),
-		Title:       dto.Title.ToEntity(),
-		Description: dto.Description.ToEntity(),
-		Medium:      dto.Medium.ToEntity(),
-		Technique:   dto.Technique.ToEntity(),
-		DimensionX:  dto.DimensionX,
-		DimensionY:  dto.DimensionY,
-		Year:        dto.Year,
-		Frame:       dto.Frame.ToEntity(),
-		Price:       dto.Price,
+		AuthorID:             dto.AuthorID,
+		Name:                 dto.Name.ToEntity(),
+		Title:                dto.Title.ToEntity(),
+		Description:          dto.Description.ToEntity(),
+		Medium:               dto.Medium.ToEntity(),
+		Technique:            dto.Technique.ToEntity(),
+		DimensionX:           dto.DimensionX,
+		DimensionY:           dto.DimensionY,
+		Year:                 dto.Year,
+		Frame:                dto.Frame.ToEntity(),
+		Price:                dto.Price,
+		NameForStripe:        dto.NameForStripe,
+		DescriptionForStripe: dto.DescriptionForStripe,
 	}
 	if id != nil {
 		art.ID = *id
@@ -119,17 +130,19 @@ func (dto *CreateArtWithPhotosDTO) ToEntity(id *uint) entity.Art {
 func (dto *UpdateArtDTO) ToEntity(id *uint) entity.Art {
 	art := entity.Art{
 		// ID:          id,
-		AuthorID:    dto.AuthorID,
-		Name:        dto.Name.ToEntity(),
-		Title:       dto.Title.ToEntity(),
-		Description: dto.Description.ToEntity(),
-		Medium:      dto.Medium.ToEntity(),
-		Technique:   dto.Technique.ToEntity(),
-		DimensionX:  dto.DimensionX,
-		DimensionY:  dto.DimensionY,
-		Year:        dto.Year,
-		Frame:       dto.Frame.ToEntity(),
-		Price:       dto.Price,
+		AuthorID:             dto.AuthorID,
+		Name:                 dto.Name.ToEntity(),
+		Title:                dto.Title.ToEntity(),
+		Description:          dto.Description.ToEntity(),
+		Medium:               dto.Medium.ToEntity(),
+		Technique:            dto.Technique.ToEntity(),
+		DimensionX:           dto.DimensionX,
+		DimensionY:           dto.DimensionY,
+		Year:                 dto.Year,
+		Frame:                dto.Frame.ToEntity(),
+		Price:                dto.Price,
+		NameForStripe:        dto.NameForStripe,
+		DescriptionForStripe: dto.DescriptionForStripe,
 	}
 	if id != nil {
 		art.ID = *id
@@ -144,48 +157,56 @@ type PhotoResponseDTO struct {
 }
 
 type ArtResponseDTO struct {
-	ID               uint                  `json:"id"`
-	AuthorID         *uint                 `json:"author_id,omitempty"`
-	Name             entity.TranslatedText `json:"name"`
-	Title            entity.TranslatedText `json:"title"`
-	Description      entity.TranslatedText `json:"description"`
-	Medium           entity.TranslatedText `json:"medium"`
-	Technique        entity.TranslatedText `json:"technique"`
-	DimensionX       int                   `json:"dimension_x"`
-	DimensionY       int                   `json:"dimension_y"`
-	Year             int                   `json:"year"`
-	Frame            entity.TranslatedText `json:"frame"`
-	Price            int                   `json:"price"`
-	MainPhotoPath    string                `json:"main_photo_path,omitempty"`
-	PreviewPhotoPath string                `json:"preview_photo_path,omitempty"`
-	Position         int                   `json:"position"`
-	CreatedAt        string                `json:"created_at"`
-	UpdatedAt        string                `json:"updated_at"`
-	Photos           []PhotoResponseDTO    `json:"photos"`
+	ID                   uint                  `json:"id"`
+	AuthorID             *uint                 `json:"author_id,omitempty"`
+	Name                 entity.TranslatedText `json:"name"`
+	Title                entity.TranslatedText `json:"title"`
+	Description          entity.TranslatedText `json:"description"`
+	Medium               entity.TranslatedText `json:"medium"`
+	Technique            entity.TranslatedText `json:"technique"`
+	DimensionX           int                   `json:"dimension_x"`
+	DimensionY           int                   `json:"dimension_y"`
+	Year                 int                   `json:"year"`
+	Frame                entity.TranslatedText `json:"frame"`
+	Price                int                   `json:"price"`
+	MainPhotoPath        string                `json:"main_photo_path,omitempty"`
+	PreviewPhotoPath     string                `json:"preview_photo_path,omitempty"`
+	Position             int                   `json:"position"`
+	CreatedAt            string                `json:"created_at"`
+	UpdatedAt            string                `json:"updated_at"`
+	Photos               []PhotoResponseDTO    `json:"photos"`
+	StripeProductID      string                `json:"stripe_product_id"`
+	PaymentLink          string                `json:"payment_link"`
+	NameForStripe        string                `json:"name_for_stripe"`
+	DescriptionForStripe string                `json:"description_for_stripe"`
 }
 
 // TODO: to config
 // const BaseURL = "http://localhost:8010"
-const BaseURL = "http://91.105.196.19:8080/"
+var BaseURL = config.GetBaseURL()
 
 func ToArtResponseDTO(art entity.Art) ArtResponseDTO {
 	dto := ArtResponseDTO{
-		ID:          art.ID,
-		AuthorID:    art.AuthorID,
-		Name:        art.Name,
-		Title:       art.Title,
-		Description: art.Description,
-		Medium:      art.Medium,
-		Technique:   art.Technique,
-		DimensionX:  art.DimensionX,
-		DimensionY:  art.DimensionY,
-		Year:        art.Year,
-		Frame:       art.Frame,
-		Price:       art.Price,
-		Position:    art.Position,
-		CreatedAt:   art.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:   art.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		Photos:      []PhotoResponseDTO{}, // Initialize with empty slice
+		ID:                   art.ID,
+		AuthorID:             art.AuthorID,
+		Name:                 art.Name,
+		Title:                art.Title,
+		Description:          art.Description,
+		Medium:               art.Medium,
+		Technique:            art.Technique,
+		DimensionX:           art.DimensionX,
+		DimensionY:           art.DimensionY,
+		Year:                 art.Year,
+		Frame:                art.Frame,
+		Price:                art.Price,
+		Position:             art.Position,
+		CreatedAt:            art.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:            art.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Photos:               []PhotoResponseDTO{}, // Initialize with empty slice
+		StripeProductID:      art.StripeProductID,
+		PaymentLink:          art.PaymentLink,
+		NameForStripe:        art.NameForStripe,
+		DescriptionForStripe: art.DescriptionForStripe,
 	}
 
 	if art.MainPhotoID != nil && art.MainPhoto.Path != "" {

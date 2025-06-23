@@ -36,6 +36,7 @@ import (
 // }
 
 // @name Art
+
 type Art struct {
 	ID       uint   `json:"id" gorm:"primaryKey"`
 	AuthorID *uint  `json:"author_id"`
@@ -64,6 +65,11 @@ type Art struct {
 	Position  int       `json:"position" example:"1"`
 	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
 	UpdatedAt time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+
+	NameForStripe        string `json:"name_for_stripe" example:"some name in english"`
+	DescriptionForStripe string `json:"description_for_stripe" example:"some description in english"`
+	StripeProductID      string `json:"stripe_product_id" example:"prod_1234567890"`
+	PaymentLink          string `json:"payment_link" example:"https://buy.stripe.com/test_cN29C0000000000000"`
 }
 
 func (a *Art) BeforeDelete(tx *gorm.DB) error {

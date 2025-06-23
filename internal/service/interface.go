@@ -25,11 +25,11 @@ type AuthorService interface {
 type ArtService interface {
 	GetAllArts(page int, size int) ([]entity.Art, int64, error)
 	GetArtByID(id uint) (entity.Art, error)
-	CreateArt(art entity.Art) (entity.Art, error)
+	CreateArt(art entity.Art, with_stripe bool) (entity.Art, error)
 	UpdateArt(art entity.Art) (entity.Art, error)
 	DeleteArt(id uint) error
-	PartialUpdateArt(id uint, kwargs map[string]interface{}) (entity.Art, error)
-	FullUpdateArt(art entity.Art) (entity.Art, error)
+	PartialUpdateArt(id uint, kwargs map[string]interface{}, with_stripe bool) (entity.Art, error)
+	FullUpdateArt(art entity.Art, with_stripe bool) (entity.Art, error)
 	AddMainOrPreviewPhotoToArt(artID uint, fileHeader *multipart.FileHeader, is_main bool, is_preview bool) (entity.Art, error)
 	AddPhotosToArt(id uint, photos []*multipart.FileHeader) (entity.Art, error)
 	PatchArtPhotos(id uint, photos []*multipart.FileHeader) (entity.Art, error)
@@ -37,6 +37,8 @@ type ArtService interface {
 	GetMainPhoto(id uint) (entity.Photo, error)
 	// PatchArtPhotos(id uint, photos []*multipart.FileHeader) ([]entity.Art, error)
 	UpdateArtsPosition(positions []int) error
+	UpdatePhotosInStripe(id uint) error
+	DeleteProductInStripe(id uint) error
 }
 
 type EventService interface {

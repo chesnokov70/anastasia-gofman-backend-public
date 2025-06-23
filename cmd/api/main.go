@@ -13,6 +13,7 @@ import (
 	"anastasia_gofman_backend/internal/service"
 	"anastasia_gofman_backend/pkg/config"
 	"anastasia_gofman_backend/pkg/database"
+	pkgService "anastasia_gofman_backend/pkg/service"
 	"log"
 	stdhttp "net/http"
 
@@ -60,7 +61,15 @@ func main() {
 
 	photoRepository := postgres.NewPhotoRepository(db)
 	artRepository := postgres.NewArtRepository(db)
-	artService := service.NewArtService(artRepository, photoRepository)
+
+	// Инициализация Stripe сервиса
+	stripeService := pkgService.NewStripeService(
+		cfg.Stripe.SecretKey, // test key
+		cfg.Stripe.PublicKey, // prod key (пока используем тот же)
+		false,                // isLive - по умолчанию тестовый режим
+	)
+
+	artService := service.NewArtService(artRepository, photoRepository, stripeService)
 	artHandler := handler.NewArtHandler(artService)
 
 	authorRepository := postgres.NewAuthorRepository(db)
@@ -73,7 +82,9 @@ func main() {
 
 	welcomeHandler := handler.NewWelcomeHandler()
 
-	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler)
+	paymentHandler := handler.NewPaymentHandler(stripeService)
+
+	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler)
 	router.Static("/uploads", "./uploads")
 	// / Swagger route
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.DefaultModelsExpandDepth(2)))
@@ -88,6 +99,12 @@ func main() {
 	})
 
 	log.Printf("Starting server on port %s in %s mode", cfg.Server.Port, cfg.Server.Mode)
+	if cfg.Stripe.SecretKey == "sk_test_" {
+		log.Printf("Warning: Using default Stripe test key. Set STRIPE_SECRET_KEY environment variable.")
+	} else {
+		log.Printf("Stripe service initialized in production mode")
+	}
+
 	if err := router.Run(":" + cfg.Server.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

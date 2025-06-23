@@ -9,7 +9,7 @@ import (
 	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
 )
 
-func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler) *gin.Engine {
+func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler) *gin.Engine {
 	router := gin.Default()
 	router.RedirectTrailingSlash = false // Disable automatic redirect for trailing slashes
 
@@ -47,10 +47,12 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		{
 			arts.GET("", pagination.New(), artHandler.GetAllArts)
 			arts.GET("/:id", artHandler.GetArtByID)
+
 			arts.POST("", artHandler.CreateArt)
 			arts.POST("/with_photos", artHandler.CreateArtWithPhotos)
 			arts.PUT("/:id", artHandler.FullUpdateArt)
 			arts.PATCH("/:id", artHandler.PartialUpdateArt)
+
 			arts.DELETE("/:id", artHandler.DeleteArt)
 
 			arts.GET("/:id/main_photo", artHandler.GetMainPhoto)
@@ -76,6 +78,25 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 
 			events.POST("/:id/photos", eventHandler.AddPhotosToEvent)
 			events.PATCH("/:id/photos", eventHandler.PatchEventPhotos)
+		}
+		payments := api.Group("/payments")
+		{
+			// Эндпоинты для управления продуктами
+			payments.POST("/products", paymentHandler.CreateProduct)
+			payments.GET("/products/:id", paymentHandler.GetProduct)
+			payments.PUT("/products/:id", paymentHandler.UpdateProduct)
+			payments.DELETE("/products/:id", paymentHandler.DeleteProduct)
+
+			// Эндпоинты для управления клиентами
+			payments.GET("/customers", paymentHandler.GetCustomers)
+
+			// Эндпоинты для платежей и возвратов
+			payments.GET("/payment-intents", paymentHandler.GetPayments)
+			payments.POST("/payment-links", paymentHandler.CreatePaymentLink)
+			payments.POST("/refunds", paymentHandler.CreateRefund)
+
+			// Эндпоинты для информации об аккаунте
+			payments.GET("/balance", paymentHandler.GetBalance)
 		}
 	}
 

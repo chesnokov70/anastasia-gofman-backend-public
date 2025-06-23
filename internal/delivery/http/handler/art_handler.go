@@ -4,6 +4,7 @@ import (
 	"anastasia_gofman_backend/internal/delivery/http/dto"
 	"anastasia_gofman_backend/internal/service"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -66,11 +67,12 @@ func (h *ArtHandler) GetArtByID(c *gin.Context) {
 }
 
 // @Summary Create a new art
-// @Description Создает новую картину, все поля необязательные кроме имени, по этому пути нельзя передавать ФОТО, но если передаешь id автора - убедись, что такой есть!
+// @Description Создает новую картину, все поля необязательные кроме имени, по этому пути нельзя передавать ФОТО, но если передаешь id автора - убедись, что такой есть! Если не передашь имя и дескрипшн для страйпа - возьму их из EN полей, но нельзя получается, чтобы поле name.en было пустым одновременно с nameForStripe
 // @Accept json
 // @Produce json
 // @Tags Arts
 // @Param data body dto.CreateArtDTO true "Art"
+// @Param with_stripe query bool false "With Stripe"
 // @Success 201 {object} dto.ArtResponseDTO
 // @Failure 400 {object} map[string]string
 // @Router /api/arts [post]
@@ -80,8 +82,14 @@ func (h *ArtHandler) CreateArt(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	with_stripe := c.DefaultQuery("with_stripe", "false")
+	with_stripe_bool, err := strconv.ParseBool(with_stripe)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_stripe format"})
+		return
+	}
 
-	art, err := h.artService.CreateArt(artDTO.ToEntity(nil))
+	art, err := h.artService.CreateArt(artDTO.ToEntity(nil), with_stripe_bool)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -98,6 +106,7 @@ func (h *ArtHandler) CreateArt(c *gin.Context) {
 // @Param main_photo formData file false "Main Photo"
 // @Param preview_photo formData file false "Preview Photo"
 // @Param photos formData []file false "Photos"
+// @Param with_stripe query bool false "With Stripe"
 // @Success 201 {object} dto.ArtResponseDTO
 // @Failure 400 {object} map[string]string
 // @Router /api/arts/with_photos [post]
@@ -121,7 +130,13 @@ func (h *ArtHandler) CreateArtWithPhotos(c *gin.Context) {
 		return
 	}
 
-	createdArt, err := h.artService.CreateArt(artDTO.ToEntity(nil))
+	with_stripe := c.DefaultQuery("with_stripe", "false")
+	with_stripe_bool, err := strconv.ParseBool(with_stripe)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_stripe format"})
+		return
+	}
+	createdArt, err := h.artService.CreateArt(artDTO.ToEntity(nil), with_stripe_bool)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create art entity: " + err.Error()})
 		return
@@ -170,6 +185,20 @@ func (h *ArtHandler) CreateArtWithPhotos(c *gin.Context) {
 		return
 	}
 
+	// h.artService.UpdatePhotosInStripe(currentArtID)
+	// фон
+	go func(artID uint) {
+		if with_stripe_bool {
+			err := h.artService.UpdatePhotosInStripe(artID)
+			if err != nil {
+				log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
+			}
+		}
+		// if err := h.artService.UpdatePhotosInStripe(artID); err != nil {
+		// 	log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
+		// }
+	}(uint(currentArtID))
+
 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(finalEvent))
 }
 
@@ -180,6 +209,7 @@ func (h *ArtHandler) CreateArtWithPhotos(c *gin.Context) {
 // @Tags Arts
 // @Param id path int true "Art ID"
 // @Param data body dto.UpdateArtDTO true "Art"
+// @Param with_stripe query bool false "With Stripe"
 // @Success 200 {object} dto.ArtResponseDTO
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -195,11 +225,26 @@ func (h *ArtHandler) FullUpdateArt(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	with_stripe := c.DefaultQuery("with_stripe", "false")
+	with_stripe_bool, err := strconv.ParseBool(with_stripe)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_stripe format"})
+		return
+	}
 	idUint := uint(id)
-	art, err := h.artService.FullUpdateArt(artDTO.ToEntity(&idUint))
+	art, err := h.artService.FullUpdateArt(artDTO.ToEntity(&idUint), with_stripe_bool)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+	// h.artService.UpdatePhotosInStripe(idUint)
+	// Запускаем в фоне
+	if with_stripe_bool {
+		go func(artID uint) {
+			if err := h.artService.UpdatePhotosInStripe(artID); err != nil {
+				log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
+			}
+		}(uint(id))
 	}
 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art))
 }
@@ -214,6 +259,7 @@ func (h *ArtHandler) FullUpdateArt(c *gin.Context) {
 // @Tags Arts
 // @Param id path int true "Art ID"
 // @Param kwargs body dto.UpdateArtDTO true "Art"
+// @Param with_stripe query bool false "With Stripe"
 // @Success 200 {object} dto.ArtResponseDTO
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -229,10 +275,23 @@ func (h *ArtHandler) PartialUpdateArt(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	art, err := h.artService.PartialUpdateArt(uint(id), kwargs)
+	with_stripe := c.DefaultQuery("with_stripe", "false")
+	with_stripe_bool, err := strconv.ParseBool(with_stripe)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_stripe format"})
+		return
+	}
+	art, err := h.artService.PartialUpdateArt(uint(id), kwargs, with_stripe_bool)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+	if with_stripe_bool {
+		go func(artID uint) {
+			if err := h.artService.UpdatePhotosInStripe(artID); err != nil {
+				log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
+			}
+		}(uint(id))
 	}
 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art))
 }
@@ -256,6 +315,13 @@ func (h *ArtHandler) DeleteArt(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// h.artService.DeleteProductInStripe(uint(id))
+	// фон
+	go func(artID uint) {
+		if err := h.artService.DeleteProductInStripe(artID); err != nil {
+			log.Printf("Failed to delete product in Stripe for art %d: %v", artID, err)
+		}
+	}(uint(id))
 	c.JSON(http.StatusOK, gin.H{"message": "art deleted"})
 }
 
@@ -289,6 +355,13 @@ func (h *ArtHandler) AddMainPhotoToArt(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// h.artService.UpdatePhotosInStripe(uint(id))
+	// фон
+	go func(artID uint) {
+		if err := h.artService.UpdatePhotosInStripe(artID); err != nil {
+			log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
+		}
+	}(uint(id))
 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art))
 }
 
@@ -327,6 +400,13 @@ func (h *ArtHandler) AddPhotosToArt(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant add photos"})
 		return
 	}
+	// h.artService.UpdatePhotosInStripe(uint(id))
+	// фон
+	go func(artID uint) {
+		if err := h.artService.UpdatePhotosInStripe(artID); err != nil {
+			log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
+		}
+	}(uint(id))
 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(photos_result))
 }
 
@@ -355,6 +435,13 @@ func (h *ArtHandler) PatchArtPhotos(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
 		return
 	}
+	// h.artService.UpdatePhotosInStripe(uint(id))
+	// фон
+	go func(artID uint) {
+		if err := h.artService.UpdatePhotosInStripe(artID); err != nil {
+			log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
+		}
+	}(uint(id))
 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(photos_result))
 }
 
