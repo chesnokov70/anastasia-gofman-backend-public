@@ -4,7 +4,13 @@ import (
 	"anastasia_gofman_backend/internal/entity"
 	"fmt"
 	"strings"
+
+	"github.com/lib/pq"
 )
+
+func specializationsToString(specializations pq.StringArray) string {
+	return strings.Join([]string(specializations), ", ")
+}
 
 // CreateAuthorDTO создает мальчишку - json в теле запроса
 // @name CreateAuthor
@@ -15,7 +21,7 @@ type CreateAuthorDTO struct {
 	EducationalBackground TranslatedTextDTO `json:"educational_background"`
 	Exhibitions           TranslatedTextDTO `json:"exhibitions"`
 	ContactInfo           TranslatedTextDTO `json:"contact_info"`
-	Specialization        []string          `json:"specialization" example:"sculptor, painter"`
+	Specialization        string            `json:"specialization" example:"sculptor, painter"`
 	Contact               struct {
 		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
@@ -44,7 +50,7 @@ type UpdateAuthorDTO struct {
 	EducationalBackground TranslatedTextDTO `json:"educational_background"`
 	Exhibitions           TranslatedTextDTO `json:"exhibitions"`
 	ContactInfo           TranslatedTextDTO `json:"contact_info"`
-	Specialization        []string          `json:"specialization" example:"sculptor, painter"`
+	Specialization        string            `json:"specialization" example:"sculptor, painter"`
 	Contact               struct {
 		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
@@ -73,7 +79,7 @@ type CreateAuthorWithPhotosDTO struct {
 	EducationalBackground TranslatedTextDTO `json:"educational_background"`
 	Exhibitions           TranslatedTextDTO `json:"exhibitions"`
 	ContactInfo           TranslatedTextDTO `json:"contact_info"`
-	Specialization        []string          `json:"specialization" example:"sculptor, painter"`
+	Specialization        string            `json:"specialization" example:"sculptor, painter"`
 	Contact               struct {
 		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
@@ -111,7 +117,7 @@ type AuthorResponseDTO struct {
 	MainPhotoPath         string                `json:"main_photo_path,omitempty"`
 	PreviewPhotoPath      string                `json:"preview_photo_path,omitempty"`
 	Photos                []PhotoResponseDTO    `json:"photos"`
-	Specialization        []string              `json:"specialization"`
+	Specialization        string                `json:"specialization"`
 }
 
 func ToAuthorResponseDTO(author entity.Author, base_url string) AuthorResponseDTO {
@@ -131,7 +137,7 @@ func ToAuthorResponseDTO(author entity.Author, base_url string) AuthorResponseDT
 		MainPhotoPath:         "",
 		PreviewPhotoPath:      "",
 		Photos:                []PhotoResponseDTO{},
-		Specialization:        author.Specialization,
+		Specialization:        specializationsToString(author.Specialization),
 	}
 
 	if author.MainPhotoID != nil && author.MainPhoto.Path != "" {

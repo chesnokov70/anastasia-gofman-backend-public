@@ -39,7 +39,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-
 	if err := db.Exec(`
 		DO $$ 
 		BEGIN
@@ -47,7 +46,7 @@ func main() {
 				SELECT 1 FROM information_schema.columns 
 				WHERE table_name = 'authors' 
 				AND column_name = 'specialization' 
-				AND data_type = 'ARRAY'
+				AND data_type = 'jsonb'
 			) THEN
 				ALTER TABLE authors DROP COLUMN specialization;
 			END IF;

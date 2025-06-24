@@ -14,10 +14,27 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 type AuthorHandler struct {
 	authorService service.AuthorService
+}
+
+func parseSpecializations(specializationStr string) pq.StringArray {
+	if specializationStr == "" {
+		return pq.StringArray{}
+	}
+
+	parts := strings.Split(specializationStr, ",")
+	var result []string
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return pq.StringArray(result)
 }
 
 // @Summary Get all authors
@@ -133,7 +150,7 @@ func (h *AuthorHandler) CreateAuthor(c *gin.Context) {
 		EducationalBackground: authorDTO.EducationalBackground.ToEntity(),
 		Exhibitions:           authorDTO.Exhibitions.ToEntity(),
 		ContactInfo:           authorDTO.ContactInfo.ToEntity(),
-		Specialization:        authorDTO.Specialization,
+		Specialization:        parseSpecializations(authorDTO.Specialization),
 		Contact: entity.ContactInfo{
 			Email: authorDTO.Contact.Email,
 			Phone: authorDTO.Contact.Phone,
@@ -207,6 +224,9 @@ func (h *AuthorHandler) PartialUpdateAuthor(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if updateData["specialization"] != nil {
+		updateData["specialization"] = parseSpecializations(updateData["specialization"].(string))
+	}
 	author, err := h.authorService.PartialUpdateAuthor(uint(id), updateData)
 
 	if err != nil {
@@ -248,7 +268,7 @@ func (h *AuthorHandler) FullUpdateAuthor(c *gin.Context) {
 		EducationalBackground: authorDTO.EducationalBackground.ToEntity(),
 		Exhibitions:           authorDTO.Exhibitions.ToEntity(),
 		ContactInfo:           authorDTO.ContactInfo.ToEntity(),
-		Specialization:        authorDTO.Specialization,
+		Specialization:        parseSpecializations(authorDTO.Specialization),
 		Contact: entity.ContactInfo{
 			Email: authorDTO.Contact.Email,
 			Phone: authorDTO.Contact.Phone,
@@ -308,7 +328,7 @@ func (h *AuthorHandler) CreateAuthorWithPhotos(c *gin.Context) {
 		EducationalBackground: authorDTO.EducationalBackground.ToEntity(),
 		Exhibitions:           authorDTO.Exhibitions.ToEntity(),
 		ContactInfo:           authorDTO.ContactInfo.ToEntity(),
-		Specialization:        authorDTO.Specialization,
+		Specialization:        parseSpecializations(authorDTO.Specialization),
 		Contact: entity.ContactInfo{
 			Email: authorDTO.Contact.Email,
 			Phone: authorDTO.Contact.Phone,

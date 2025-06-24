@@ -2,6 +2,8 @@ package entity
 
 import (
 	"time"
+
+	"github.com/lib/pq"
 )
 
 // @name SocialLink
@@ -36,7 +38,7 @@ type Author struct {
 	EducationalBackground TranslatedText `json:"educational_background" gorm:"type:jsonb"`
 	Exhibitions           TranslatedText `json:"exhibitions" gorm:"type:jsonb"`
 	ContactInfo           TranslatedText `json:"contact_info" gorm:"type:jsonb"`
-	Specialization        []string       `json:"specialization" example:"sculptor, painter" gorm:"type:jsonb"`
+	Specialization        pq.StringArray `json:"specialization" example:"sculptor, painter" gorm:"type:text[]"`
 	// NEW
 
 	Contact   ContactInfo `json:"contact" gorm:"embedded"`

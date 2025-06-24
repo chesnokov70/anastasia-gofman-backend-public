@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/lib/pq"
+
 	"gorm.io/gorm"
 )
 
@@ -42,9 +44,7 @@ func (r *AuthorRepository) GetAuthorsBySpecialization(specializations []string, 
 	}).Order("position ASC")
 
 	if len(specializations) > 0 {
-		for _, spec := range specializations {
-			query = query.Where("specialization::jsonb ? ?", spec)
-		}
+		query = query.Where("specialization && ?", pq.Array(specializations))
 	}
 
 	err := query.Count(&count).Error
@@ -203,8 +203,9 @@ func (r *AuthorRepository) CreateDefaultAuthor() {
 			Contact: entity.ContactInfo{
 				Email: "anastasia@gallery.com",
 			},
-			Position: 3333,
-			IsActive: true,
+			Specialization: pq.StringArray{"artist", "gallery_owner"},
+			Position:       3333,
+			IsActive:       true,
 		}
 
 		if err := r.db.Create(&defaultAuthor).Error; err != nil {
