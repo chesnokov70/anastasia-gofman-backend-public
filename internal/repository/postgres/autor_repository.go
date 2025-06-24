@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -43,7 +42,9 @@ func (r *AuthorRepository) GetAuthorsBySpecialization(specializations []string, 
 	}).Order("position ASC")
 
 	if len(specializations) > 0 {
-		query = query.Where("specialization && ?", pq.Array(specializations))
+		for _, spec := range specializations {
+			query = query.Where("specialization::jsonb ? ?", spec)
+		}
 	}
 
 	err := query.Count(&count).Error
