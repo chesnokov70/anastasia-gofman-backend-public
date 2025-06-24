@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"anastasia_gofman_backend/pkg/config"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,27 +22,96 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 }
 
 // @Summary Get all arts
-// @Description Получает все картины
+// @Description Получает все картины. В Sorting можно передать NEW, RATED(ХЗ что это - использую position), PRICE_HIGH, PRICE_LOW, если не передать - будет сортировка по position
 // @Accept json
 // @Produce json
 // @Tags Arts
 // @Param page query int false "Page number" default(1)
 // @Param size query int false "Page size" default(10)
+// @Param with_pagination query bool false "With pagination" default(true)
+// @Param sorting query string false "Sorting type" Enums(NEW, RATED, PRICE_HIGH, PRICE_LOW) default()
+// @Param filtering query string false "JSON filter object with price_from, price_to, size, direction, style, author fields"
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
 // @Router /api/arts [get]
 func (h *ArtHandler) GetAllArts(c *gin.Context) {
-	page := c.GetInt("page")
-	size := c.GetInt("size")
-	arts, total_pages, total_items, err := h.artService.GetAllArts(page, size)
+	page := c.DefaultQuery("page", "1")
+	size := c.DefaultQuery("size", "10")
+	sorting := c.DefaultQuery("sorting", "")
+	filtering := c.DefaultQuery("filtering", "")
+
+	page_int, err := strconv.Atoi(page)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page format"})
+		return
+	}
+	size_int, err := strconv.Atoi(size)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid size format"})
+		return
+	}
+
+	with_pagination := c.DefaultQuery("with_pagination", "true")
+	with_pagination_bool, err := strconv.ParseBool(with_pagination)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_pagination format"})
+		return
+	}
+
+	validSortings := map[string]bool{
+		"NEW":        true,
+		"RATED":      true,
+		"PRICE_HIGH": true,
+		"PRICE_LOW":  true,
+		"":           true,
+	}
+	if !validSortings[sorting] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid sorting parameter. Valid values: NEW, RATED, PRICE_HIGH, PRICE_LOW"})
+		return
+	}
+
+	var filteringDTO *dto.ArtFilteringDTO
+	if filtering != "" {
+		filteringDTO = &dto.ArtFilteringDTO{}
+		if err := json.Unmarshal([]byte(filtering), filteringDTO); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid filtering JSON format: " + err.Error()})
+			return
+		}
+
+		if filteringDTO.Size != nil {
+			validSizes := map[string]bool{"SMALL": true, "MEDIUM": true, "BIG": true}
+			if !validSizes[*filteringDTO.Size] {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid size value. Valid values: SMALL, MEDIUM, BIG"})
+				return
+			}
+		}
+	}
+
+	arts, total_pages, total_items, err := h.artService.GetAllArts(page_int, size_int, with_pagination_bool, sorting, filteringDTO.ToEntity())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"data":       dto.ToArtResponseDTOs(arts),
-		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
-	})
+	min_price, max_price, err := h.artService.GetMinAndMaxPrice()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	base_url := config.GetBaseURL()
+	if with_pagination_bool {
+		c.JSON(http.StatusOK, gin.H{
+			"data":       dto.ToArtResponseDTOs(arts, base_url),
+			"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
+			"min_price":  min_price,
+			"max_price":  max_price,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"data":      dto.ToArtResponseDTOs(arts, base_url),
+			"min_price": min_price,
+			"max_price": max_price,
+		})
+	}
 }
 
 // @Summary Get art by id
@@ -63,7 +134,8 @@ func (h *ArtHandler) GetArtByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art, base_url))
 }
 
 // @Summary Create a new art
@@ -94,7 +166,8 @@ func (h *ArtHandler) CreateArt(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, dto.ToArtResponseDTO(art))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusCreated, dto.ToArtResponseDTO(art, base_url))
 }
 
 // @Summary Create art with photos
@@ -199,7 +272,8 @@ func (h *ArtHandler) CreateArtWithPhotos(c *gin.Context) {
 		// }
 	}(uint(currentArtID))
 
-	c.JSON(http.StatusOK, dto.ToArtResponseDTO(finalEvent))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(finalEvent, base_url))
 }
 
 // @Summary Full update art
@@ -246,7 +320,8 @@ func (h *ArtHandler) FullUpdateArt(c *gin.Context) {
 			}
 		}(uint(id))
 	}
-	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art, base_url))
 }
 
 // @Param kwargs body map[string]interface{} true "kwargs"
@@ -293,7 +368,8 @@ func (h *ArtHandler) PartialUpdateArt(c *gin.Context) {
 			}
 		}(uint(id))
 	}
-	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art, base_url))
 }
 
 // @Summary Delete art
@@ -362,7 +438,8 @@ func (h *ArtHandler) AddMainPhotoToArt(c *gin.Context) {
 			log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
 		}
 	}(uint(id))
-	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art, base_url))
 }
 
 // @Summary Add photos to art
@@ -407,7 +484,8 @@ func (h *ArtHandler) AddPhotosToArt(c *gin.Context) {
 			log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
 		}
 	}(uint(id))
-	c.JSON(http.StatusOK, dto.ToArtResponseDTO(photos_result))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(photos_result, base_url))
 }
 
 // @Summary Patch art photos
@@ -442,7 +520,8 @@ func (h *ArtHandler) PatchArtPhotos(c *gin.Context) {
 			log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
 		}
 	}(uint(id))
-	c.JSON(http.StatusOK, dto.ToArtResponseDTO(photos_result))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(photos_result, base_url))
 }
 
 // @Summary Add author to art
@@ -473,7 +552,8 @@ func (h *ArtHandler) AddAuthorToArt(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art, base_url))
 }
 
 // @Summary Get main photo

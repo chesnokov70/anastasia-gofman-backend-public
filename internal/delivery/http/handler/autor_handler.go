@@ -3,14 +3,15 @@ package handler
 import (
 	"net/http"
 
-	// "anastasia_gofman_backend/internal/repository/postgres"
-
 	"anastasia_gofman_backend/internal/delivery/http/dto"
 	"anastasia_gofman_backend/internal/entity"
 	"anastasia_gofman_backend/internal/service"
+	"anastasia_gofman_backend/pkg/config"
 	"strconv"
 
 	"encoding/json"
+
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,28 +28,63 @@ type AuthorHandler struct {
 // @Param with_arts query bool false "With Arts"
 // @Param page query int false "Page number" default(1)
 // @Param size query int false "Page size" default(10)
+// @Param with_pagination query bool false "With pagination" default(true)
+// @Param specialization query []string false "Filter by specialization" collectionFormat(csv)
 // @Success 200 {array} dto.AuthorResponseWithArtsDTO
 // @Router /api/authors [get]
 func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 	page := c.GetInt("page")
 	size := c.GetInt("size")
+	with_pagination_str := c.DefaultQuery("with_pagination", "true")
+	with_pagination, err := strconv.ParseBool(with_pagination_str)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_pagination format"})
+		return
+	}
 	with_arts_str := c.DefaultQuery("with_arts", "false")
 	with_arts, err := strconv.ParseBool(with_arts_str)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_arts format"})
 		return
 	}
-	authors, arts, total_pages, total_items, err := h.authorService.GetAllAuthors(with_arts, page, size)
+
+	// Получаем параметры фильтрации по специализации
+	specialization_param := c.Query("specialization")
+	var specializations []string
+	if specialization_param != "" {
+		// Разделяем по запятой для поддержки нескольких специализаций
+		specializations = strings.Split(specialization_param, ",")
+		for i := range specializations {
+			specializations[i] = strings.TrimSpace(specializations[i])
+		}
+	}
+
+	var authors []entity.Author
+	var arts map[uint][]entity.Art
+	var total_pages, total_items int64
+
+	// Используем фильтрацию по специализации если указана
+	if len(specializations) > 0 {
+		authors, arts, total_pages, total_items, err = h.authorService.GetAuthorsBySpecialization(specializations, with_arts, page, size, with_pagination)
+	} else {
+		authors, arts, total_pages, total_items, err = h.authorService.GetAllAuthors(with_arts, page, size, with_pagination)
+	}
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	response := gin.H{
-		"data":       dto.ToAuthorResponseWithAllArtsDTOs(authors, arts),
-		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
+	base_url := config.GetBaseURL()
+	if with_pagination {
+		response := gin.H{
+			"data":       dto.ToAuthorResponseWithAllArtsDTOs(authors, arts, base_url),
+			"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
+		}
+		c.JSON(http.StatusOK, response)
+	} else {
+		c.JSON(http.StatusOK, dto.ToAuthorResponseWithAllArtsDTOs(authors, arts, base_url))
 	}
-	c.JSON(http.StatusOK, response)
 }
 
 // @Summary Get author by ID
@@ -70,7 +106,8 @@ func (h *AuthorHandler) GetAuthorByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(author))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(author, base_url))
 }
 
 // @Summary Create author
@@ -96,6 +133,7 @@ func (h *AuthorHandler) CreateAuthor(c *gin.Context) {
 		EducationalBackground: authorDTO.EducationalBackground.ToEntity(),
 		Exhibitions:           authorDTO.Exhibitions.ToEntity(),
 		ContactInfo:           authorDTO.ContactInfo.ToEntity(),
+		Specialization:        authorDTO.Specialization,
 		Contact: entity.ContactInfo{
 			Email: authorDTO.Contact.Email,
 			Phone: authorDTO.Contact.Phone,
@@ -112,6 +150,7 @@ func (h *AuthorHandler) CreateAuthor(c *gin.Context) {
 				Behance:   authorDTO.Contact.Links.Behance,
 			},
 		},
+		IsActive: authorDTO.IsActive,
 	}
 
 	author, err := h.authorService.CreateAuthor(author)
@@ -119,7 +158,8 @@ func (h *AuthorHandler) CreateAuthor(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, dto.ToAuthorResponseDTO(author))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusCreated, dto.ToAuthorResponseDTO(author, base_url))
 }
 
 // @Summary Delete author
@@ -173,7 +213,8 @@ func (h *AuthorHandler) PartialUpdateAuthor(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(author))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(author, base_url))
 }
 
 // @Summary Update author
@@ -207,6 +248,7 @@ func (h *AuthorHandler) FullUpdateAuthor(c *gin.Context) {
 		EducationalBackground: authorDTO.EducationalBackground.ToEntity(),
 		Exhibitions:           authorDTO.Exhibitions.ToEntity(),
 		ContactInfo:           authorDTO.ContactInfo.ToEntity(),
+		Specialization:        authorDTO.Specialization,
 		Contact: entity.ContactInfo{
 			Email: authorDTO.Contact.Email,
 			Phone: authorDTO.Contact.Phone,
@@ -223,13 +265,15 @@ func (h *AuthorHandler) FullUpdateAuthor(c *gin.Context) {
 				Behance:   authorDTO.Contact.Links.Behance,
 			},
 		},
+		IsActive: authorDTO.IsActive,
 	}
 	author, err = h.authorService.FullUpdateAuthor(author)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(author))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(author, base_url))
 }
 
 // @Summary Create author with photos
@@ -264,6 +308,7 @@ func (h *AuthorHandler) CreateAuthorWithPhotos(c *gin.Context) {
 		EducationalBackground: authorDTO.EducationalBackground.ToEntity(),
 		Exhibitions:           authorDTO.Exhibitions.ToEntity(),
 		ContactInfo:           authorDTO.ContactInfo.ToEntity(),
+		Specialization:        authorDTO.Specialization,
 		Contact: entity.ContactInfo{
 			Email: authorDTO.Contact.Email,
 			Phone: authorDTO.Contact.Phone,
@@ -327,7 +372,8 @@ func (h *AuthorHandler) CreateAuthorWithPhotos(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.ToAuthorResponseDTO(finalAuthor))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusCreated, dto.ToAuthorResponseDTO(finalAuthor, base_url))
 }
 
 // @Summary Add main photo to author
@@ -364,7 +410,8 @@ func (h *AuthorHandler) AddMainPhotoToAuthor(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(author))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(author, base_url))
 }
 
 // @Summary Add photos to author
@@ -402,7 +449,8 @@ func (h *AuthorHandler) AddPhotosToAuthor(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant add photos"})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(photos_result))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(photos_result, base_url))
 }
 
 // @Summary Patch author photos
@@ -431,7 +479,8 @@ func (h *AuthorHandler) PatchAuthorPhotos(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(photos_result))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(photos_result, base_url))
 }
 
 // @Summary Update main photo to author
@@ -491,5 +540,6 @@ func (h *AuthorHandler) GetAuthorWithArts(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToAuthorResponseWithArtsDTO(author, arts))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToAuthorResponseWithArtsDTO(author, arts, base_url))
 }

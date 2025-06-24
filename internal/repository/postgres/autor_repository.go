@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"anastasia_gofman_backend/internal/entity"
+	"errors"
 	"fmt"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -11,10 +13,10 @@ type AuthorRepository struct {
 	db *gorm.DB
 }
 
-func (r *AuthorRepository) GetAllAuthors(offset int, limit int) ([]entity.Author, int64, error) {
+func (r *AuthorRepository) GetAllAuthors(offset int, limit int, with_pagination bool) ([]entity.Author, int64, error) {
 	var authors []entity.Author
 	var count int64
-	query := r.db.Model(&entity.Author{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+	query := r.db.Model(&entity.Author{}).Where("id != ?", 3333).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
 	}).Order("position ASC")
 
@@ -23,7 +25,32 @@ func (r *AuthorRepository) GetAllAuthors(offset int, limit int) ([]entity.Author
 		return nil, 0, err
 	}
 
-	if limit > 0 {
+	if with_pagination && limit > 0 {
+		query = query.Offset(offset).Limit(limit)
+	}
+
+	err = query.Find(&authors).Error
+	return authors, count, err
+}
+
+func (r *AuthorRepository) GetAuthorsBySpecialization(specializations []string, offset int, limit int, with_pagination bool) ([]entity.Author, int64, error) {
+	var authors []entity.Author
+	var count int64
+
+	query := r.db.Model(&entity.Author{}).Where("id != ?", 3333).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("photos.position ASC")
+	}).Order("position ASC")
+
+	if len(specializations) > 0 {
+		query = query.Where("specialization && ?", specializations)
+	}
+
+	err := query.Count(&count).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if with_pagination && limit > 0 {
 		query = query.Offset(offset).Limit(limit)
 	}
 
@@ -41,7 +68,7 @@ func (r *AuthorRepository) GetAuthorByID(id uint) (entity.Author, error) {
 
 func (r *AuthorRepository) GetCountOfAuthors() (int, error) {
 	var count int64
-	err := r.db.Model(&entity.Author{}).Count(&count).Error
+	err := r.db.Model(&entity.Author{}).Where("id != ?", 3333).Count(&count).Error
 	return int(count), err
 }
 
@@ -106,6 +133,9 @@ func (r *AuthorRepository) UpdateAuthor(author entity.Author) (entity.Author, er
 }
 
 func (r *AuthorRepository) DeleteAuthor(id uint) error {
+	if id == 3333 {
+		return errors.New("cannot delete default author")
+	}
 	return r.db.Delete(&entity.Author{}, id).Error
 }
 
@@ -126,7 +156,7 @@ func (r *AuthorRepository) AddMainOrPreviewPhotoToAuthor(photo entity.Photo) (en
 
 func (r *AuthorRepository) UpdateAuthorsPosition(positions []int) error {
 	for i, position := range positions {
-		err := r.db.Model(&entity.Author{}).Where("id = ?", i+1).Update("position", position).Error
+		err := r.db.Model(&entity.Author{}).Where("id = ? AND id != ?", i+1, 3333).Update("position", position).Error
 		if err != nil {
 			return err
 		}
@@ -144,4 +174,41 @@ func (r *AuthorRepository) RemoveMainOrPreviewPhotoFromAuthor(authorID uint, isM
 
 func NewAuthorRepository(db *gorm.DB) *AuthorRepository {
 	return &AuthorRepository{db: db}
+}
+
+func (r *AuthorRepository) CreateDefaultAuthor() {
+	var count int64
+	r.db.Model(&entity.Author{}).Where("id = ?", 3333).Count(&count)
+
+	if count == 0 {
+		defaultAuthor := entity.Author{
+			ID: 3333,
+			Name: entity.TranslatedText{
+				EN: "Anastasia Gofman",
+				RU: "Анастасия Гофман",
+				ES: "Anastasia Gofman",
+			},
+			Bio: entity.TranslatedText{
+				EN: "Artist and Gallery Owner",
+				RU: "Художник и владелец галереи",
+				ES: "Artista y propietario de galería",
+			},
+			Biography: entity.TranslatedText{
+				EN: "Anastasia Gofman is a talented artist and the owner of this gallery.",
+				RU: "Анастасия Гофман - талантливый художник и владелец этой галереи.",
+				ES: "Anastasia Gofman es una artista talentosa y propietaria de esta galería.",
+			},
+			Contact: entity.ContactInfo{
+				Email: "anastasia@gallery.com",
+			},
+			Position: 3333,
+			IsActive: true,
+		}
+
+		if err := r.db.Create(&defaultAuthor).Error; err != nil {
+			log.Printf("Warning: Failed to create default author: %v", err)
+		} else {
+			log.Printf("Default author 'Anastasia Gofman' created with ID: 3333")
+		}
+	}
 }

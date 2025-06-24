@@ -73,6 +73,7 @@ func main() {
 	artHandler := handler.NewArtHandler(artService)
 
 	authorRepository := postgres.NewAuthorRepository(db)
+	authorRepository.CreateDefaultAuthor()
 	authorService := service.NewAuthorService(authorRepository, photoRepository, artRepository)
 	authorHandler := handler.NewAuthorHandler(authorService)
 

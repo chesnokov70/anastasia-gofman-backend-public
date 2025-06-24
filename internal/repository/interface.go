@@ -1,10 +1,13 @@
 // internal/repository/interface.go
 package repository
 
-import "anastasia_gofman_backend/internal/entity"
+import (
+	"anastasia_gofman_backend/internal/entity"
+)
 
 type AuthorRepository interface {
-	GetAllAuthors(offset int, limit int) ([]entity.Author, int64, error)
+	GetAllAuthors(offset int, limit int, with_pagination bool) ([]entity.Author, int64, error)
+	GetAuthorsBySpecialization(specializations []string, offset int, limit int, with_pagination bool) ([]entity.Author, int64, error)
 	GetAuthorByID(id uint) (entity.Author, error)
 	GetCountOfAuthors() (int, error)
 	CreateAuthor(author entity.Author) (entity.Author, error)
@@ -15,10 +18,11 @@ type AuthorRepository interface {
 	AddMainOrPreviewPhotoToAuthor(photo entity.Photo) (entity.Author, error)
 	UpdateAuthorsPosition(positions []int) error
 	RemoveMainOrPreviewPhotoFromAuthor(authorID uint, isMain bool) error
+	CreateDefaultAuthor()
 }
 
 type ArtRepository interface {
-	GetAllArts(offset int, limit int) ([]entity.Art, int64, error)
+	GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter) ([]entity.Art, int64, error)
 	GetArtByID(id uint) (entity.Art, error)
 	GetCountOfArts() (int, error)
 	CreateArt(art entity.Art) (entity.Art, error)
@@ -32,6 +36,7 @@ type ArtRepository interface {
 	RemoveMainAndPreviewPhotoFromArt(artID uint) error
 	GetArtsByAuthorID(authorID uint) ([]entity.Art, error)
 	SplitArtsByAuthors(authors []entity.Author) (map[uint][]entity.Art, error)
+	GetMinAndMaxPrice() (int, int, error)
 
 	// AddPhotoToArt(photo entity.Photo) (entity.Art, error)
 	// GetCountOfPhotos(artID uint) int

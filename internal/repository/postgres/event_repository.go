@@ -19,7 +19,8 @@ func (r *EventRepository) GetAllEvents(offset int, limit int) ([]entity.Event, i
 	var count int64
 	query := r.db.Model(&entity.Event{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
-	}).Order("position ASC")
+		// }).Order("position ASC")
+	}).Order("created_at DESC")
 
 	err := query.Count(&count).Error
 	if err != nil {

@@ -14,19 +14,55 @@ func NewArtRepository(db *gorm.DB) *ArtRepository {
 	return &ArtRepository{db: db}
 }
 
-func (r *ArtRepository) GetAllArts(offset int, limit int) ([]entity.Art, int64, error) {
+func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter) ([]entity.Art, int64, error) {
 	var arts []entity.Art
 	var count int64
 	query := r.db.Model(&entity.Art{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
-	}).Order("position ASC")
+	})
+
+	if filtering != nil {
+		if filtering.PriceFrom != nil {
+			query = query.Where("price >= ?", *filtering.PriceFrom)
+		}
+		if filtering.PriceTo != nil {
+			query = query.Where("price <= ?", *filtering.PriceTo)
+		}
+		if filtering.Size != nil {
+			query = query.Where("size = ?", *filtering.Size)
+		}
+		if filtering.Direction != nil {
+			query = query.Where("direction = ?", *filtering.Direction)
+		}
+		if filtering.Style != nil {
+			query = query.Where("style = ?", *filtering.Style)
+		}
+		if filtering.Author != nil {
+			query = query.Joins("LEFT JOIN authors ON arts.author_id = authors.id").
+				Where("authors.name->>'en' ILIKE ? OR authors.name->>'ru' ILIKE ? OR authors.name->>'es' ILIKE ?",
+					"%"+*filtering.Author+"%", "%"+*filtering.Author+"%", "%"+*filtering.Author+"%")
+		}
+	}
+
+	switch sorting {
+	case "NEW":
+		query = query.Order("created_at DESC")
+	case "RATED":
+		query = query.Order("position ASC")
+	case "PRICE_HIGH":
+		query = query.Order("price DESC")
+	case "PRICE_LOW":
+		query = query.Order("price ASC")
+	default:
+		query = query.Order("position ASC")
+	}
 
 	err := query.Count(&count).Error
 	if err != nil {
 		return nil, 0, err
 	}
 
-	if limit > 0 {
+	if with_pagination {
 		query = query.Offset(offset).Limit(limit)
 	}
 
@@ -148,6 +184,20 @@ func (r *ArtRepository) SplitArtsByAuthors(authors []entity.Author) (map[uint][]
 		}
 	}
 	return arts, nil
+}
+
+func (r *ArtRepository) GetMinAndMaxPrice() (int, int, error) {
+	var result struct {
+		MinPrice int `gorm:"column:min_price"`
+		MaxPrice int `gorm:"column:max_price"`
+	}
+
+	err := r.db.Model(&entity.Art{}).Select("MIN(price) as min_price, MAX(price) as max_price").Scan(&result).Error
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return result.MinPrice, result.MaxPrice, nil
 }
 
 // func (r *ArtRepository) AddPhotoToArt(photo entity.Photo) (entity.Art, error) {

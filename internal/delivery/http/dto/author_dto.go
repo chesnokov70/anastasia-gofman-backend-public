@@ -15,6 +15,7 @@ type CreateAuthorDTO struct {
 	EducationalBackground TranslatedTextDTO `json:"educational_background"`
 	Exhibitions           TranslatedTextDTO `json:"exhibitions"`
 	ContactInfo           TranslatedTextDTO `json:"contact_info"`
+	Specialization        []string          `json:"specialization" example:"sculptor, painter"`
 	Contact               struct {
 		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
@@ -43,6 +44,7 @@ type UpdateAuthorDTO struct {
 	EducationalBackground TranslatedTextDTO `json:"educational_background"`
 	Exhibitions           TranslatedTextDTO `json:"exhibitions"`
 	ContactInfo           TranslatedTextDTO `json:"contact_info"`
+	Specialization        []string          `json:"specialization" example:"sculptor, painter"`
 	Contact               struct {
 		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
@@ -71,6 +73,7 @@ type CreateAuthorWithPhotosDTO struct {
 	EducationalBackground TranslatedTextDTO `json:"educational_background"`
 	Exhibitions           TranslatedTextDTO `json:"exhibitions"`
 	ContactInfo           TranslatedTextDTO `json:"contact_info"`
+	Specialization        []string          `json:"specialization" example:"sculptor, painter"`
 	Contact               struct {
 		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
@@ -108,9 +111,10 @@ type AuthorResponseDTO struct {
 	MainPhotoPath         string                `json:"main_photo_path,omitempty"`
 	PreviewPhotoPath      string                `json:"preview_photo_path,omitempty"`
 	Photos                []PhotoResponseDTO    `json:"photos"`
+	Specialization        []string              `json:"specialization"`
 }
 
-func ToAuthorResponseDTO(author entity.Author) AuthorResponseDTO {
+func ToAuthorResponseDTO(author entity.Author, base_url string) AuthorResponseDTO {
 	dto := AuthorResponseDTO{
 		ID:                    author.ID,
 		Name:                  author.Name,
@@ -127,21 +131,22 @@ func ToAuthorResponseDTO(author entity.Author) AuthorResponseDTO {
 		MainPhotoPath:         "",
 		PreviewPhotoPath:      "",
 		Photos:                []PhotoResponseDTO{},
+		Specialization:        author.Specialization,
 	}
 
 	if author.MainPhotoID != nil && author.MainPhoto.Path != "" {
 		path := strings.TrimPrefix(author.MainPhoto.Path, "/")
-		dto.MainPhotoPath = fmt.Sprintf("%s/%s", BaseURL, path)
+		dto.MainPhotoPath = fmt.Sprintf("%s/%s", base_url, path)
 	}
 	if author.PreviewPhotoID != nil && author.PreviewPhoto.Path != "" {
 		path := strings.TrimPrefix(author.PreviewPhoto.Path, "/")
-		dto.PreviewPhotoPath = fmt.Sprintf("%s/%s", BaseURL, path)
+		dto.PreviewPhotoPath = fmt.Sprintf("%s/%s", base_url, path)
 	}
 
 	for _, photo := range author.Photos {
 		if !photo.IsMain && !photo.IsPreview {
 			path := strings.TrimPrefix(photo.Path, "/")
-			fullPath := fmt.Sprintf("%s/%s", BaseURL, path)
+			fullPath := fmt.Sprintf("%s/%s", base_url, path)
 			dto.Photos = append(dto.Photos, PhotoResponseDTO{
 				ID:       photo.ID,
 				Path:     fullPath,
@@ -153,10 +158,10 @@ func ToAuthorResponseDTO(author entity.Author) AuthorResponseDTO {
 	return dto
 }
 
-func ToAuthorResponseDTOs(authors []entity.Author) []AuthorResponseDTO {
+func ToAuthorResponseDTOs(authors []entity.Author, base_url string) []AuthorResponseDTO {
 	authorDTOs := make([]AuthorResponseDTO, len(authors))
 	for i, author := range authors {
-		authorDTOs[i] = ToAuthorResponseDTO(author)
+		authorDTOs[i] = ToAuthorResponseDTO(author, base_url)
 	}
 	return authorDTOs
 }
@@ -166,17 +171,17 @@ type AuthorResponseWithArtsDTO struct {
 	Arts []ArtResponseDTO `json:"arts"`
 }
 
-func ToAuthorResponseWithArtsDTO(author entity.Author, arts []entity.Art) AuthorResponseWithArtsDTO {
+func ToAuthorResponseWithArtsDTO(author entity.Author, arts []entity.Art, base_url string) AuthorResponseWithArtsDTO {
 	return AuthorResponseWithArtsDTO{
-		AuthorResponseDTO: ToAuthorResponseDTO(author),
-		Arts:              ToArtResponseDTOs(arts),
+		AuthorResponseDTO: ToAuthorResponseDTO(author, base_url),
+		Arts:              ToArtResponseDTOs(arts, base_url),
 	}
 }
 
-func ToAuthorResponseWithAllArtsDTOs(authors []entity.Author, arts map[uint][]entity.Art) []AuthorResponseWithArtsDTO {
+func ToAuthorResponseWithAllArtsDTOs(authors []entity.Author, arts map[uint][]entity.Art, base_url string) []AuthorResponseWithArtsDTO {
 	authorDTOs := make([]AuthorResponseWithArtsDTO, len(authors))
 	for i, author := range authors {
-		authorDTOs[i] = ToAuthorResponseWithArtsDTO(author, arts[author.ID])
+		authorDTOs[i] = ToAuthorResponseWithArtsDTO(author, arts[author.ID], base_url)
 	}
 	return authorDTOs
 }

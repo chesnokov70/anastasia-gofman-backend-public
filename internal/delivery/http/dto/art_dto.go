@@ -8,6 +8,29 @@ import (
 	"strings"
 )
 
+type ArtFilteringDTO struct {
+	PriceFrom *int    `json:"price_from"`
+	PriceTo   *int    `json:"price_to"`
+	Size      *string `json:"size"`
+	Direction *string `json:"direction"`
+	Style     *string `json:"style"`
+	Author    *string `json:"author"`
+}
+
+func (dto *ArtFilteringDTO) ToEntity() *entity.ArtFilter {
+	if dto == nil {
+		return nil
+	}
+	return &entity.ArtFilter{
+		PriceFrom: dto.PriceFrom,
+		PriceTo:   dto.PriceTo,
+		Size:      dto.Size,
+		Direction: dto.Direction,
+		Style:     dto.Style,
+		Author:    dto.Author,
+	}
+}
+
 // TranslatedTextDTO defines a structure for localized text.
 // @name TranslatedTextDTO
 type TranslatedTextDTO struct {
@@ -33,11 +56,14 @@ type CreateArtDTO struct {
 	Description          TranslatedTextDTO `json:"description"`
 	Medium               TranslatedTextDTO `json:"medium"`
 	Technique            TranslatedTextDTO `json:"technique"`
+	Direction            string            `json:"direction" example:"EXCLUSIVE"`
+	Style                string            `json:"style" example:"abstract"`
 	DimensionX           int               `json:"dimension_x" example:"100"`
 	DimensionY           int               `json:"dimension_y" example:"100"`
 	Year                 int               `json:"year" example:"2021"`
 	Frame                TranslatedTextDTO `json:"frame"`
 	Price                int               `json:"price" example:"100000"`
+	Size                 string            `json:"size" example:"small"`
 	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
 	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
 }
@@ -50,12 +76,15 @@ type CreateArtWithPhotosDTO struct {
 	Title                TranslatedTextDTO `json:"title"`
 	Description          TranslatedTextDTO `json:"description"`
 	Medium               TranslatedTextDTO `json:"medium"`
+	Style                string            `json:"style" example:"abstract"`
 	Technique            TranslatedTextDTO `json:"technique"`
+	Direction            string            `json:"direction" example:"EXCLUSIVE"`
 	DimensionX           int               `json:"dimension_x" example:"100"`
 	DimensionY           int               `json:"dimension_y" example:"100"`
 	Year                 int               `json:"year" example:"2021"`
 	Frame                TranslatedTextDTO `json:"frame"`
 	Price                int               `json:"price" example:"100000"`
+	Size                 string            `json:"size" example:"small"`
 	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
 	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
 	// MainPhoto    *multipart.FileHeader   `json:"main_photo"`
@@ -72,9 +101,12 @@ type UpdateArtDTO struct {
 	Description          TranslatedTextDTO `json:"description"`
 	Medium               TranslatedTextDTO `json:"medium"`
 	Technique            TranslatedTextDTO `json:"technique"`
+	Style                string            `json:"style" example:"abstract"`
+	Direction            string            `json:"direction" example:"EXCLUSIVE"`
 	DimensionX           int               `json:"dimension_x" example:"100"`
 	DimensionY           int               `json:"dimension_y" example:"100"`
 	Year                 int               `json:"year" example:"2021"`
+	Size                 string            `json:"size" example:"small"`
 	Frame                TranslatedTextDTO `json:"frame"`
 	Price                int               `json:"price" example:"100000"`
 	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
@@ -92,7 +124,10 @@ func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
 		Technique:            dto.Technique.ToEntity(),
 		DimensionX:           dto.DimensionX,
 		DimensionY:           dto.DimensionY,
+		Style:                dto.Style,
+		Direction:            dto.Direction,
 		Year:                 dto.Year,
+		Size:                 dto.Size,
 		Frame:                dto.Frame.ToEntity(),
 		Price:                dto.Price,
 		NameForStripe:        dto.NameForStripe,
@@ -115,7 +150,10 @@ func (dto *CreateArtWithPhotosDTO) ToEntity(id *uint) entity.Art {
 		Technique:            dto.Technique.ToEntity(),
 		DimensionX:           dto.DimensionX,
 		DimensionY:           dto.DimensionY,
+		Style:                dto.Style,
+		Direction:            dto.Direction,
 		Year:                 dto.Year,
+		Size:                 dto.Size,
 		Frame:                dto.Frame.ToEntity(),
 		Price:                dto.Price,
 		NameForStripe:        dto.NameForStripe,
@@ -138,7 +176,10 @@ func (dto *UpdateArtDTO) ToEntity(id *uint) entity.Art {
 		Technique:            dto.Technique.ToEntity(),
 		DimensionX:           dto.DimensionX,
 		DimensionY:           dto.DimensionY,
+		Style:                dto.Style,
+		Direction:            dto.Direction,
 		Year:                 dto.Year,
+		Size:                 dto.Size,
 		Frame:                dto.Frame.ToEntity(),
 		Price:                dto.Price,
 		NameForStripe:        dto.NameForStripe,
@@ -160,12 +201,14 @@ type ArtResponseDTO struct {
 	ID                   uint                  `json:"id"`
 	AuthorID             *uint                 `json:"author_id,omitempty"`
 	Name                 entity.TranslatedText `json:"name"`
+	Style                string                `json:"style"`
 	Title                entity.TranslatedText `json:"title"`
 	Description          entity.TranslatedText `json:"description"`
 	Medium               entity.TranslatedText `json:"medium"`
 	Technique            entity.TranslatedText `json:"technique"`
 	DimensionX           int                   `json:"dimension_x"`
 	DimensionY           int                   `json:"dimension_y"`
+	Direction            string                `json:"direction"`
 	Year                 int                   `json:"year"`
 	Frame                entity.TranslatedText `json:"frame"`
 	Price                int                   `json:"price"`
@@ -174,6 +217,7 @@ type ArtResponseDTO struct {
 	Position             int                   `json:"position"`
 	CreatedAt            string                `json:"created_at"`
 	UpdatedAt            string                `json:"updated_at"`
+	Size                 string                `json:"size"`
 	Photos               []PhotoResponseDTO    `json:"photos"`
 	StripeProductID      string                `json:"stripe_product_id"`
 	PaymentLink          string                `json:"payment_link"`
@@ -185,20 +229,23 @@ type ArtResponseDTO struct {
 // const BaseURL = "http://localhost:8010"
 var BaseURL = config.GetBaseURL()
 
-func ToArtResponseDTO(art entity.Art) ArtResponseDTO {
+func ToArtResponseDTO(art entity.Art, base_url string) ArtResponseDTO {
 	dto := ArtResponseDTO{
 		ID:                   art.ID,
 		AuthorID:             art.AuthorID,
 		Name:                 art.Name,
+		Style:                art.Style,
 		Title:                art.Title,
 		Description:          art.Description,
 		Medium:               art.Medium,
 		Technique:            art.Technique,
 		DimensionX:           art.DimensionX,
 		DimensionY:           art.DimensionY,
+		Direction:            art.Direction,
 		Year:                 art.Year,
 		Frame:                art.Frame,
 		Price:                art.Price,
+		Size:                 art.Size,
 		Position:             art.Position,
 		CreatedAt:            art.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:            art.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
@@ -211,17 +258,17 @@ func ToArtResponseDTO(art entity.Art) ArtResponseDTO {
 
 	if art.MainPhotoID != nil && art.MainPhoto.Path != "" {
 		path := strings.TrimPrefix(art.MainPhoto.Path, "/")
-		dto.MainPhotoPath = fmt.Sprintf("%s/%s", BaseURL, path)
+		dto.MainPhotoPath = fmt.Sprintf("%s/%s", base_url, path)
 	}
 	if art.PreviewPhotoID != nil && art.PreviewPhoto.Path != "" {
 		path := strings.TrimPrefix(art.PreviewPhoto.Path, "/")
-		dto.PreviewPhotoPath = fmt.Sprintf("%s/%s", BaseURL, path)
+		dto.PreviewPhotoPath = fmt.Sprintf("%s/%s", base_url, path)
 	}
 
 	for _, photo := range art.Photos {
 		if !photo.IsMain && !photo.IsPreview {
 			path := strings.TrimPrefix(photo.Path, "/")
-			fullPath := fmt.Sprintf("%s/%s", BaseURL, path)
+			fullPath := fmt.Sprintf("%s/%s", base_url, path)
 			dto.Photos = append(dto.Photos, PhotoResponseDTO{
 				ID:       photo.ID,
 				Path:     fullPath,
@@ -233,10 +280,10 @@ func ToArtResponseDTO(art entity.Art) ArtResponseDTO {
 	return dto
 }
 
-func ToArtResponseDTOs(arts []entity.Art) []ArtResponseDTO {
+func ToArtResponseDTOs(arts []entity.Art, base_url string) []ArtResponseDTO {
 	artDTOs := make([]ArtResponseDTO, len(arts))
 	for i, art := range arts {
-		artDTOs[i] = ToArtResponseDTO(art)
+		artDTOs[i] = ToArtResponseDTO(art, base_url)
 	}
 	return artDTOs
 }

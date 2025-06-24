@@ -1,4 +1,3 @@
-// swag:name FlexibleTime
 package dto
 
 import (
@@ -14,6 +13,12 @@ import (
 // @name FlexibleTime
 type FlexibleTime struct {
 	time.Time
+}
+
+// @name FlexibleTimeSwaggerDoc
+// swagger:model FlexibleTime
+type FlexibleTimeSwaggerDoc struct {
+	Time string `json:"time" example:"2024-01-01T00:00:00Z"`
 }
 
 // UnmarshalJSON реализует кастомную логику парсинга для нескольких форматов дат
@@ -59,8 +64,8 @@ type CreateEventDTO struct {
 	Title       TranslatedTextDTO `json:"title" binding:"required"`
 	Description TranslatedTextDTO `json:"description"`
 	Location    TranslatedTextDTO `json:"location"`
-	StartDate   FlexibleTime      `json:"start_date" example:"2024-01-01T00:00:00Z или 01.01.2024"`
-	EndDate     FlexibleTime      `json:"end_date" example:"2024-01-02T00:00:00Z или 02.01.2024"`
+	StartDate   FlexibleTime      `json:"start_date" swaggertype:"string" example:"2024-01-01T00:00:00Z"`
+	EndDate     FlexibleTime      `json:"end_date" swaggertype:"string" example:"2024-01-02T00:00:00Z"`
 }
 
 // @name CreateEventWithPhotos

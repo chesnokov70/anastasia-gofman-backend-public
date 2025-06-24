@@ -53,6 +53,12 @@ type Art struct {
 	Frame       TranslatedText `json:"frame" gorm:"type:jsonb"`
 	Price       int            `json:"price" example:"100000"`
 
+	// HUETA - wtf:
+	Size      string `json:"size" example:"small"`
+	Direction string `json:"direction" example:"EXCLUSIVE"`
+	Style     string `json:"style" example:"abstract"`
+	// END HUETA
+
 	MainPhotoID *uint `json:"main_photo_id" example:"1"`
 	MainPhoto   Photo `json:"-" gorm:"foreignKey:MainPhotoID;references:ID"`
 
@@ -74,4 +80,13 @@ type Art struct {
 
 func (a *Art) BeforeDelete(tx *gorm.DB) error {
 	return tx.Where("owner_id = ? AND owner_type = ?", a.ID, "arts").Delete(&Photo{}).Error
+}
+
+type ArtFilter struct {
+	PriceFrom *int
+	PriceTo   *int
+	Size      *string
+	Direction *string
+	Style     *string
+	Author    *string
 }

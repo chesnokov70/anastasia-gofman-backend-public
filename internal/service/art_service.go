@@ -30,13 +30,13 @@ func NewArtService(artRepository repository.ArtRepository, photoRepository repos
 	}
 }
 
-func (s *artService) GetAllArts(page int, size int) ([]entity.Art, int64, int64, error) {
+func (s *artService) GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter) ([]entity.Art, int64, int64, error) {
 	offset, limit := 0, 0
 	if page > 0 && size > 0 {
 		offset = (page - 1) * size
 		limit = size
 	}
-	arts, total, err := s.artRepository.GetAllArts(offset, limit)
+	arts, total, err := s.artRepository.GetAllArts(offset, limit, with_pagination, sorting, filtering)
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -44,7 +44,7 @@ func (s *artService) GetAllArts(page int, size int) ([]entity.Art, int64, int64,
 	if total == 0 {
 		total_pages = 0
 	} else {
-		total_pages = max(int64(total/int64(size)), 1)
+		total_pages = (int64(total) + int64(size) - 1) / int64(size)
 	}
 	return arts, total_pages, int64(total), nil
 }
@@ -567,4 +567,12 @@ func (s *artService) DeleteProductInStripe(id uint) error {
 		return err
 	}
 	return s.stripeService.DeleteProduct(art.StripeProductID)
+}
+
+func (s *artService) GetMinAndMaxPrice() (int, int, error) {
+	min_price, max_price, err := s.artRepository.GetMinAndMaxPrice()
+	if err != nil {
+		return 0, 0, err
+	}
+	return min_price, max_price, nil
 }
