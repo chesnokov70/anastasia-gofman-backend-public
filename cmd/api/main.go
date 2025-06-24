@@ -36,24 +36,6 @@ func main() {
 	gin.SetMode(cfg.Server.Mode)
 
 	db, err := database.NewPostgresDB(cfg)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	if err := db.Exec(`
-		DO $$ 
-		BEGIN
-			IF EXISTS (
-				SELECT 1 FROM information_schema.columns 
-				WHERE table_name = 'authors' 
-				AND column_name = 'specialization' 
-				AND data_type = 'jsonb'
-			) THEN
-				ALTER TABLE authors DROP COLUMN specialization;
-			END IF;
-		END $$;
-	`).Error; err != nil {
-		log.Printf("Warning: Failed to drop old specialization column: %v", err)
-	}
 
 	// имиграция
 	err = db.AutoMigrate(
