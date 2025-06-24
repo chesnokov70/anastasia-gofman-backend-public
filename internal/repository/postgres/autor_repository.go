@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -42,7 +43,8 @@ func (r *AuthorRepository) GetAuthorsBySpecialization(specializations []string, 
 	}).Order("position ASC")
 
 	if len(specializations) > 0 {
-		query = query.Where("specialization && ?", specializations)
+		arrayStr := "{" + strings.Join(specializations, ",") + "}"
+		query = query.Where("specialization && ?::text[]", arrayStr)
 	}
 
 	err := query.Count(&count).Error
