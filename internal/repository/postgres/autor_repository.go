@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -43,8 +43,7 @@ func (r *AuthorRepository) GetAuthorsBySpecialization(specializations []string, 
 	}).Order("position ASC")
 
 	if len(specializations) > 0 {
-		arrayStr := "{" + strings.Join(specializations, ",") + "}"
-		query = query.Where("specialization && ?::text[]", arrayStr)
+		query = query.Where("specialization && ?", pq.Array(specializations))
 	}
 
 	err := query.Count(&count).Error
