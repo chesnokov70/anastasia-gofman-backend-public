@@ -42,6 +42,12 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 				Where("authors.name->>'en' ILIKE ? OR authors.name->>'ru' ILIKE ? OR authors.name->>'es' ILIKE ?",
 					"%"+*filtering.Author+"%", "%"+*filtering.Author+"%", "%"+*filtering.Author+"%")
 		}
+		if filtering.Type != nil {
+			query = query.Where("type = ?", *filtering.Type)
+		}
+		if filtering.ArchiveType != nil {
+			query = query.Where("archive_type = ?", *filtering.ArchiveType)
+		}
 	}
 	if without_collection {
 		query = query.Where("collection_id IS NULL")

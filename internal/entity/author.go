@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/lib/pq"
@@ -29,9 +30,10 @@ type ContactInfo struct {
 
 // @name Author
 type Author struct {
-	ID   uint           `json:"id" gorm:"primary_key" example:"1"`
-	Name TranslatedText `json:"name" gorm:"type:jsonb"`
-	Bio  TranslatedText `json:"bio" gorm:"type:jsonb"`
+	ID             uint            `json:"id" gorm:"primary_key" example:"1"`
+	Name           TranslatedText  `json:"name" gorm:"type:jsonb"`
+	Bio            TranslatedText  `json:"bio" gorm:"type:jsonb"`
+	AdditionalInfo json.RawMessage `json:"additional_info" gorm:"type:jsonb"`
 
 	// NEW
 	Biography             TranslatedText `json:"biography" gorm:"type:jsonb"`

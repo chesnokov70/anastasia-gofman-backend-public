@@ -9,12 +9,14 @@ import (
 )
 
 type ArtFilteringDTO struct {
-	PriceFrom *int    `json:"price_from"`
-	PriceTo   *int    `json:"price_to"`
-	Size      *string `json:"size"`
-	Direction *string `json:"direction"`
-	Style     *string `json:"style"`
-	Author    *string `json:"author"`
+	PriceFrom   *int    `json:"price_from"`
+	PriceTo     *int    `json:"price_to"`
+	Size        *string `json:"size"`
+	Direction   *string `json:"direction"`
+	Style       *string `json:"style"`
+	Author      *string `json:"author"`
+	Type        *string `json:"type"`
+	ArchiveType *string `json:"archive_type"`
 }
 
 func (dto *ArtFilteringDTO) ToEntity() *entity.ArtFilter {
@@ -22,12 +24,14 @@ func (dto *ArtFilteringDTO) ToEntity() *entity.ArtFilter {
 		return nil
 	}
 	return &entity.ArtFilter{
-		PriceFrom: dto.PriceFrom,
-		PriceTo:   dto.PriceTo,
-		Size:      dto.Size,
-		Direction: dto.Direction,
-		Style:     dto.Style,
-		Author:    dto.Author,
+		PriceFrom:   dto.PriceFrom,
+		PriceTo:     dto.PriceTo,
+		Size:        dto.Size,
+		Direction:   dto.Direction,
+		Style:       dto.Style,
+		Author:      dto.Author,
+		Type:        dto.Type,
+		ArchiveType: dto.ArchiveType,
 	}
 }
 
@@ -67,6 +71,8 @@ type CreateArtDTO struct {
 	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
 	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
 	CollectionID         *uint             `json:"collection_id" example:"1"`
+	Type                 string            `json:"type" example:"archive"`
+	ArchiveType          string            `json:"archive_type" example:"repeat"`
 }
 
 // @name CreateArt
@@ -92,6 +98,8 @@ type CreateArtWithPhotosDTO struct {
 	// MainPhoto    *multipart.FileHeader   `json:"main_photo"`
 	// PreviewPhoto *multipart.FileHeader   `json:"preview_photo"`
 	// Photos       []*multipart.FileHeader `json:"photos"`
+	Type        string `json:"type" example:"archive"`
+	ArchiveType string `json:"archive_type" example:"repeat"`
 }
 
 // UpdateArtDTO defines the structure for updating an existing art piece.
@@ -114,6 +122,8 @@ type UpdateArtDTO struct {
 	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
 	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
 	CollectionID         *uint             `json:"collection_id" example:"1"`
+	Type                 string            `json:"type" example:"archive"`
+	ArchiveType          string            `json:"archive_type" example:"repeat"`
 }
 
 func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
@@ -136,6 +146,8 @@ func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
 		NameForStripe:        dto.NameForStripe,
 		DescriptionForStripe: dto.DescriptionForStripe,
 		CollectionID:         dto.CollectionID,
+		Type:                 dto.Type,
+		ArchiveType:          dto.ArchiveType,
 	}
 	if id != nil {
 		art.ID = *id
@@ -163,6 +175,8 @@ func (dto *CreateArtWithPhotosDTO) ToEntity(id *uint) entity.Art {
 		NameForStripe:        dto.NameForStripe,
 		DescriptionForStripe: dto.DescriptionForStripe,
 		CollectionID:         dto.CollectionID,
+		Type:                 dto.Type,
+		ArchiveType:          dto.ArchiveType,
 	}
 	if id != nil {
 		art.ID = *id
@@ -190,6 +204,8 @@ func (dto *UpdateArtDTO) ToEntity(id *uint) entity.Art {
 		NameForStripe:        dto.NameForStripe,
 		DescriptionForStripe: dto.DescriptionForStripe,
 		CollectionID:         dto.CollectionID,
+		Type:                 dto.Type,
+		ArchiveType:          dto.ArchiveType,
 	}
 	if id != nil {
 		art.ID = *id
@@ -231,6 +247,8 @@ type ArtResponseDTO struct {
 	NameForStripe        string                `json:"name_for_stripe"`
 	DescriptionForStripe string                `json:"description_for_stripe"`
 	CollectionID         *uint                 `json:"collection_id,omitempty"`
+	Type                 string                `json:"type"`
+	ArchiveType          string                `json:"archive_type"`
 }
 
 // TODO: to config
@@ -264,6 +282,8 @@ func ToArtResponseDTO(art entity.Art, base_url string) ArtResponseDTO {
 		NameForStripe:        art.NameForStripe,
 		DescriptionForStripe: art.DescriptionForStripe,
 		CollectionID:         art.CollectionID,
+		Type:                 art.Type,
+		ArchiveType:          art.ArchiveType,
 	}
 
 	if art.MainPhotoID != nil && art.MainPhoto.Path != "" {

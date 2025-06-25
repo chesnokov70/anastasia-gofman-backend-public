@@ -20,21 +20,22 @@ type eventService struct {
 func NewEventService(eventRepository repository.EventRepository, photoRepository repository.PhotoRepository) EventService {
 	return &eventService{eventRepository: eventRepository, photoRepository: photoRepository}
 }
-func (s *eventService) GetAllEvents(page int, size int) ([]entity.Event, int64, int64, error) {
-	offset, limit := 0, 0
-	if page > 0 && size > 0 {
-		offset = (page - 1) * size
-		limit = size
-	}
+func (s *eventService) GetAllEvents(offset int, limit int) ([]entity.Event, int64, int64, error) {
 	events, total, err := s.eventRepository.GetAllEvents(offset, limit)
 	if err != nil {
 		return nil, 0, 0, err
 	}
+
 	var total_pages int64
 	if total == 0 {
 		total_pages = 0
 	} else {
-		total_pages = (int64(total) + int64(size) - 1) / int64(size)
+		pageSize := limit
+		if pageSize > 0 {
+			total_pages = (int64(total) + int64(pageSize) - 1) / int64(pageSize)
+		} else {
+			total_pages = 1
+		}
 	}
 	return events, total_pages, int64(total), nil
 }

@@ -2,6 +2,7 @@ package dto
 
 import (
 	"anastasia_gofman_backend/internal/entity"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -22,6 +23,7 @@ type CreateAuthorDTO struct {
 	Exhibitions           TranslatedTextDTO `json:"exhibitions"`
 	ContactInfo           TranslatedTextDTO `json:"contact_info"`
 	Specialization        string            `json:"specialization" example:"sculptor, painter"`
+	AdditionalInfo        json.RawMessage   `json:"additional_info" swaggertype:"object" example:"{\"key\": \"value\"}"`
 	Contact               struct {
 		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
@@ -51,6 +53,7 @@ type UpdateAuthorDTO struct {
 	Exhibitions           TranslatedTextDTO `json:"exhibitions"`
 	ContactInfo           TranslatedTextDTO `json:"contact_info"`
 	Specialization        string            `json:"specialization" example:"sculptor, painter"`
+	AdditionalInfo        json.RawMessage   `json:"additional_info" swaggertype:"object" example:"{\"key\": \"value\"}"`
 	Contact               struct {
 		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
@@ -80,6 +83,7 @@ type CreateAuthorWithPhotosDTO struct {
 	Exhibitions           TranslatedTextDTO `json:"exhibitions"`
 	ContactInfo           TranslatedTextDTO `json:"contact_info"`
 	Specialization        string            `json:"specialization" example:"sculptor, painter"`
+	AdditionalInfo        json.RawMessage   `json:"additional_info" swaggertype:"object" example:"{\"key\": \"value\"}"`
 	Contact               struct {
 		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
@@ -118,6 +122,7 @@ type AuthorResponseDTO struct {
 	PreviewPhotoPath      string                `json:"preview_photo_path,omitempty"`
 	Photos                []PhotoResponseDTO    `json:"photos"`
 	Specialization        string                `json:"specialization"`
+	AdditionalInfo        json.RawMessage       `json:"additional_info" swaggertype:"object"`
 }
 
 func ToAuthorResponseDTO(author entity.Author, base_url string) AuthorResponseDTO {
@@ -147,6 +152,9 @@ func ToAuthorResponseDTO(author entity.Author, base_url string) AuthorResponseDT
 	if author.PreviewPhotoID != nil && author.PreviewPhoto.Path != "" {
 		path := strings.TrimPrefix(author.PreviewPhoto.Path, "/")
 		dto.PreviewPhotoPath = fmt.Sprintf("%s/%s", base_url, path)
+	}
+	if author.ID == 3333 {
+		dto.AdditionalInfo = author.AdditionalInfo
 	}
 
 	for _, photo := range author.Photos {

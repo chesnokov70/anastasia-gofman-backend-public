@@ -31,7 +31,7 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 // @Param with_pagination query bool false "With pagination" default(true)
 // @Param without_collection query bool false "Without collection" default(true)
 // @Param sorting query string false "Sorting type" Enums(NEW, RATED, PRICE_HIGH, PRICE_LOW) default()
-// @Param filtering query string false "JSON filter object with price_from, price_to, size, direction, style, author fields"
+// @Param filtering query string false "JSON filter object with price_from, price_to, size, direction, style, author fields, type, archive_type"
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
 // @Router /api/arts [get]
@@ -108,7 +108,7 @@ func (h *ArtHandler) GetAllArts(c *gin.Context) {
 	if with_pagination_bool {
 		c.JSON(http.StatusOK, gin.H{
 			"data":       dto.ToArtResponseDTOs(arts, base_url),
-			"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
+			"pagination": gin.H{"total_pages": int(total_pages), "current_page": int(page_int), "page_size": int(size_int), "total_items": int(total_items)},
 			"min_price":  min_price,
 			"max_price":  max_price,
 		})

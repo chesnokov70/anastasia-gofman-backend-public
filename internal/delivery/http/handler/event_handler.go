@@ -23,22 +23,54 @@ func NewEventHandler(eventService service.EventService) *EventHandler {
 // @Accept json
 // @Produce json
 // @Tags Events
-// @Param page query int false "Page number" default(1)
-// @Param size query int false "Page size" default(10)
+// @Param offset query int false "Offset v pagination" default(0)
+// @Param limit query int false "Limit v pagination" default(10)
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
 // @Router /api/events [get]
 func (h *EventHandler) GetAllEvents(c *gin.Context) {
-	page := c.GetInt("page")
-	size := c.GetInt("size")
-	events, total_pages, total_items, err := h.eventService.GetAllEvents(page, size)
+	// Получаем offset и limit напрямую из query parameters
+	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid offset parameter"})
+		return
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit parameter"})
+		return
+	}
+
+	// Валидация параметров
+	if offset < 0 {
+		offset = 0
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+
+	events, total_pages, total_items, err := h.eventService.GetAllEvents(offset, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Рассчитываем текущую "страницу" для совместимости с пагинацией
+	current_page := 1
+	if limit > 0 {
+		current_page = (offset / limit) + 1
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"data":       dto.ToEventResponseDTOs(events),
-		"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
+		"data": dto.ToEventResponseDTOs(events),
+		"pagination": gin.H{
+			"total_items":  int(total_items),
+			"offset":       offset,
+			"limit":        limit,
+			"current_page": current_page,
+			"total_pages":  int(total_pages),
+		},
 	})
 }
 

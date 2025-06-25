@@ -96,7 +96,7 @@ func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 	if with_pagination {
 		response := gin.H{
 			"data":       dto.ToAuthorResponseWithAllArtsDTOs(authors, arts, base_url),
-			"pagination": gin.H{"total_pages": total_pages, "current_page": page, "page_size": size, "total_items": total_items},
+			"pagination": gin.H{"total_pages": int(total_pages), "current_page": int(page), "page_size": int(size), "total_items": int(total_items)},
 		}
 		c.JSON(http.StatusOK, response)
 	} else {
@@ -151,6 +151,7 @@ func (h *AuthorHandler) CreateAuthor(c *gin.Context) {
 		Exhibitions:           authorDTO.Exhibitions.ToEntity(),
 		ContactInfo:           authorDTO.ContactInfo.ToEntity(),
 		Specialization:        parseSpecializations(authorDTO.Specialization),
+		AdditionalInfo:        authorDTO.AdditionalInfo,
 		Contact: entity.ContactInfo{
 			Email: authorDTO.Contact.Email,
 			Phone: authorDTO.Contact.Phone,
@@ -207,7 +208,7 @@ func (h *AuthorHandler) DeleteAuthor(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path uint true "Author ID"
-// @Param data body dto.UpdateAuthorDTO true "Update data"
+// @Param data body dto.UpdateAuthorDTO true "Author"
 // @Success 200 {object} dto.AuthorResponseDTO
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -269,6 +270,7 @@ func (h *AuthorHandler) FullUpdateAuthor(c *gin.Context) {
 		Exhibitions:           authorDTO.Exhibitions.ToEntity(),
 		ContactInfo:           authorDTO.ContactInfo.ToEntity(),
 		Specialization:        parseSpecializations(authorDTO.Specialization),
+		AdditionalInfo:        authorDTO.AdditionalInfo,
 		Contact: entity.ContactInfo{
 			Email: authorDTO.Contact.Email,
 			Phone: authorDTO.Contact.Phone,
@@ -329,6 +331,7 @@ func (h *AuthorHandler) CreateAuthorWithPhotos(c *gin.Context) {
 		Exhibitions:           authorDTO.Exhibitions.ToEntity(),
 		ContactInfo:           authorDTO.ContactInfo.ToEntity(),
 		Specialization:        parseSpecializations(authorDTO.Specialization),
+		AdditionalInfo:        authorDTO.AdditionalInfo,
 		Contact: entity.ContactInfo{
 			Email: authorDTO.Contact.Email,
 			Phone: authorDTO.Contact.Phone,
