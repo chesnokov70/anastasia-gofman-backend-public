@@ -9,7 +9,7 @@ import (
 	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
 )
 
-func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler) *gin.Engine {
+func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler) *gin.Engine {
 	router := gin.Default()
 	router.RedirectTrailingSlash = false // Disable automatic redirect for trailing slashes
 
@@ -67,6 +67,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			arts.PATCH("/:id/photos", artHandler.PatchArtPhotos)
 
 			arts.POST("/:id/author/:author_id", artHandler.AddAuthorToArt)
+
 		}
 		events := api.Group("/events")
 		{
@@ -102,6 +103,15 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 
 			// Эндпоинты для информации об аккаунте
 			payments.GET("/balance", paymentHandler.GetBalance)
+		}
+		collections := api.Group("/collections")
+		{
+			collections.GET("", collectionHandler.GetAllCollections)
+			collections.GET("/:id", collectionHandler.GetCollectionByID)
+			collections.POST("", collectionHandler.CreateCollection)
+			collections.PUT("/:id", collectionHandler.FullUpdateCollection)
+			collections.PATCH("/:id", collectionHandler.PartialUpdateCollection)
+			collections.DELETE("/:id", collectionHandler.DeleteCollection)
 		}
 	}
 

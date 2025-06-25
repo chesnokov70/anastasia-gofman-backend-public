@@ -57,12 +57,18 @@ func (r *EventRepository) GetCountOfEvents() (int, error) {
 func (r *EventRepository) PartialUpdateEvent(id uint, kwargs map[string]interface{}) (entity.Event, error) {
 	var event entity.Event
 	err := r.db.Model(&event).Where("id = ?", id).Updates(kwargs).Error
-	return event, err
+	if err != nil {
+		return entity.Event{}, err
+	}
+	return r.GetEventByID(id)
 }
 
 func (r *EventRepository) FullUpdateEvent(event entity.Event) (entity.Event, error) {
 	err := r.db.Model(&event).Where("id = ?", event.ID).Updates(event).Error
-	return event, err
+	if err != nil {
+		return entity.Event{}, err
+	}
+	return r.GetEventByID(uint(event.ID))
 }
 
 func (r *EventRepository) UpdateEvent(event entity.Event) (entity.Event, error) {

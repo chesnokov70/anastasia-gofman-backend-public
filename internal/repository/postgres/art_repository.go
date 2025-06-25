@@ -14,7 +14,7 @@ func NewArtRepository(db *gorm.DB) *ArtRepository {
 	return &ArtRepository{db: db}
 }
 
-func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter) ([]entity.Art, int64, error) {
+func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool) ([]entity.Art, int64, error) {
 	var arts []entity.Art
 	var count int64
 	query := r.db.Model(&entity.Art{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
@@ -42,6 +42,9 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 				Where("authors.name->>'en' ILIKE ? OR authors.name->>'ru' ILIKE ? OR authors.name->>'es' ILIKE ?",
 					"%"+*filtering.Author+"%", "%"+*filtering.Author+"%", "%"+*filtering.Author+"%")
 		}
+	}
+	if without_collection {
+		query = query.Where("collection_id IS NULL")
 	}
 
 	switch sorting {
@@ -72,7 +75,7 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 
 func (r *ArtRepository) GetArtByID(id uint) (entity.Art, error) {
 	var art entity.Art
-	err := r.db.Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+	err := r.db.Preload("Author").Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
 	}).First(&art, id).Error
 	return art, err
@@ -101,7 +104,10 @@ func (r *ArtRepository) DeleteArt(id uint) error {
 func (r *ArtRepository) PartialUpdateArt(id uint, kwargs map[string]interface{}) (entity.Art, error) {
 	var art entity.Art
 	err := r.db.Model(&art).Where("id = ?", id).Updates(kwargs).Error
-	return art, err
+	if err != nil {
+		return entity.Art{}, err
+	}
+	return r.GetArtByID(id)
 }
 
 func (r *ArtRepository) FullUpdateArt(art entity.Art) (entity.Art, error) {
@@ -198,6 +204,22 @@ func (r *ArtRepository) GetMinAndMaxPrice() (int, int, error) {
 	}
 
 	return result.MinPrice, result.MaxPrice, nil
+}
+
+func (r *ArtRepository) GetArtsByCollectionID(collectionID uint) ([]entity.Art, error) {
+	var arts []entity.Art
+	err := r.db.Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("photos.position ASC")
+	}).Where("collection_id = ?", collectionID).Find(&arts).Error
+	return arts, err
+}
+
+func (r *ArtRepository) RemoveCollectionFromArts(collectionID uint) error {
+	return r.db.Model(&entity.Art{}).Where("collection_id = ?", collectionID).Update("collection_id", nil).Error
+}
+
+func (r *ArtRepository) DeleteArtsByCollectionID(collectionID uint) error {
+	return r.db.Where("collection_id = ?", collectionID).Delete(&entity.Art{}).Error
 }
 
 // func (r *ArtRepository) AddPhotoToArt(photo entity.Photo) (entity.Art, error) {

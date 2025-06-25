@@ -131,7 +131,10 @@ func (r *AuthorRepository) FullUpdateAuthor(author entity.Author) (entity.Author
 
 func (r *AuthorRepository) UpdateAuthor(author entity.Author) (entity.Author, error) {
 	err := r.db.Save(&author).Error
-	return author, err
+	if err != nil {
+		return entity.Author{}, err
+	}
+	return r.GetAuthorByID(author.ID)
 }
 
 func (r *AuthorRepository) DeleteAuthor(id uint) error {

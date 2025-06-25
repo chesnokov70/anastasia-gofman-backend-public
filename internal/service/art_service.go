@@ -30,13 +30,13 @@ func NewArtService(artRepository repository.ArtRepository, photoRepository repos
 	}
 }
 
-func (s *artService) GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter) ([]entity.Art, int64, int64, error) {
+func (s *artService) GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool) ([]entity.Art, int64, int64, error) {
 	offset, limit := 0, 0
 	if page > 0 && size > 0 {
 		offset = (page - 1) * size
 		limit = size
 	}
-	arts, total, err := s.artRepository.GetAllArts(offset, limit, with_pagination, sorting, filtering)
+	arts, total, err := s.artRepository.GetAllArts(offset, limit, with_pagination, sorting, filtering, without_collection)
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -238,6 +238,9 @@ func (s *artService) PartialUpdateArt(id uint, kwargs map[string]interface{}, wi
 			price = &intVal
 		} else if intVal, ok := val.(int); ok {
 			int64Val := int64(intVal)
+			price = &int64Val
+		} else if floatVal, ok := val.(float64); ok {
+			int64Val := int64(floatVal)
 			price = &int64Val
 		} else {
 			return entity.Art{}, errors.New("invalid price format")
@@ -446,15 +449,12 @@ func (s *artService) DeleteAllPhotos(id uint) error {
 		return err
 	}
 	for _, photo := range photos {
-		// Преобразуем путь из БД в реальный путь файла
 		filePath := photo.Path
 		if strings.HasPrefix(filePath, "/uploads/") {
-			// Убираем /uploads/ из начала
 			filePath = strings.TrimPrefix(filePath, "/uploads/")
-			// Получаем полный путь
 			filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
 		} else if strings.HasPrefix(filePath, "/") {
-			// Старый формат пути
+
 			filePath = filePath[1:]
 		}
 
@@ -575,4 +575,67 @@ func (s *artService) GetMinAndMaxPrice() (int, int, error) {
 		return 0, 0, err
 	}
 	return min_price, max_price, nil
+}
+
+func (s *artService) DeleteArtsByCollectionID(id uint) error {
+	arts, err := s.artRepository.GetArtsByCollectionID(id)
+	if err != nil {
+		return err
+	}
+	for _, art := range arts {
+		s.DeleteArt(art.ID)
+	}
+	return nil
+}
+
+func (s *artService) DeleteArtsByCollectionIDSync(id uint) error {
+	arts, err := s.artRepository.GetArtsByCollectionID(id)
+	if err != nil {
+		return err
+	}
+
+	artPhotos := make(map[uint][]entity.Photo)
+	for _, art := range arts {
+		photos, err := s.photoRepository.GetAllPhotosByOwnerID(art.ID, "arts")
+		if err != nil {
+			fmt.Printf("Error getting photos for art %d: %v\n", art.ID, err)
+			continue
+		}
+		artPhotos[art.ID] = photos
+	}
+
+	if err := s.artRepository.DeleteArtsByCollectionID(id); err != nil {
+		return err
+	}
+
+	go func() {
+		for _, art := range arts {
+			if art.StripeProductID != "" {
+				if err := s.stripeService.DeleteProduct(art.StripeProductID); err != nil {
+					fmt.Printf("Error deleting Stripe product %s: %v\n", art.StripeProductID, err)
+				}
+			}
+
+			if photos, exists := artPhotos[art.ID]; exists {
+				for _, photo := range photos {
+					filePath := photo.Path
+					if strings.HasPrefix(filePath, "/uploads/") {
+						filePath = strings.TrimPrefix(filePath, "/uploads/")
+						filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
+					} else if strings.HasPrefix(filePath, "/") {
+						filePath = filePath[1:]
+					}
+
+					err := os.Remove(filePath)
+					if err != nil {
+						fmt.Printf("ERROR DELETING PHOTO %s: %v\n", filePath, err)
+					} else {
+						fmt.Printf("PHOTO DELETED: %s\n", filePath)
+					}
+				}
+			}
+		}
+	}()
+
+	return nil
 }

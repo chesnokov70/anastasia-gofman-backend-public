@@ -82,7 +82,11 @@ func main() {
 
 	paymentHandler := handler.NewPaymentHandler(stripeService)
 
-	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler)
+	collectionRepository := postgres.NewArtCollectionRepository(db, artRepository)
+	collectionService := service.NewArtCollectionService(collectionRepository)
+	collectionHandler := handler.NewCollectionHandler(collectionService, artService)
+
+	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler)
 	router.Static("/uploads", "./uploads")
 	// / Swagger route
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.DefaultModelsExpandDepth(2)))

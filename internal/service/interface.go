@@ -24,7 +24,7 @@ type AuthorService interface {
 }
 
 type ArtService interface {
-	GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter) ([]entity.Art, int64, int64, error)
+	GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool) ([]entity.Art, int64, int64, error)
 	GetArtByID(id uint) (entity.Art, error)
 	CreateArt(art entity.Art, with_stripe bool) (entity.Art, error)
 	UpdateArt(art entity.Art) (entity.Art, error)
@@ -36,11 +36,12 @@ type ArtService interface {
 	PatchArtPhotos(id uint, photos []*multipart.FileHeader) (entity.Art, error)
 	AddAuthorToArt(id uint, author_id uint) (entity.Art, error)
 	GetMainPhoto(id uint) (entity.Photo, error)
-	// PatchArtPhotos(id uint, photos []*multipart.FileHeader) ([]entity.Art, error)
 	UpdateArtsPosition(positions []int) error
 	UpdatePhotosInStripe(id uint) error
 	DeleteProductInStripe(id uint) error
 	GetMinAndMaxPrice() (int, int, error)
+	DeleteArtsByCollectionID(id uint) error
+	DeleteArtsByCollectionIDSync(id uint) error
 }
 
 type EventService interface {
@@ -60,4 +61,14 @@ type EventService interface {
 	AddPhotosToEventReplaceOld(id uint, photos []*multipart.FileHeader) (entity.Event, error)
 
 	DeleteEvent(id uint) error
+}
+
+type ArtCollectionService interface {
+	GetAllCollections(sorting string, with_arts bool) ([]entity.ArtCollection, error)
+	GetCollectionByID(id uint, with_arts bool) (entity.ArtCollection, error)
+	CreateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
+	UpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
+	DeleteCollection(id uint, delete_action string, artService ArtService) error
+	PartialUpdateCollection(id uint, kwargs map[string]interface{}) (entity.ArtCollection, error)
+	FullUpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
 }

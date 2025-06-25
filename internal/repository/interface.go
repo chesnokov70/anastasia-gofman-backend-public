@@ -22,7 +22,7 @@ type AuthorRepository interface {
 }
 
 type ArtRepository interface {
-	GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter) ([]entity.Art, int64, error)
+	GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool) ([]entity.Art, int64, error)
 	GetArtByID(id uint) (entity.Art, error)
 	GetCountOfArts() (int, error)
 	CreateArt(art entity.Art) (entity.Art, error)
@@ -37,6 +37,10 @@ type ArtRepository interface {
 	GetArtsByAuthorID(authorID uint) ([]entity.Art, error)
 	SplitArtsByAuthors(authors []entity.Author) (map[uint][]entity.Art, error)
 	GetMinAndMaxPrice() (int, int, error)
+
+	GetArtsByCollectionID(collectionID uint) ([]entity.Art, error)
+	RemoveCollectionFromArts(collectionID uint) error
+	DeleteArtsByCollectionID(collectionID uint) error
 
 	// AddPhotoToArt(photo entity.Photo) (entity.Art, error)
 	// GetCountOfPhotos(artID uint) int
@@ -94,4 +98,15 @@ type PhotoRepository interface {
 
 	// Create
 	CreatePhoto(photo entity.Photo) (entity.Photo, error)
+}
+
+type ArtCollectionRepository interface {
+	GetAllCollections(sorting string, withArts bool) ([]entity.ArtCollection, error)
+	GetCollectionByID(id uint, with_arts bool) (entity.ArtCollection, error)
+	CreateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
+	UpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
+	DeleteCollection(id uint, delete_action string) error
+	PartialUpdateCollection(id uint, kwargs map[string]interface{}) (entity.ArtCollection, error)
+	FullUpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
+	GetArtsByCollectionID(collectionID uint) ([]entity.Art, error)
 }

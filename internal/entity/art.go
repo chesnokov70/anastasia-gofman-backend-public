@@ -57,6 +57,9 @@ type Art struct {
 	Size      string `json:"size" example:"small"`
 	Direction string `json:"direction" example:"EXCLUSIVE"`
 	Style     string `json:"style" example:"abstract"`
+
+	CollectionID *uint         `json:"collection_id" example:"1"`
+	Collection   ArtCollection `json:"-" gorm:"foreignKey:CollectionID;references:ID"`
 	// END HUETA
 
 	MainPhotoID *uint `json:"main_photo_id" example:"1"`
@@ -89,4 +92,13 @@ type ArtFilter struct {
 	Direction *string
 	Style     *string
 	Author    *string
+}
+
+type ArtCollection struct {
+	ID          uint           `json:"id" gorm:"primaryKey"`
+	Name        TranslatedText `json:"name" gorm:"type:jsonb"`
+	Description TranslatedText `json:"description" gorm:"type:jsonb"`
+	Arts        []Art          `json:"arts,omitempty" gorm:"foreignKey:CollectionID"`
+	CreatedAt   time.Time      `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt   time.Time      `json:"updated_at" example:"2021-01-01T00:00:00Z"`
 }

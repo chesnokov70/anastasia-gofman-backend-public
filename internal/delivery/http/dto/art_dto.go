@@ -66,6 +66,7 @@ type CreateArtDTO struct {
 	Size                 string            `json:"size" example:"small"`
 	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
 	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
+	CollectionID         *uint             `json:"collection_id" example:"1"`
 }
 
 // @name CreateArt
@@ -87,6 +88,7 @@ type CreateArtWithPhotosDTO struct {
 	Size                 string            `json:"size" example:"small"`
 	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
 	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
+	CollectionID         *uint             `json:"collection_id" example:"1"`
 	// MainPhoto    *multipart.FileHeader   `json:"main_photo"`
 	// PreviewPhoto *multipart.FileHeader   `json:"preview_photo"`
 	// Photos       []*multipart.FileHeader `json:"photos"`
@@ -111,6 +113,7 @@ type UpdateArtDTO struct {
 	Price                int               `json:"price" example:"100000"`
 	NameForStripe        string            `json:"name_for_stripe" example:"some name in english"`
 	DescriptionForStripe string            `json:"description_for_stripe" example:"some description in english"`
+	CollectionID         *uint             `json:"collection_id" example:"1"`
 }
 
 func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
@@ -132,6 +135,7 @@ func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
 		Price:                dto.Price,
 		NameForStripe:        dto.NameForStripe,
 		DescriptionForStripe: dto.DescriptionForStripe,
+		CollectionID:         dto.CollectionID,
 	}
 	if id != nil {
 		art.ID = *id
@@ -158,6 +162,7 @@ func (dto *CreateArtWithPhotosDTO) ToEntity(id *uint) entity.Art {
 		Price:                dto.Price,
 		NameForStripe:        dto.NameForStripe,
 		DescriptionForStripe: dto.DescriptionForStripe,
+		CollectionID:         dto.CollectionID,
 	}
 	if id != nil {
 		art.ID = *id
@@ -184,6 +189,7 @@ func (dto *UpdateArtDTO) ToEntity(id *uint) entity.Art {
 		Price:                dto.Price,
 		NameForStripe:        dto.NameForStripe,
 		DescriptionForStripe: dto.DescriptionForStripe,
+		CollectionID:         dto.CollectionID,
 	}
 	if id != nil {
 		art.ID = *id
@@ -200,6 +206,7 @@ type PhotoResponseDTO struct {
 type ArtResponseDTO struct {
 	ID                   uint                  `json:"id"`
 	AuthorID             *uint                 `json:"author_id,omitempty"`
+	AuthorName           entity.TranslatedText `json:"author_name"`
 	Name                 entity.TranslatedText `json:"name"`
 	Style                string                `json:"style"`
 	Title                entity.TranslatedText `json:"title"`
@@ -223,6 +230,7 @@ type ArtResponseDTO struct {
 	PaymentLink          string                `json:"payment_link"`
 	NameForStripe        string                `json:"name_for_stripe"`
 	DescriptionForStripe string                `json:"description_for_stripe"`
+	CollectionID         *uint                 `json:"collection_id,omitempty"`
 }
 
 // TODO: to config
@@ -233,6 +241,7 @@ func ToArtResponseDTO(art entity.Art, base_url string) ArtResponseDTO {
 	dto := ArtResponseDTO{
 		ID:                   art.ID,
 		AuthorID:             art.AuthorID,
+		AuthorName:           art.Author.Name,
 		Name:                 art.Name,
 		Style:                art.Style,
 		Title:                art.Title,
@@ -254,6 +263,7 @@ func ToArtResponseDTO(art entity.Art, base_url string) ArtResponseDTO {
 		PaymentLink:          art.PaymentLink,
 		NameForStripe:        art.NameForStripe,
 		DescriptionForStripe: art.DescriptionForStripe,
+		CollectionID:         art.CollectionID,
 	}
 
 	if art.MainPhotoID != nil && art.MainPhoto.Path != "" {
