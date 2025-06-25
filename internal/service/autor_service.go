@@ -98,8 +98,21 @@ func (s *authorService) GetAuthorsBySpecialization(specializations []string, wit
 	return authors, arts, total_pages, int64(total), nil
 }
 
-func (s *authorService) GetAuthorByID(id uint) (entity.Author, error) {
-	return s.authorRepository.GetAuthorByID(id)
+func (s *authorService) GetAuthorByID(id uint, with_arts bool) (entity.Author, map[uint][]entity.Art, error) {
+	author, err := s.authorRepository.GetAuthorByID(id)
+	if err != nil {
+		return entity.Author{}, nil, err
+	}
+	if with_arts {
+		arts := make(map[uint][]entity.Art)
+		arts, err = s.artRepository.SplitArtsByAuthors([]entity.Author{author})
+		if err != nil {
+			return entity.Author{}, nil, err
+		}
+		// author.Arts = arts[author.ID]
+		return author, arts, nil
+	}
+	return author, nil, nil
 }
 
 func (s *authorService) CreateAuthor(author entity.Author) (entity.Author, error) {

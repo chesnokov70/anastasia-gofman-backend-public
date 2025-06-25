@@ -8,7 +8,7 @@ import (
 type AuthorService interface {
 	GetAllAuthors(with_arts bool, page int, size int, with_pagination bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error)
 	GetAuthorsBySpecialization(specializations []string, with_arts bool, page int, size int, with_pagination bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error)
-	GetAuthorByID(id uint) (entity.Author, error)
+	GetAuthorByID(id uint, with_arts bool) (entity.Author, map[uint][]entity.Art, error)
 	CreateAuthor(author entity.Author) (entity.Author, error)
 	UpdateAuthor(author entity.Author) (entity.Author, error)
 	DeleteAuthor(id uint) error

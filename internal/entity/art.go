@@ -42,16 +42,17 @@ type Art struct {
 	AuthorID *uint  `json:"author_id"`
 	Author   Author `json:"-" gorm:"foreignKey:AuthorID;references:ID"`
 
-	Name        TranslatedText `json:"name" gorm:"type:jsonb"`
-	Title       TranslatedText `json:"title" gorm:"type:jsonb"`
-	Description TranslatedText `json:"description" gorm:"type:jsonb"`
-	Medium      TranslatedText `json:"medium" gorm:"type:jsonb"`
-	Technique   TranslatedText `json:"technique" gorm:"type:jsonb"`
-	DimensionX  int            `json:"dimension_x" example:"100"`
-	DimensionY  int            `json:"dimension_y" example:"100"`
-	Year        int            `json:"year" example:"2021"`
-	Frame       TranslatedText `json:"frame" gorm:"type:jsonb"`
-	Price       int            `json:"price" example:"100000"`
+	Name         TranslatedText `json:"name" gorm:"type:jsonb"`
+	Title        TranslatedText `json:"title" gorm:"type:jsonb"`
+	Description  TranslatedText `json:"description" gorm:"type:jsonb"`
+	Medium       TranslatedText `json:"medium" gorm:"type:jsonb"`
+	Technique    TranslatedText `json:"technique" gorm:"type:jsonb"`
+	DimensionX   int            `json:"dimension_x" example:"100"`
+	DimensionY   int            `json:"dimension_y" example:"100"`
+	DimensionStr string         `json:"dimension_str" example:"100x100*222"`
+	Year         int            `json:"year" example:"2021"`
+	Frame        TranslatedText `json:"frame" gorm:"type:jsonb"`
+	Price        int            `json:"price" example:"100000"`
 
 	// HUETA - wtf:
 	Size      string `json:"size" example:"small"`

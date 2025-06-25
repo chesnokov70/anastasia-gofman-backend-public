@@ -110,7 +110,8 @@ func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Author ID"
-// @Success 200 {object} dto.AuthorResponseDTO
+// @Param with_arts query bool false "With Arts"
+// @Success 200 {object} dto.AuthorResponseWithArtsDTO
 // @Router /api/authors/{id} [get]
 func (h *AuthorHandler) GetAuthorByID(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -118,13 +119,19 @@ func (h *AuthorHandler) GetAuthorByID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
 		return
 	}
-	author, err := h.authorService.GetAuthorByID(uint(id))
+	with_arts_str := c.DefaultQuery("with_arts", "false")
+	with_arts, err := strconv.ParseBool(with_arts_str)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_arts format"})
+		return
+	}
+	author, arts, err := h.authorService.GetAuthorByID(uint(id), with_arts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	base_url := config.GetBaseURL()
-	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(author, base_url))
+	c.JSON(http.StatusOK, dto.ToAuthorResponseWithArtsDTO(author, arts[author.ID], base_url))
 }
 
 // @Summary Create author
@@ -389,7 +396,7 @@ func (h *AuthorHandler) CreateAuthorWithPhotos(c *gin.Context) {
 		}
 	}
 
-	finalAuthor, err := h.authorService.GetAuthorByID(currentAuthorID)
+	finalAuthor, _, err := h.authorService.GetAuthorByID(currentAuthorID, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve author after updates: " + err.Error()})
 		return
@@ -454,7 +461,7 @@ func (h *AuthorHandler) AddPhotosToAuthor(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
 		return
 	}
-	_, err = h.authorService.GetAuthorByID(uint(id))
+	_, _, err = h.authorService.GetAuthorByID(uint(id), false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "author not found"})
 		return

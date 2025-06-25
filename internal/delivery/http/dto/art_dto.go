@@ -64,6 +64,7 @@ type CreateArtDTO struct {
 	Style                string            `json:"style" example:"abstract"`
 	DimensionX           int               `json:"dimension_x" example:"100"`
 	DimensionY           int               `json:"dimension_y" example:"100"`
+	DimensionStr         string            `json:"dimension_str" example:"100x100*222"`
 	Year                 int               `json:"year" example:"2021"`
 	Frame                TranslatedTextDTO `json:"frame"`
 	Price                int               `json:"price" example:"100000"`
@@ -88,6 +89,7 @@ type CreateArtWithPhotosDTO struct {
 	Direction            string            `json:"direction" example:"EXCLUSIVE"`
 	DimensionX           int               `json:"dimension_x" example:"100"`
 	DimensionY           int               `json:"dimension_y" example:"100"`
+	DimensionStr         string            `json:"dimension_str" example:"100x100*222"`
 	Year                 int               `json:"year" example:"2021"`
 	Frame                TranslatedTextDTO `json:"frame"`
 	Price                int               `json:"price" example:"100000"`
@@ -115,6 +117,7 @@ type UpdateArtDTO struct {
 	Direction            string            `json:"direction" example:"EXCLUSIVE"`
 	DimensionX           int               `json:"dimension_x" example:"100"`
 	DimensionY           int               `json:"dimension_y" example:"100"`
+	DimensionStr         string            `json:"dimension_str" example:"100x100*222"`
 	Year                 int               `json:"year" example:"2021"`
 	Size                 string            `json:"size" example:"small"`
 	Frame                TranslatedTextDTO `json:"frame"`
@@ -139,6 +142,7 @@ func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
 		DimensionY:           dto.DimensionY,
 		Style:                dto.Style,
 		Direction:            dto.Direction,
+		DimensionStr:         dto.DimensionStr,
 		Year:                 dto.Year,
 		Size:                 dto.Size,
 		Frame:                dto.Frame.ToEntity(),
@@ -168,6 +172,7 @@ func (dto *CreateArtWithPhotosDTO) ToEntity(id *uint) entity.Art {
 		DimensionY:           dto.DimensionY,
 		Style:                dto.Style,
 		Direction:            dto.Direction,
+		DimensionStr:         dto.DimensionStr,
 		Year:                 dto.Year,
 		Size:                 dto.Size,
 		Frame:                dto.Frame.ToEntity(),
@@ -197,6 +202,7 @@ func (dto *UpdateArtDTO) ToEntity(id *uint) entity.Art {
 		DimensionY:           dto.DimensionY,
 		Style:                dto.Style,
 		Direction:            dto.Direction,
+		DimensionStr:         dto.DimensionStr,
 		Year:                 dto.Year,
 		Size:                 dto.Size,
 		Frame:                dto.Frame.ToEntity(),
@@ -231,6 +237,7 @@ type ArtResponseDTO struct {
 	Technique            entity.TranslatedText `json:"technique"`
 	DimensionX           int                   `json:"dimension_x"`
 	DimensionY           int                   `json:"dimension_y"`
+	DimensionStr         string                `json:"dimension_str"`
 	Direction            string                `json:"direction"`
 	Year                 int                   `json:"year"`
 	Frame                entity.TranslatedText `json:"frame"`
@@ -268,6 +275,7 @@ func ToArtResponseDTO(art entity.Art, base_url string) ArtResponseDTO {
 		Technique:            art.Technique,
 		DimensionX:           art.DimensionX,
 		DimensionY:           art.DimensionY,
+		DimensionStr:         art.DimensionStr,
 		Direction:            art.Direction,
 		Year:                 art.Year,
 		Frame:                art.Frame,
