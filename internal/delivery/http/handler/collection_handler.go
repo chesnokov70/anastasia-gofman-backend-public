@@ -148,12 +148,13 @@ func (h *CollectionHandler) PartialUpdateCollection(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter"})
 		return
 	}
-	var collection dto.UpdateCollectionDTO
-	if err := c.ShouldBindJSON(&collection); err != nil {
+	// var collection dto.UpdateCollectionDTO
+	var updateData map[string]interface{}
+	if err := c.ShouldBindJSON(&updateData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	collection_entity, err := h.collectionService.PartialUpdateCollection(uint(id_uint), collection.ToMap(uint(id_uint)))
+	collection_entity, err := h.collectionService.PartialUpdateCollection(uint(id_uint), updateData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
