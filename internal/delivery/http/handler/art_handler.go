@@ -30,6 +30,7 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 // @Param size query int false "Page size" default(10)
 // @Param with_pagination query bool false "With pagination" default(true)
 // @Param without_collection query bool false "Without collection" default(true)
+// @Param with_type_discrimination query bool false "With type discrimination" default(false)
 // @Param sorting query string false "Sorting type" Enums(NEW, RATED, PRICE_HIGH, PRICE_LOW) default()
 // @Param filtering query string false "JSON filter object with price_from, price_to, size, direction, style, author fields, type, archive_type"
 // @Success 200 {object} map[string]interface{}
@@ -42,6 +43,7 @@ func (h *ArtHandler) GetAllArts(c *gin.Context) {
 	filtering := c.DefaultQuery("filtering", "")
 	without_collection := c.DefaultQuery("without_collection", "true")
 	without_collection_bool, err := strconv.ParseBool(without_collection)
+	with_type_discrimination := c.DefaultQuery("with_type_discrimination", "false")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid without_collection format"})
 		return
@@ -60,6 +62,7 @@ func (h *ArtHandler) GetAllArts(c *gin.Context) {
 
 	with_pagination := c.DefaultQuery("with_pagination", "true")
 	with_pagination_bool, err := strconv.ParseBool(with_pagination)
+	with_type_discrimination_bool, err := strconv.ParseBool(with_type_discrimination)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_pagination format"})
 		return
@@ -94,7 +97,7 @@ func (h *ArtHandler) GetAllArts(c *gin.Context) {
 		}
 	}
 
-	arts, total_pages, total_items, err := h.artService.GetAllArts(page_int, size_int, with_pagination_bool, sorting, filteringDTO.ToEntity(), without_collection_bool)
+	arts, total_pages, total_items, err := h.artService.GetAllArts(page_int, size_int, with_pagination_bool, sorting, filteringDTO.ToEntity(), without_collection_bool, with_type_discrimination_bool)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

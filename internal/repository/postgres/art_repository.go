@@ -14,7 +14,7 @@ func NewArtRepository(db *gorm.DB) *ArtRepository {
 	return &ArtRepository{db: db}
 }
 
-func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool) ([]entity.Art, int64, error) {
+func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool, with_type_discrimination bool) ([]entity.Art, int64, error) {
 	var arts []entity.Art
 	var count int64
 	query := r.db.Model(&entity.Art{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
@@ -53,17 +53,28 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 		query = query.Where("collection_id IS NULL")
 	}
 
+	if with_type_discrimination {
+		query = query.Where("type IS NULL OR type = '' OR type = 'archive'")
+	}
+
+	orderBy := ""
 	switch sorting {
 	case "NEW":
-		query = query.Order("created_at DESC")
+		orderBy = "created_at DESC"
 	case "RATED":
-		query = query.Order("position ASC")
+		orderBy = "position ASC"
 	case "PRICE_HIGH":
-		query = query.Order("price DESC")
+		orderBy = "price DESC"
 	case "PRICE_LOW":
-		query = query.Order("price ASC")
+		orderBy = "price ASC"
 	default:
-		query = query.Order("position ASC")
+		orderBy = "position ASC"
+	}
+
+	if with_type_discrimination {
+		query = query.Order("CASE WHEN type IS NULL OR type = '' THEN 0 WHEN type = 'archive' THEN 1 END, " + orderBy)
+	} else {
+		query = query.Order(orderBy)
 	}
 
 	err := query.Count(&count).Error

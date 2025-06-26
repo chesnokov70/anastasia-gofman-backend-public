@@ -22,7 +22,7 @@ type AuthorRepository interface {
 }
 
 type ArtRepository interface {
-	GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool) ([]entity.Art, int64, error)
+	GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool, with_type_discrimination bool) ([]entity.Art, int64, error)
 	GetArtByID(id uint) (entity.Art, error)
 	GetCountOfArts() (int, error)
 	CreateArt(art entity.Art) (entity.Art, error)

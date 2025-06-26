@@ -24,7 +24,7 @@ type AuthorService interface {
 }
 
 type ArtService interface {
-	GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool) ([]entity.Art, int64, int64, error)
+	GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool, with_type_discrimination bool) ([]entity.Art, int64, int64, error)
 	GetArtByID(id uint) (entity.Art, error)
 	CreateArt(art entity.Art, with_stripe bool) (entity.Art, error)
 	UpdateArt(art entity.Art) (entity.Art, error)
