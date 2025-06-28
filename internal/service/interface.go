@@ -72,3 +72,22 @@ type ArtCollectionService interface {
 	PartialUpdateCollection(id uint, kwargs map[string]interface{}) (entity.ArtCollection, error)
 	FullUpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
 }
+
+type PressAndArticleService interface {
+	GetAllPressAndArticles(page int, size int, with_pagination bool, article_or_press string) ([]entity.Press, []entity.Article, int64, int64, error)
+	GetPressOrArticleByID(id uint, article_or_press string) (*entity.Press, *entity.Article, error)
+	CreatePressOrArticle(press_or_article string, press entity.Press, article entity.Article) (*entity.Press, *entity.Article, error)
+
+	UpdatePressOrArticle(press_or_article string, press entity.Press, article entity.Article) (*entity.Press, *entity.Article, error)
+	DeletePressOrArticle(press_or_article string, id uint) error
+	PartialUpdatePressOrArticle(press_or_article string, id uint, kwargs map[string]interface{}) (*entity.Press, *entity.Article, error)
+	FullUpdatePressOrArticle(press_or_article string, press entity.Press, article entity.Article) (*entity.Press, *entity.Article, error)
+
+	DeleteMainOrPreviewPhoto(id uint, press_or_article string, type_of_photo string) error
+	AddMainOrPreviewPhotoToPressOrArticle(press_or_article string, id uint, fileHeader *multipart.FileHeader, is_main bool, is_preview bool) (*entity.Press, *entity.Article, error)
+	AddPhotosToPressOrArticle(id uint, press_or_article string, photos []*multipart.FileHeader) (*entity.Press, *entity.Article, error)
+	PatchPressOrArticlePhotos(id uint, press_or_article string, photos []*multipart.FileHeader) (*entity.Press, *entity.Article, error)
+	GetMainPhoto(id uint, press_or_article string) (entity.Photo, error)
+	DeleteAllPhotos(id uint, press_or_article string) error
+	DeleteAllNoSpecialPhotos(id uint, press_or_article string) error
+}

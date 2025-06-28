@@ -110,3 +110,15 @@ type ArtCollectionRepository interface {
 	FullUpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
 	GetArtsByCollectionID(collectionID uint) ([]entity.Art, error)
 }
+
+type PressAndArticleRepository interface {
+	GetAllPressAndArticles(offset int, limit int, with_pagination bool, article_or_press string) ([]entity.Press, []entity.Article, int64, error)
+	GetPressOrArticleByID(id uint, article_or_press string) (*entity.Press, *entity.Article, error)
+	CreatePressOrArticle(press_or_article string, press entity.Press, article entity.Article) (*entity.Press, *entity.Article, error)
+	GetCountOfPressOrArticle(article_or_press string) (int, error)
+	UpdatePressOrArticle(press_or_article string, press entity.Press, article entity.Article) (*entity.Press, *entity.Article, error)
+	DeletePressOrArticle(press_or_article string, id uint) error
+	PartialUpdatePressOrArticle(press_or_article string, id uint, kwargs map[string]interface{}) (*entity.Press, *entity.Article, error)
+	FullUpdatePressOrArticle(press_or_article string, press *entity.Press, article *entity.Article) (*entity.Press, *entity.Article, error)
+	AddMainOrPreviewPhotoToPressOrArticle(photo entity.Photo, press_or_article string) (*entity.Press, *entity.Article, error)
+}

@@ -43,6 +43,8 @@ func main() {
 		&entity.Photo{},
 		&entity.Art{},
 		&entity.Event{},
+		&entity.Press{},
+		&entity.Article{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
@@ -86,7 +88,12 @@ func main() {
 	collectionService := service.NewArtCollectionService(collectionRepository)
 	collectionHandler := handler.NewCollectionHandler(collectionService, artService)
 
-	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler)
+	pressArticleRepository := postgres.NewPressAndArticleRepository(db)
+	pressArticleService := service.NewPressAndArticleService(pressArticleRepository, photoRepository)
+	pressHandler := handler.NewPressHandler(pressArticleService)
+	articleHandler := handler.NewArticleHandler(pressArticleService)
+
+	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler)
 	router.Static("/uploads", "./uploads")
 	// / Swagger route
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.DefaultModelsExpandDepth(2)))

@@ -9,8 +9,8 @@ import (
 	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
 )
 
-// func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler, pressHandler *handler.PressHandler, articleHandler *handler.ArticleHandler) *gin.Engine {
-func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler) *gin.Engine {
+func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler, pressHandler *handler.PressHandler, articleHandler *handler.ArticleHandler) *gin.Engine {
+	// func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler) *gin.Engine {
 	router := gin.Default()
 	router.RedirectTrailingSlash = false // Disable automatic redirect for trailing slashes
 
@@ -114,18 +114,34 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			collections.PATCH("/:id", collectionHandler.PartialUpdateCollection)
 			collections.DELETE("/:id", collectionHandler.DeleteCollection)
 		}
-		// press := api.Group("/press")
-		// {
-		// 	press.GET("", pressHandler.GetAllPress)
-		// 	press.GET("/:id", pressHandler.GetPressByID)
-		// 	press.POST("", pressHandler.CreatePress)
-		// }
-		// articles := api.Group("/articles")
-		// {
-		// 	articles.GET("", articleHandler.GetAllArticles)
-		// 	articles.GET("/:id", articleHandler.GetArticleByID)
-		// 	articles.POST("", articleHandler.CreateArticle)
-		// }
+		press := api.Group("/press")
+		{
+			press.GET("", pressHandler.GetAllPress)
+			press.GET("/:id", pressHandler.GetPressByID)
+			press.POST("", pressHandler.CreatePress)
+			press.POST("/with_photos", pressHandler.CreatePressWithPhotos)
+			press.DELETE("/:id", pressHandler.DeletePress)
+			press.PUT("/:id", pressHandler.FullUpdatePress)
+			press.PATCH("/:id", pressHandler.PartialUpdatePress)
+			press.POST("/:id/main_photo", pressHandler.AddMainPhotoToPress)
+			press.POST("/:id/photos", pressHandler.AddPhotosToPress)
+			press.PATCH("/:id/photos", pressHandler.PatchPressPhotos)
+			press.GET("/:id/main_photo", pressHandler.GetMainPhoto)
+		}
+		articles := api.Group("/articles")
+		{
+			articles.GET("", articleHandler.GetAllArticles)
+			articles.GET("/:id", articleHandler.GetArticleByID)
+			articles.POST("", articleHandler.CreateArticle)
+			articles.POST("/with_photos", articleHandler.CreateArticleWithPhotos)
+			articles.DELETE("/:id", articleHandler.DeleteArticle)
+			articles.PUT("/:id", articleHandler.FullUpdateArticle)
+			articles.PATCH("/:id", articleHandler.PartialUpdateArticle)
+			articles.POST("/:id/main_photo", articleHandler.AddMainPhotoToArticle)
+			articles.POST("/:id/photos", articleHandler.AddPhotosToArticle)
+			articles.PATCH("/:id/photos", articleHandler.PatchArticlePhotos)
+			articles.GET("/:id/main_photo", articleHandler.GetMainPhoto)
+		}
 	}
 
 	return router

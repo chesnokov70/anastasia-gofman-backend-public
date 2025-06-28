@@ -128,7 +128,13 @@ func (r *ArtRepository) PartialUpdateArt(id uint, kwargs map[string]interface{})
 }
 
 func (r *ArtRepository) FullUpdateArt(art entity.Art) (entity.Art, error) {
-	err := r.db.Model(&art).Where("id = ?", art.ID).Updates(art).Error
+	err := r.db.Model(&art).Where("id = ?", art.ID).
+		Select("author_id", "name", "title", "description", "medium", "technique",
+			"dimension_x", "dimension_y", "dimension_str", "year", "frame", "price",
+			"size", "direction", "style", "type", "archive_type", "collection_id",
+			"name_for_stripe", "description_for_stripe", "stripe_product_id",
+			"payment_link", "position").
+		Updates(art).Error
 	if err != nil {
 		return entity.Art{}, err
 	}

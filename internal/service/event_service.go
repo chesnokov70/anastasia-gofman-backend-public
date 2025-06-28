@@ -101,20 +101,17 @@ func (s *eventService) UpdateEvent(event entity.Event) (entity.Event, error) {
 }
 
 func (s *eventService) AddMainOrPreviewPhotoToEvent(eventID uint, fileHeader *multipart.FileHeader, is_main bool, is_preview bool) (entity.Event, error) {
-	// s.photoRepository.D(eventID, "event", is_main, is_preview)
+	var oldPhoto *entity.Photo
 	if is_main {
-		// if err := s.DeleteMainOrPreviewPhoto(eventID, "main"); err != nil {
-		// 	return entity.Event{}, err
-		// }
-		s.DeleteMainOrPreviewPhoto(eventID, "main")
-		s.photoRepository.DeleteMainPhoto(eventID, "event")
+		if photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(eventID, "event", true); err == nil {
+			oldPhoto = &photo
+		}
 	} else if is_preview {
-		// if err := s.DeleteMainOrPreviewPhoto(eventID, "preview"); err != nil {
-		// 	return entity.Event{}, err
-		// }
-		s.DeleteMainOrPreviewPhoto(eventID, "preview")
-		s.photoRepository.DeletePreviewPhoto(eventID, "event")
+		if photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(eventID, "event", false); err == nil {
+			oldPhoto = &photo
+		}
 	}
+
 	pos, _ := s.photoRepository.GetCountOfPhotos(eventID, "event")
 	photo, err := create_photo_from_http_photo(eventID, "event", fileHeader, is_main, is_preview, pos)
 	if err != nil {
@@ -124,7 +121,28 @@ func (s *eventService) AddMainOrPreviewPhotoToEvent(eventID uint, fileHeader *mu
 	if err != nil {
 		return entity.Event{}, err
 	}
-	return s.eventRepository.AddMainOrPreviewPhotoToEvent(eventID, photo)
+
+	event, err := s.eventRepository.AddMainOrPreviewPhotoToEvent(eventID, photo)
+	if err != nil {
+		return entity.Event{}, err
+	}
+
+	if oldPhoto != nil {
+		filePath := oldPhoto.Path
+		if strings.HasPrefix(filePath, "/") {
+			filePath = filePath[1:]
+		}
+
+		if err := os.Remove(filePath); err != nil {
+			fmt.Printf("ERROR DELETING OLD PHOTO FILE %s: %v\n", filePath, err)
+		}
+
+		if err := s.photoRepository.DeletePhoto(oldPhoto.ID); err != nil {
+			fmt.Printf("ERROR DELETING OLD PHOTO FROM DB (ID %d): %v\n", oldPhoto.ID, err)
+		}
+	}
+
+	return event, nil
 }
 
 func (s *eventService) AddPhotosToEvent(id uint, photos []*multipart.FileHeader) (entity.Event, error) {
@@ -161,15 +179,43 @@ func (s *eventService) UpdateEventsPosition(positions []int) error {
 }
 
 func (s *eventService) UpdateMainPhotoToEvent(id uint, fileHeader *multipart.FileHeader) (entity.Event, error) {
-	s.DeleteMainOrPreviewPhoto(id, "main")
-	s.photoRepository.DeleteMainPhoto(id, "event")
+	var oldPhoto *entity.Photo
+	if photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(id, "event", true); err == nil {
+		oldPhoto = &photo
+	}
+
 	pos, _ := s.photoRepository.GetCountOfPhotos(id, "event")
 	photo, err := create_photo_from_http_photo(id, "event", fileHeader, true, false, pos+1)
 	if err != nil {
 		return entity.Event{}, err
 	}
-	s.photoRepository.CreatePhoto(photo)
-	return s.eventRepository.AddMainOrPreviewPhotoToEvent(id, photo)
+	photo, err = s.photoRepository.CreatePhoto(photo)
+	if err != nil {
+		return entity.Event{}, err
+	}
+
+	event, err := s.eventRepository.AddMainOrPreviewPhotoToEvent(id, photo)
+	if err != nil {
+		return entity.Event{}, err
+	}
+
+	if oldPhoto != nil {
+
+		filePath := oldPhoto.Path
+		if strings.HasPrefix(filePath, "/") {
+			filePath = filePath[1:]
+		}
+
+		if err := os.Remove(filePath); err != nil {
+			fmt.Printf("ERROR DELETING OLD PHOTO FILE %s: %v\n", filePath, err)
+		}
+
+		if err := s.photoRepository.DeletePhoto(oldPhoto.ID); err != nil {
+			fmt.Printf("ERROR DELETING OLD PHOTO FROM DB (ID %d): %v\n", oldPhoto.ID, err)
+		}
+	}
+
+	return event, nil
 }
 
 func (s *eventService) GetMainPhoto(id uint) (entity.Photo, error) {
@@ -182,7 +228,6 @@ func (s *eventService) DeleteAllPhotos(id uint) error {
 		return err
 	}
 	for _, photo := range photos {
-		// Убираем ведущий слеш, чтобы получить относительный путь
 		filePath := photo.Path
 		if strings.HasPrefix(filePath, "/") {
 			filePath = filePath[1:]
@@ -206,7 +251,6 @@ func (s *eventService) DeleteAllNoSpecialPhotos(id uint) error {
 		return err
 	}
 	for _, photo := range photos {
-		// Убираем ведущий слеш, чтобы получить относительный путь
 		filePath := photo.Path
 		if strings.HasPrefix(filePath, "/") {
 			filePath = filePath[1:]
@@ -236,7 +280,6 @@ func (s *eventService) DeleteMainOrPreviewPhoto(id uint, type_of_photo string) e
 		return err
 	}
 
-	// Убираем ведущий слеш, чтобы получить относительный путь
 	filePath := photo.Path
 	if strings.HasPrefix(filePath, "/") {
 		filePath = filePath[1:]

@@ -20,7 +20,7 @@ type Photo struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	Path      string    `json:"path"`
 	OwnerID   uint      `json:"owner_id"`
-	OwnerType string    `json:"owner_type"` // "arts", "event"
+	OwnerType string    `json:"owner_type"` // "arts", "event", "article", "press"
 	Position  int       `json:"position"`
 	IsMain    bool      `json:"is_main"`
 	IsPreview bool      `json:"is_preview"`

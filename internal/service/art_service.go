@@ -304,18 +304,17 @@ func (s *artService) FullUpdateArt(art entity.Art, with_stripe bool) (entity.Art
 }
 
 func (s *artService) AddMainOrPreviewPhotoToArt(artID uint, fileHeader *multipart.FileHeader, is_main bool, is_preview bool) (entity.Art, error) {
+	var oldPhoto *entity.Photo
 	if is_main {
-		if err := s.DeleteMainOrPreviewPhoto(artID, "main"); err != nil {
-			return entity.Art{}, err
+		if photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(artID, "arts", true); err == nil {
+			oldPhoto = &photo
 		}
-		s.photoRepository.DeleteMainPhoto(artID, "arts")
 	} else if is_preview {
-		if err := s.DeleteMainOrPreviewPhoto(artID, "preview"); err != nil {
-			return entity.Art{}, err
+		if photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(artID, "arts", false); err == nil {
+			oldPhoto = &photo
 		}
-		s.photoRepository.DeletePreviewPhoto(artID, "arts")
 	}
-	// s.photoRepository.DeletePhoto(artID, is_main, is_preview)
+
 	pos, _ := s.photoRepository.GetCountOfPhotos(artID, "arts")
 	main_photo, err := create_photo_from_http_photo(artID, "arts", fileHeader, is_main, is_preview, pos)
 	if err != nil {
@@ -325,7 +324,31 @@ func (s *artService) AddMainOrPreviewPhotoToArt(artID uint, fileHeader *multipar
 	if err != nil {
 		return entity.Art{}, err
 	}
-	return s.artRepository.AddMainOrPreviewPhotoToArt(main_photo)
+
+	art, err := s.artRepository.AddMainOrPreviewPhotoToArt(main_photo)
+	if err != nil {
+		return entity.Art{}, err
+	}
+
+	if oldPhoto != nil {
+		filePath := oldPhoto.Path
+		if strings.HasPrefix(filePath, "/uploads/") {
+			filePath = strings.TrimPrefix(filePath, "/uploads/")
+			filePath = config.GetUploadFilePath(strings.Split(filePath, "/")[0], strings.Join(strings.Split(filePath, "/")[1:], "/"))
+		} else if strings.HasPrefix(filePath, "/") {
+			filePath = filePath[1:]
+		}
+
+		if err := os.Remove(filePath); err != nil {
+			fmt.Printf("ERROR DELETING OLD PHOTO FILE %s: %v\n", filePath, err)
+		}
+
+		if err := s.photoRepository.DeletePhoto(oldPhoto.ID); err != nil {
+			fmt.Printf("ERROR DELETING OLD PHOTO FROM DB (ID %d): %v\n", oldPhoto.ID, err)
+		}
+	}
+
+	return art, nil
 }
 
 func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipart.FileHeader, is_main bool, is_preview bool, position_of_photo int) (entity.Photo, error) {
@@ -344,6 +367,12 @@ func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipa
 	} else if OwnerType == "event" {
 		subdir = "events_photos"
 		filename = fmt.Sprintf("event_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+	} else if OwnerType == "press" {
+		subdir = "press_photos"
+		filename = fmt.Sprintf("press_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+	} else if OwnerType == "article" {
+		subdir = "article_photos"
+		filename = fmt.Sprintf("article_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
 	} else {
 		return entity.Photo{}, errors.New("invalid type of photo")
 	}
@@ -370,23 +399,12 @@ func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipa
 	// Для базы данных сохраняем относительный путь
 	relativePath := fmt.Sprintf("/uploads/%s/%s", subdir, filename)
 
-	var res_photo entity.Photo
-	if OwnerType == "arts" {
-		res_photo = entity.Photo{
-			Path:      relativePath,
-			OwnerID:   OwnerID,
-			OwnerType: OwnerType,
-			IsMain:    is_main,
-			IsPreview: is_preview,
-		}
-	} else if OwnerType == "event" {
-		res_photo = entity.Photo{
-			Path:      relativePath,
-			OwnerID:   OwnerID,
-			OwnerType: OwnerType,
-			IsMain:    is_main,
-			IsPreview: is_preview,
-		}
+	res_photo := entity.Photo{
+		Path:      relativePath,
+		OwnerID:   OwnerID,
+		OwnerType: OwnerType,
+		IsMain:    is_main,
+		IsPreview: is_preview,
 	}
 	return res_photo, nil
 }

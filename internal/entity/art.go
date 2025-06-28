@@ -114,14 +114,38 @@ type Article struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
 	Title       TranslatedText `json:"title" gorm:"type:jsonb"`
 	Description TranslatedText `json:"description" gorm:"type:jsonb"`
-	CreatedAt   time.Time      `json:"created_at" example:"2021-01-01T00:00:00Z"`
-	UpdatedAt   time.Time      `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+	FullText    TranslatedText `json:"full_text" gorm:"type:jsonb"`
+	Link        string         `json:"link" example:"https://example.com"`
+
+	MainPhotoID *uint `json:"main_photo_id" example:"1"`
+	MainPhoto   Photo `json:"-" gorm:"foreignKey:MainPhotoID;references:ID"`
+
+	PreviewPhotoID *uint `json:"preview_photo_id" example:"2"`
+	PreviewPhoto   Photo `json:"-" gorm:"foreignKey:PreviewPhotoID;references:ID"`
+
+	Photos []Photo `json:"-" gorm:"polymorphic:Owner;polymorphicValue:article"`
+
+	Position  int       `json:"position" example:"1"`
+	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
 }
 
 type Press struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
 	Title       TranslatedText `json:"title" gorm:"type:jsonb"`
 	Description TranslatedText `json:"description" gorm:"type:jsonb"`
-	CreatedAt   time.Time      `json:"created_at" example:"2021-01-01T00:00:00Z"`
-	UpdatedAt   time.Time      `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+	FullText    TranslatedText `json:"full_text" gorm:"type:jsonb"`
+	Link        string         `json:"link" example:"https://example.com"`
+	MainPhotoID *uint          `json:"main_photo_id" example:"1"`
+	MainPhoto   Photo          `json:"-" gorm:"foreignKey:MainPhotoID;references:ID"`
+
+	PreviewPhotoID *uint `json:"preview_photo_id" example:"2"`
+	PreviewPhoto   Photo `json:"-" gorm:"foreignKey:PreviewPhotoID;references:ID"`
+
+	Photos []Photo `json:"-" gorm:"polymorphic:Owner;polymorphicValue:press"`
+
+	// PhotosIDS []uint    `json:"photos_ids"`
+	Position  int       `json:"position" example:"1"`
+	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
 }
