@@ -93,8 +93,7 @@ func (s *pressAndArticleService) PartialUpdatePressOrArticle(press_or_article st
 			return nil, nil, errors.New("invalid main_photo format")
 		}
 
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, press_or_article)
-		main_photo, err := create_photo_from_http_photo(id, press_or_article, mainPhotoHeader, true, false, pos)
+		main_photo, err := create_photo_from_http_photo(id, press_or_article, mainPhotoHeader, true, false)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create main photo: %w", err)
 		}
@@ -116,8 +115,7 @@ func (s *pressAndArticleService) PartialUpdatePressOrArticle(press_or_article st
 			return nil, nil, errors.New("invalid preview_photo format")
 		}
 
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, press_or_article)
-		preview_photo, err := create_photo_from_http_photo(id, press_or_article, previewPhotoHeader, false, true, pos)
+		preview_photo, err := create_photo_from_http_photo(id, press_or_article, previewPhotoHeader, false, true)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create preview photo: %w", err)
 		}
@@ -143,9 +141,8 @@ func (s *pressAndArticleService) PartialUpdatePressOrArticle(press_or_article st
 			return nil, nil, fmt.Errorf("failed to delete old photos: %w", err)
 		}
 
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, press_or_article)
 		for i, photo := range photos {
-			photoEntity, err := create_photo_from_http_photo(id, press_or_article, photo, false, false, pos+1+i)
+			photoEntity, err := create_photo_from_http_photo(id, press_or_article, photo, false, false)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to create photo %d: %w", i, err)
 			}
@@ -175,8 +172,7 @@ func (s *pressAndArticleService) AddMainOrPreviewPhotoToPressOrArticle(press_or_
 		}
 	}
 
-	pos, _ := s.photoRepository.GetCountOfPhotos(id, press_or_article)
-	main_photo, err := create_photo_from_http_photo(id, press_or_article, fileHeader, is_main, is_preview, pos)
+	main_photo, err := create_photo_from_http_photo(id, press_or_article, fileHeader, is_main, is_preview)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -213,12 +209,8 @@ func (s *pressAndArticleService) AddMainOrPreviewPhotoToPressOrArticle(press_or_
 }
 
 func (s *pressAndArticleService) AddPhotosToPressOrArticle(id uint, press_or_article string, photos []*multipart.FileHeader) (*entity.Press, *entity.Article, error) {
-	current_count_of_photos, err := s.photoRepository.GetCountOfPhotos(id, press_or_article)
-	if err != nil {
-		return nil, nil, err
-	}
-	for i, photo := range photos {
-		photo, err := create_photo_from_http_photo(id, press_or_article, photo, false, false, i+current_count_of_photos)
+	for _, photo := range photos {
+		photo, err := create_photo_from_http_photo(id, press_or_article, photo, false, false)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -233,12 +225,8 @@ func (s *pressAndArticleService) AddPhotosToPressOrArticle(id uint, press_or_art
 func (s *pressAndArticleService) PatchPressOrArticlePhotos(id uint, press_or_article string, photos []*multipart.FileHeader) (*entity.Press, *entity.Article, error) {
 
 	s.DeleteAllNoSpecialPhotos(id, press_or_article)
-	current_count_of_photos, err := s.photoRepository.GetCountOfPhotos(id, press_or_article)
-	if err != nil {
-		return nil, nil, err
-	}
-	for i, photo := range photos {
-		photo, err := create_photo_from_http_photo(id, press_or_article, photo, false, false, i+current_count_of_photos+1)
+	for _, photo := range photos {
+		photo, err := create_photo_from_http_photo(id, press_or_article, photo, false, false)
 		if err != nil {
 			return nil, nil, err
 		}

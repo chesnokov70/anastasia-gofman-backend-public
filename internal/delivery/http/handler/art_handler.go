@@ -32,7 +32,7 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 // @Param without_collection query bool false "Without collection" default(true)
 // @Param with_type_discrimination query bool false "With type discrimination" default(false)
 // @Param sorting query string false "Sorting type" Enums(NEW, RATED, PRICE_HIGH, PRICE_LOW) default()
-// @Param filtering query string false "JSON filter object with price_from, price_to, size, direction, style, author fields, type, archive_type"
+// @Param filtering query string false "JSON filter object with price_from, price_to, size, direction, style, author fields, type, archive_type, search"
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
 // @Router /api/arts [get]

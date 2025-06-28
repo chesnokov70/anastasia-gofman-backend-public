@@ -9,20 +9,68 @@ import (
 )
 
 type ArtFilteringDTO struct {
-	PriceFrom   *int    `json:"price_from"`
-	PriceTo     *int    `json:"price_to"`
-	Size        *string `json:"size"`
-	Direction   *string `json:"direction"`
-	Style       *string `json:"style"`
-	Author      *string `json:"author"`
-	Type        *string `json:"type"`
-	ArchiveType *string `json:"archive_type"`
+	PriceFrom   *int          `json:"price_from"`
+	PriceTo     *int          `json:"price_to"`
+	Size        *string       `json:"size"`
+	Direction   *string       `json:"direction"`
+	Style       *string       `json:"style"`
+	Author      *string       `json:"author"`
+	Type        *string       `json:"type"`
+	ArchiveType *string       `json:"archive_type"`
+	Search      *ArtSearchDTO `json:"search"`
+}
+
+type ArtSearchDTO struct {
+	Name         *TranslatedTextDTO `json:"name"`
+	Title        *TranslatedTextDTO `json:"title"`
+	Description  *TranslatedTextDTO `json:"description"`
+	Medium       *TranslatedTextDTO `json:"medium"`
+	Technique    *TranslatedTextDTO `json:"technique"`
+	Year         *string            `json:"year"`
+	Frame        *TranslatedTextDTO `json:"frame"`
+	Style        *string            `json:"style"`
+	Direction    *string            `json:"direction"`
+	DimensionStr *string            `json:"dimension_str"`
 }
 
 func (dto *ArtFilteringDTO) ToEntity() *entity.ArtFilter {
 	if dto == nil {
 		return nil
 	}
+
+	var search *entity.ArtSearch
+	if dto.Search != nil {
+		search = &entity.ArtSearch{}
+		if dto.Search.Name != nil {
+			nameEntity := dto.Search.Name.ToEntity()
+			search.Name = &nameEntity
+		}
+		if dto.Search.Title != nil {
+			titleEntity := dto.Search.Title.ToEntity()
+			search.Title = &titleEntity
+		}
+		if dto.Search.Description != nil {
+			descEntity := dto.Search.Description.ToEntity()
+			search.Description = &descEntity
+		}
+		if dto.Search.Medium != nil {
+			mediumEntity := dto.Search.Medium.ToEntity()
+			search.Medium = &mediumEntity
+		}
+		if dto.Search.Technique != nil {
+			techniqueEntity := dto.Search.Technique.ToEntity()
+			search.Technique = &techniqueEntity
+		}
+		if dto.Search.Frame != nil {
+			frameEntity := dto.Search.Frame.ToEntity()
+			search.Frame = &frameEntity
+		}
+		search.Year = dto.Search.Year
+		search.Style = dto.Search.Style
+		search.Direction = dto.Search.Direction
+		search.DimensionStr = dto.Search.DimensionStr
+	}
+
 	return &entity.ArtFilter{
 		PriceFrom:   dto.PriceFrom,
 		PriceTo:     dto.PriceTo,
@@ -32,6 +80,7 @@ func (dto *ArtFilteringDTO) ToEntity() *entity.ArtFilter {
 		Author:      dto.Author,
 		Type:        dto.Type,
 		ArchiveType: dto.ArchiveType,
+		Search:      search,
 	}
 }
 

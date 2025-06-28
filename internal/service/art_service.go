@@ -5,6 +5,7 @@ import (
 	"anastasia_gofman_backend/internal/repository"
 	"anastasia_gofman_backend/pkg/config"
 	"anastasia_gofman_backend/pkg/service"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -144,8 +145,7 @@ func (s *artService) PartialUpdateArt(id uint, kwargs map[string]interface{}, wi
 			return entity.Art{}, errors.New("invalid main_photo format")
 		}
 
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, "arts")
-		main_photo, err := create_photo_from_http_photo(id, "arts", mainPhotoHeader, true, false, pos)
+		main_photo, err := create_photo_from_http_photo(id, "arts", mainPhotoHeader, true, false)
 		if err != nil {
 			return entity.Art{}, fmt.Errorf("failed to create main photo: %w", err)
 		}
@@ -167,8 +167,7 @@ func (s *artService) PartialUpdateArt(id uint, kwargs map[string]interface{}, wi
 			return entity.Art{}, errors.New("invalid preview_photo format")
 		}
 
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, "arts")
-		preview_photo, err := create_photo_from_http_photo(id, "arts", previewPhotoHeader, false, true, pos)
+		preview_photo, err := create_photo_from_http_photo(id, "arts", previewPhotoHeader, false, true)
 		if err != nil {
 			return entity.Art{}, fmt.Errorf("failed to create preview photo: %w", err)
 		}
@@ -194,9 +193,8 @@ func (s *artService) PartialUpdateArt(id uint, kwargs map[string]interface{}, wi
 			return entity.Art{}, fmt.Errorf("failed to delete old photos: %w", err)
 		}
 
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, "arts")
 		for i, photo := range photos {
-			photoEntity, err := create_photo_from_http_photo(id, "arts", photo, false, false, pos+1+i)
+			photoEntity, err := create_photo_from_http_photo(id, "arts", photo, false, false)
 			if err != nil {
 				return entity.Art{}, fmt.Errorf("failed to create photo %d: %w", i, err)
 			}
@@ -315,8 +313,7 @@ func (s *artService) AddMainOrPreviewPhotoToArt(artID uint, fileHeader *multipar
 		}
 	}
 
-	pos, _ := s.photoRepository.GetCountOfPhotos(artID, "arts")
-	main_photo, err := create_photo_from_http_photo(artID, "arts", fileHeader, is_main, is_preview, pos)
+	main_photo, err := create_photo_from_http_photo(artID, "arts", fileHeader, is_main, is_preview)
 	if err != nil {
 		return entity.Art{}, err
 	}
@@ -351,7 +348,7 @@ func (s *artService) AddMainOrPreviewPhotoToArt(artID uint, fileHeader *multipar
 	return art, nil
 }
 
-func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipart.FileHeader, is_main bool, is_preview bool, position_of_photo int) (entity.Photo, error) {
+func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipart.FileHeader, is_main bool, is_preview bool) (entity.Photo, error) {
 
 	file, err := photo.Open()
 	if err != nil {
@@ -359,28 +356,34 @@ func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipa
 	}
 	defer file.Close()
 
+	fileContent, err := io.ReadAll(file)
+	if err != nil {
+		return entity.Photo{}, fmt.Errorf("failed to read file content: %w", err)
+	}
+
+	hash := sha256.Sum256(fileContent)
+	hashStr := fmt.Sprintf("%x", hash[:8])
+
 	var subdir string
 	var filename string
 	if OwnerType == "arts" {
 		subdir = "arts_photos"
-		filename = fmt.Sprintf("art_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+		filename = fmt.Sprintf("art_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
 	} else if OwnerType == "event" {
 		subdir = "events_photos"
-		filename = fmt.Sprintf("event_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+		filename = fmt.Sprintf("event_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
 	} else if OwnerType == "press" {
 		subdir = "press_photos"
-		filename = fmt.Sprintf("press_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+		filename = fmt.Sprintf("press_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
 	} else if OwnerType == "article" {
 		subdir = "article_photos"
-		filename = fmt.Sprintf("article_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+		filename = fmt.Sprintf("article_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
 	} else {
 		return entity.Photo{}, errors.New("invalid type of photo")
 	}
 
-	// Получаем полный путь для сохранения файла
 	fullPath := config.GetUploadFilePath(subdir, filename)
 
-	// Создаем директорию если её нет
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
 		return entity.Photo{}, fmt.Errorf("failed to create directory: %w", err)
 	}
@@ -391,9 +394,10 @@ func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipa
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, file)
+	_, err = out.Write(fileContent)
+	// _, err = io.Copy(out, file)
 	if err != nil {
-		return entity.Photo{}, fmt.Errorf("failed to copy file: %w", err)
+		return entity.Photo{}, fmt.Errorf("failed to write file: %w", err)
 	}
 
 	// Для базы данных сохраняем относительный путь
@@ -410,12 +414,8 @@ func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipa
 }
 
 func (s *artService) AddPhotosToArt(id uint, photos []*multipart.FileHeader) (entity.Art, error) {
-	current_count_of_photos, err := s.photoRepository.GetCountOfPhotos(id, "arts")
-	if err != nil {
-		return entity.Art{}, err
-	}
-	for i, photo := range photos {
-		photo, err := create_photo_from_http_photo(id, "arts", photo, false, false, i+current_count_of_photos)
+	for _, photo := range photos {
+		photo, err := create_photo_from_http_photo(id, "arts", photo, false, false)
 		if err != nil {
 			return entity.Art{}, err
 		}
@@ -427,12 +427,8 @@ func (s *artService) AddPhotosToArt(id uint, photos []*multipart.FileHeader) (en
 func (s *artService) PatchArtPhotos(id uint, photos []*multipart.FileHeader) (entity.Art, error) {
 
 	s.DeleteAllNoSpecialPhotos(id)
-	current_count_of_photos, err := s.photoRepository.GetCountOfPhotos(id, "arts")
-	if err != nil {
-		return entity.Art{}, err
-	}
-	for i, photo := range photos {
-		photo, err := create_photo_from_http_photo(id, "arts", photo, false, false, i+current_count_of_photos+1)
+	for _, photo := range photos {
+		photo, err := create_photo_from_http_photo(id, "arts", photo, false, false)
 		if err != nil {
 			return entity.Art{}, err
 		}

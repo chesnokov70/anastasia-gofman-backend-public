@@ -55,8 +55,7 @@ func (s *eventService) CreateEvent(event entity.Event) (entity.Event, error) {
 
 func (s *eventService) PartialUpdateEvent(id uint, kwargs map[string]interface{}) (entity.Event, error) {
 	if kwargs["main_photo"] != nil {
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, "event")
-		main_photo, err := create_photo_from_http_photo(id, "event", kwargs["main_photo"].(*multipart.FileHeader), true, false, pos)
+		main_photo, err := create_photo_from_http_photo(id, "event", kwargs["main_photo"].(*multipart.FileHeader), true, false)
 		if err != nil {
 			return entity.Event{}, err
 		}
@@ -66,8 +65,7 @@ func (s *eventService) PartialUpdateEvent(id uint, kwargs map[string]interface{}
 		delete(kwargs, "main_photo")
 	}
 	if kwargs["preview_photo"] != nil {
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, "event")
-		preview_photo, err := create_photo_from_http_photo(id, "event", kwargs["preview_photo"].(*multipart.FileHeader), false, true, pos)
+		preview_photo, err := create_photo_from_http_photo(id, "event", kwargs["preview_photo"].(*multipart.FileHeader), false, true)
 		if err != nil {
 			return entity.Event{}, err
 		}
@@ -79,9 +77,8 @@ func (s *eventService) PartialUpdateEvent(id uint, kwargs map[string]interface{}
 	if kwargs["photos"] != nil {
 		photos := kwargs["photos"].([]*multipart.FileHeader)
 		s.photoRepository.DeleteAllNoSpecialPhotos(id, "event")
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, "event")
-		for i, photo := range photos {
-			photo, err := create_photo_from_http_photo(id, "event", photo, false, false, pos+1+i)
+		for _, photo := range photos {
+			photo, err := create_photo_from_http_photo(id, "event", photo, false, false)
 			if err != nil {
 				return entity.Event{}, err
 			}
@@ -112,8 +109,7 @@ func (s *eventService) AddMainOrPreviewPhotoToEvent(eventID uint, fileHeader *mu
 		}
 	}
 
-	pos, _ := s.photoRepository.GetCountOfPhotos(eventID, "event")
-	photo, err := create_photo_from_http_photo(eventID, "event", fileHeader, is_main, is_preview, pos)
+	photo, err := create_photo_from_http_photo(eventID, "event", fileHeader, is_main, is_preview)
 	if err != nil {
 		return entity.Event{}, err
 	}
@@ -146,12 +142,8 @@ func (s *eventService) AddMainOrPreviewPhotoToEvent(eventID uint, fileHeader *mu
 }
 
 func (s *eventService) AddPhotosToEvent(id uint, photos []*multipart.FileHeader) (entity.Event, error) {
-	current_count_of_photos, err := s.photoRepository.GetCountOfPhotos(id, "event")
-	if err != nil {
-		return entity.Event{}, err
-	}
-	for i, photo := range photos {
-		photo, err := create_photo_from_http_photo(id, "event", photo, false, false, i+current_count_of_photos)
+	for _, photo := range photos {
+		photo, err := create_photo_from_http_photo(id, "event", photo, false, false)
 		if err != nil {
 			return entity.Event{}, err
 		}
@@ -163,9 +155,8 @@ func (s *eventService) AddPhotosToEvent(id uint, photos []*multipart.FileHeader)
 func (s *eventService) AddPhotosToEventReplaceOld(id uint, photos []*multipart.FileHeader) (entity.Event, error) {
 
 	s.DeleteAllNoSpecialPhotos(id)
-	pos, _ := s.photoRepository.GetCountOfPhotos(id, "event")
-	for i, photo := range photos {
-		photo, err := create_photo_from_http_photo(id, "event", photo, false, false, pos+1+i)
+	for _, photo := range photos {
+		photo, err := create_photo_from_http_photo(id, "event", photo, false, false)
 		if err != nil {
 			return entity.Event{}, err
 		}
@@ -184,8 +175,7 @@ func (s *eventService) UpdateMainPhotoToEvent(id uint, fileHeader *multipart.Fil
 		oldPhoto = &photo
 	}
 
-	pos, _ := s.photoRepository.GetCountOfPhotos(id, "event")
-	photo, err := create_photo_from_http_photo(id, "event", fileHeader, true, false, pos+1)
+	photo, err := create_photo_from_http_photo(id, "event", fileHeader, true, false)
 	if err != nil {
 		return entity.Event{}, err
 	}

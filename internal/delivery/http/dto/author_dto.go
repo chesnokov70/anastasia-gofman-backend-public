@@ -25,7 +25,7 @@ type CreateAuthorDTO struct {
 	Specialization        string            `json:"specialization" example:"sculptor, painter"`
 	AdditionalInfo        json.RawMessage   `json:"additional_info" swaggertype:"object" example:"{\"key\": \"value\"}"`
 	Contact               struct {
-		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
+		Email string `json:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
 		Links struct {
 			Instagram string `json:"instagram" example:"vovka_insta"`
@@ -55,7 +55,7 @@ type UpdateAuthorDTO struct {
 	Specialization        string            `json:"specialization" example:"sculptor, painter"`
 	AdditionalInfo        json.RawMessage   `json:"additional_info" swaggertype:"object" example:"{\"key\": \"value\"}"`
 	Contact               struct {
-		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
+		Email string `json:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
 		Links struct {
 			Instagram string `json:"instagram" example:"vovka_insta"`
@@ -85,7 +85,7 @@ type CreateAuthorWithPhotosDTO struct {
 	Specialization        string            `json:"specialization" example:"sculptor, painter"`
 	AdditionalInfo        json.RawMessage   `json:"additional_info" swaggertype:"object" example:"{\"key\": \"value\"}"`
 	Contact               struct {
-		Email string `json:"email" binding:"email" example:"vovka@sosijopa.com"`
+		Email string `json:"email" example:"vovka@sosijopa.com"`
 		Phone string `json:"phone" example:"+5553535"`
 		Links struct {
 			Instagram string `json:"instagram" example:"vovka_insta"`

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"anastasia_gofman_backend/internal/entity"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -43,10 +44,135 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 					"%"+*filtering.Author+"%", "%"+*filtering.Author+"%", "%"+*filtering.Author+"%")
 		}
 		if filtering.Type != nil {
-			query = query.Where("type = ?", *filtering.Type)
+			if *filtering.Type == "" {
+				query = query.Where("type IS NULL OR type = ''")
+			} else {
+				query = query.Where("type = ?", *filtering.Type)
+			}
 		}
 		if filtering.ArchiveType != nil {
 			query = query.Where("archive_type = ?", *filtering.ArchiveType)
+		}
+
+		if filtering.Search != nil {
+			searchConditions := []string{}
+			searchArgs := []interface{}{}
+
+			if filtering.Search.Name != nil {
+				if filtering.Search.Name.EN != "" {
+					searchConditions = append(searchConditions, "name->>'en' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Name.EN+"%")
+				}
+				if filtering.Search.Name.RU != "" {
+					searchConditions = append(searchConditions, "name->>'ru' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Name.RU+"%")
+				}
+				if filtering.Search.Name.ES != "" {
+					searchConditions = append(searchConditions, "name->>'es' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Name.ES+"%")
+				}
+			}
+
+			if filtering.Search.Title != nil {
+				if filtering.Search.Title.EN != "" {
+					searchConditions = append(searchConditions, "title->>'en' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Title.EN+"%")
+				}
+				if filtering.Search.Title.RU != "" {
+					searchConditions = append(searchConditions, "title->>'ru' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Title.RU+"%")
+				}
+				if filtering.Search.Title.ES != "" {
+					searchConditions = append(searchConditions, "title->>'es' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Title.ES+"%")
+				}
+			}
+
+			if filtering.Search.Description != nil {
+				if filtering.Search.Description.EN != "" {
+					searchConditions = append(searchConditions, "description->>'en' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Description.EN+"%")
+				}
+				if filtering.Search.Description.RU != "" {
+					searchConditions = append(searchConditions, "description->>'ru' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Description.RU+"%")
+				}
+				if filtering.Search.Description.ES != "" {
+					searchConditions = append(searchConditions, "description->>'es' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Description.ES+"%")
+				}
+			}
+
+			if filtering.Search.Medium != nil {
+				if filtering.Search.Medium.EN != "" {
+					searchConditions = append(searchConditions, "medium->>'en' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Medium.EN+"%")
+				}
+				if filtering.Search.Medium.RU != "" {
+					searchConditions = append(searchConditions, "medium->>'ru' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Medium.RU+"%")
+				}
+				if filtering.Search.Medium.ES != "" {
+					searchConditions = append(searchConditions, "medium->>'es' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Medium.ES+"%")
+				}
+			}
+
+			if filtering.Search.Technique != nil {
+				if filtering.Search.Technique.EN != "" {
+					searchConditions = append(searchConditions, "technique->>'en' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Technique.EN+"%")
+				}
+				if filtering.Search.Technique.RU != "" {
+					searchConditions = append(searchConditions, "technique->>'ru' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Technique.RU+"%")
+				}
+				if filtering.Search.Technique.ES != "" {
+					searchConditions = append(searchConditions, "technique->>'es' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Technique.ES+"%")
+				}
+			}
+
+			if filtering.Search.Frame != nil {
+				if filtering.Search.Frame.EN != "" {
+					searchConditions = append(searchConditions, "frame->>'en' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Frame.EN+"%")
+				}
+				if filtering.Search.Frame.RU != "" {
+					searchConditions = append(searchConditions, "frame->>'ru' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Frame.RU+"%")
+				}
+				if filtering.Search.Frame.ES != "" {
+					searchConditions = append(searchConditions, "frame->>'es' ILIKE ?")
+					searchArgs = append(searchArgs, "%"+filtering.Search.Frame.ES+"%")
+				}
+			}
+
+			// Поиск по обычным полям
+			if filtering.Search.Year != nil && *filtering.Search.Year != "" {
+				searchConditions = append(searchConditions, "CAST(year AS TEXT) ILIKE ?")
+				searchArgs = append(searchArgs, "%"+*filtering.Search.Year+"%")
+			}
+
+			if filtering.Search.Style != nil && *filtering.Search.Style != "" {
+				searchConditions = append(searchConditions, "style ILIKE ?")
+				searchArgs = append(searchArgs, "%"+*filtering.Search.Style+"%")
+			}
+
+			if filtering.Search.Direction != nil && *filtering.Search.Direction != "" {
+				searchConditions = append(searchConditions, "direction ILIKE ?")
+				searchArgs = append(searchArgs, "%"+*filtering.Search.Direction+"%")
+			}
+
+			if filtering.Search.DimensionStr != nil && *filtering.Search.DimensionStr != "" {
+				searchConditions = append(searchConditions, "dimension_str ILIKE ?")
+				searchArgs = append(searchArgs, "%"+*filtering.Search.DimensionStr+"%")
+			}
+
+			if len(searchConditions) > 0 {
+				searchQuery := "(" + strings.Join(searchConditions, " OR ") + ")"
+				query = query.Where(searchQuery, searchArgs...)
+			}
 		}
 	}
 	if without_collection {

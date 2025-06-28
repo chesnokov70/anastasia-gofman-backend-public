@@ -4,6 +4,7 @@ import (
 	"anastasia_gofman_backend/internal/entity"
 	"anastasia_gofman_backend/internal/repository"
 	"anastasia_gofman_backend/pkg/config"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -137,8 +138,7 @@ func (s *authorService) DeleteAuthor(id uint) error {
 
 func (s *authorService) PartialUpdateAuthor(id uint, kwargs map[string]interface{}) (entity.Author, error) {
 	if kwargs["main_photo"] != nil {
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, "authors")
-		main_photo, err := create_photo_from_http_photo_author(id, "authors", kwargs["main_photo"].(*multipart.FileHeader), true, false, pos)
+		main_photo, err := create_photo_from_http_photo_author(id, "authors", kwargs["main_photo"].(*multipart.FileHeader), true, false)
 		if err != nil {
 			return entity.Author{}, err
 		}
@@ -147,8 +147,7 @@ func (s *authorService) PartialUpdateAuthor(id uint, kwargs map[string]interface
 		delete(kwargs, "main_photo")
 	}
 	if kwargs["preview_photo"] != nil {
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, "authors")
-		preview_photo, err := create_photo_from_http_photo_author(id, "authors", kwargs["preview_photo"].(*multipart.FileHeader), false, true, pos)
+		preview_photo, err := create_photo_from_http_photo_author(id, "authors", kwargs["preview_photo"].(*multipart.FileHeader), false, true)
 		if err != nil {
 			return entity.Author{}, err
 		}
@@ -159,9 +158,8 @@ func (s *authorService) PartialUpdateAuthor(id uint, kwargs map[string]interface
 	if kwargs["photos"] != nil {
 		photos := kwargs["photos"].([]*multipart.FileHeader)
 		s.photoRepository.DeleteAllNoSpecialPhotos(id, "authors")
-		pos, _ := s.photoRepository.GetCountOfPhotos(id, "authors")
-		for i, photo := range photos {
-			photo, err := create_photo_from_http_photo_author(id, "authors", photo, false, false, pos+1+i)
+		for _, photo := range photos {
+			photo, err := create_photo_from_http_photo_author(id, "authors", photo, false, false)
 			if err != nil {
 				return entity.Author{}, err
 			}
@@ -186,8 +184,7 @@ func (s *authorService) AddMainOrPreviewPhotoToAuthor(authorID uint, fileHeader 
 		oldPhoto, _ = s.photoRepository.GetMainOrPreviewPhotoByOwnerID(authorID, "authors", false)
 	}
 
-	pos, _ := s.photoRepository.GetCountOfPhotos(authorID, "authors")
-	newPhoto, err := create_photo_from_http_photo_author(authorID, "authors", fileHeader, is_main, is_preview, pos)
+	newPhoto, err := create_photo_from_http_photo_author(authorID, "authors", fileHeader, is_main, is_preview)
 	if err != nil {
 		return entity.Author{}, err
 	}
@@ -219,18 +216,26 @@ func (s *authorService) AddMainOrPreviewPhotoToAuthor(authorID uint, fileHeader 
 	return author, nil
 }
 
-func create_photo_from_http_photo_author(OwnerID uint, OwnerType string, photo *multipart.FileHeader, is_main bool, is_preview bool, position_of_photo int) (entity.Photo, error) {
+func create_photo_from_http_photo_author(OwnerID uint, OwnerType string, photo *multipart.FileHeader, is_main bool, is_preview bool) (entity.Photo, error) {
 	file, err := photo.Open()
 	if err != nil {
 		return entity.Photo{}, err
 	}
 	defer file.Close()
 
+	fileContent, err := io.ReadAll(file)
+	if err != nil {
+		return entity.Photo{}, fmt.Errorf("failed to read file content: %w", err)
+	}
+
+	hash := sha256.Sum256(fileContent)
+	hashStr := fmt.Sprintf("%x", hash[:8])
+
 	var subdir string
 	var filename string
 	if OwnerType == "authors" {
 		subdir = "authors_photos"
-		filename = fmt.Sprintf("author_%d_photo_%d%s", OwnerID, position_of_photo, filepath.Ext(photo.Filename))
+		filename = fmt.Sprintf("author_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
 	} else {
 		return entity.Photo{}, errors.New("invalid type of photo")
 	}
@@ -247,9 +252,9 @@ func create_photo_from_http_photo_author(OwnerID uint, OwnerType string, photo *
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, file)
+	_, err = out.Write(fileContent)
 	if err != nil {
-		return entity.Photo{}, fmt.Errorf("failed to copy file: %w", err)
+		return entity.Photo{}, fmt.Errorf("failed to write file: %w", err)
 	}
 
 	relativePath := fmt.Sprintf("/uploads/%s/%s", subdir, filename)
@@ -289,12 +294,8 @@ func deletePhotoFile(path string) error {
 }
 
 func (s *authorService) AddPhotosToAuthor(id uint, photos []*multipart.FileHeader) (entity.Author, error) {
-	current_count_of_photos, err := s.photoRepository.GetCountOfPhotos(id, "authors")
-	if err != nil {
-		return entity.Author{}, err
-	}
-	for i, photo := range photos {
-		photo, err := create_photo_from_http_photo_author(id, "authors", photo, false, false, i+current_count_of_photos)
+	for _, photo := range photos {
+		photo, err := create_photo_from_http_photo_author(id, "authors", photo, false, false)
 		if err != nil {
 			return entity.Author{}, err
 		}
@@ -305,12 +306,8 @@ func (s *authorService) AddPhotosToAuthor(id uint, photos []*multipart.FileHeade
 
 func (s *authorService) PatchAuthorPhotos(id uint, photos []*multipart.FileHeader) (entity.Author, error) {
 	s.DeleteAllNoSpecialPhotos(id)
-	current_count_of_photos, err := s.photoRepository.GetCountOfPhotos(id, "authors")
-	if err != nil {
-		return entity.Author{}, err
-	}
-	for i, photo := range photos {
-		photo, err := create_photo_from_http_photo_author(id, "authors", photo, false, false, i+current_count_of_photos+1)
+	for _, photo := range photos {
+		photo, err := create_photo_from_http_photo_author(id, "authors", photo, false, false)
 		if err != nil {
 			return entity.Author{}, err
 		}

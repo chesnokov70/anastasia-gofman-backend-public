@@ -99,6 +99,20 @@ type ArtFilter struct {
 	Author      *string
 	Type        *string
 	ArchiveType *string
+	Search      *ArtSearch
+}
+
+type ArtSearch struct {
+	Name         *TranslatedText
+	Title        *TranslatedText
+	Description  *TranslatedText
+	Medium       *TranslatedText
+	Technique    *TranslatedText
+	Year         *string
+	Frame        *TranslatedText
+	Style        *string
+	Direction    *string
+	DimensionStr *string
 }
 
 type ArtCollection struct {
