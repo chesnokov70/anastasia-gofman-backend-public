@@ -44,7 +44,7 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 					"%"+*filtering.Author+"%", "%"+*filtering.Author+"%", "%"+*filtering.Author+"%")
 		}
 		if filtering.Type != nil {
-			if *filtering.Type == "" {
+			if *filtering.Type == "" || *filtering.Type == "_common" {
 				query = query.Where("type IS NULL OR type = ''")
 			} else {
 				query = query.Where("type = ?", *filtering.Type)

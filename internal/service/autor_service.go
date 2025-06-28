@@ -4,7 +4,6 @@ import (
 	"anastasia_gofman_backend/internal/entity"
 	"anastasia_gofman_backend/internal/repository"
 	"anastasia_gofman_backend/pkg/config"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -216,6 +216,11 @@ func (s *authorService) AddMainOrPreviewPhotoToAuthor(authorID uint, fileHeader 
 	return author, nil
 }
 
+func generateFilenameWithUUIDForAuthor(ownerID uint, originalName string) string {
+	uuidStr := uuid.New().String()[:8]
+	return fmt.Sprintf("author_%d_%s%s", ownerID, uuidStr, filepath.Ext(originalName))
+}
+
 func create_photo_from_http_photo_author(OwnerID uint, OwnerType string, photo *multipart.FileHeader, is_main bool, is_preview bool) (entity.Photo, error) {
 	file, err := photo.Open()
 	if err != nil {
@@ -223,19 +228,11 @@ func create_photo_from_http_photo_author(OwnerID uint, OwnerType string, photo *
 	}
 	defer file.Close()
 
-	fileContent, err := io.ReadAll(file)
-	if err != nil {
-		return entity.Photo{}, fmt.Errorf("failed to read file content: %w", err)
-	}
-
-	hash := sha256.Sum256(fileContent)
-	hashStr := fmt.Sprintf("%x", hash[:8])
-
 	var subdir string
 	var filename string
 	if OwnerType == "authors" {
 		subdir = "authors_photos"
-		filename = fmt.Sprintf("author_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
+		filename = generateFilenameWithUUIDForAuthor(OwnerID, photo.Filename)
 	} else {
 		return entity.Photo{}, errors.New("invalid type of photo")
 	}
@@ -252,7 +249,7 @@ func create_photo_from_http_photo_author(OwnerID uint, OwnerType string, photo *
 	}
 	defer out.Close()
 
-	_, err = out.Write(fileContent)
+	_, err = io.Copy(out, file)
 	if err != nil {
 		return entity.Photo{}, fmt.Errorf("failed to write file: %w", err)
 	}

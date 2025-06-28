@@ -5,7 +5,6 @@ import (
 	"anastasia_gofman_backend/internal/repository"
 	"anastasia_gofman_backend/pkg/config"
 	"anastasia_gofman_backend/pkg/service"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"gorm.io/gorm"
 )
@@ -348,36 +349,38 @@ func (s *artService) AddMainOrPreviewPhotoToArt(artID uint, fileHeader *multipar
 	return art, nil
 }
 
-func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipart.FileHeader, is_main bool, is_preview bool) (entity.Photo, error) {
+func generateFilenameWithUUID(ownerID uint, ownerType string, originalName string) string {
+	uuidStr := uuid.New().String()[:8]
+	switch ownerType {
+	case "arts":
+		return fmt.Sprintf("art_%d_%s%s", ownerID, uuidStr, filepath.Ext(originalName))
 
+	default:
+		return fmt.Sprintf("%s_%d_%s%s", ownerType, ownerID, uuidStr, filepath.Ext(originalName))
+	}
+}
+
+func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipart.FileHeader, is_main bool, is_preview bool) (entity.Photo, error) {
 	file, err := photo.Open()
 	if err != nil {
 		return entity.Photo{}, err
 	}
 	defer file.Close()
 
-	fileContent, err := io.ReadAll(file)
-	if err != nil {
-		return entity.Photo{}, fmt.Errorf("failed to read file content: %w", err)
-	}
-
-	hash := sha256.Sum256(fileContent)
-	hashStr := fmt.Sprintf("%x", hash[:8])
-
 	var subdir string
 	var filename string
 	if OwnerType == "arts" {
 		subdir = "arts_photos"
-		filename = fmt.Sprintf("art_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
+		filename = generateFilenameWithUUID(OwnerID, "arts", photo.Filename)
 	} else if OwnerType == "event" {
 		subdir = "events_photos"
-		filename = fmt.Sprintf("event_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
+		filename = generateFilenameWithUUID(OwnerID, "event", photo.Filename)
 	} else if OwnerType == "press" {
 		subdir = "press_photos"
-		filename = fmt.Sprintf("press_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
+		filename = generateFilenameWithUUID(OwnerID, "press", photo.Filename)
 	} else if OwnerType == "article" {
 		subdir = "article_photos"
-		filename = fmt.Sprintf("article_%d_%s%s", OwnerID, hashStr, filepath.Ext(photo.Filename))
+		filename = generateFilenameWithUUID(OwnerID, "article", photo.Filename)
 	} else {
 		return entity.Photo{}, errors.New("invalid type of photo")
 	}
@@ -394,13 +397,11 @@ func create_photo_from_http_photo(OwnerID uint, OwnerType string, photo *multipa
 	}
 	defer out.Close()
 
-	_, err = out.Write(fileContent)
-	// _, err = io.Copy(out, file)
+	_, err = io.Copy(out, file)
 	if err != nil {
 		return entity.Photo{}, fmt.Errorf("failed to write file: %w", err)
 	}
 
-	// Для базы данных сохраняем относительный путь
 	relativePath := fmt.Sprintf("/uploads/%s/%s", subdir, filename)
 
 	res_photo := entity.Photo{
