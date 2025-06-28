@@ -22,7 +22,7 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 }
 
 // @Summary Get all arts
-// @Description Получает все картины. В Sorting можно передать NEW, RATED(ХЗ что это - использую position), PRICE_HIGH, PRICE_LOW, если не передать - будет сортировка по position
+// @Description Получает все картины. В Sorting можно передать NEW, RATED(ХЗ что это - использую position), PRICE_HIGH, PRICE_LOW, если не передать - будет сортировка по position. В Filtering можно передать search - поиск по названию, Name Title Description Medium Technique Year Frame Style Direction DimensionStr. type = _common - все картины без type или с type = ""
 // @Accept json
 // @Produce json
 // @Tags Arts
