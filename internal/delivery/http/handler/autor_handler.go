@@ -100,7 +100,10 @@ func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, response)
 	} else {
-		c.JSON(http.StatusOK, dto.ToAuthorResponseWithAllArtsDTOs(authors, arts, base_url))
+		response := gin.H{
+			"data": dto.ToAuthorResponseWithAllArtsDTOs(authors, arts, base_url),
+		}
+		c.JSON(http.StatusOK, response)
 	}
 }
 

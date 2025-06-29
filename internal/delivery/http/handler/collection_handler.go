@@ -44,7 +44,10 @@ func (h *CollectionHandler) GetAllCollections(c *gin.Context) {
 	}
 
 	base_url := config.GetBaseURL()
-	c.JSON(http.StatusOK, dto.ToCollectionResponseDTOs(collections, base_url))
+	response := gin.H{
+		"data": dto.ToCollectionResponseDTOs(collections, base_url),
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 // @Summary Get collection by ID
