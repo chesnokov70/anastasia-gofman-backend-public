@@ -35,6 +35,7 @@ type ArtService interface {
 	AddPhotosToArt(id uint, photos []*multipart.FileHeader) (entity.Art, error)
 	PatchArtPhotos(id uint, photos []*multipart.FileHeader) (entity.Art, error)
 	AddAuthorToArt(id uint, author_id uint) (entity.Art, error)
+	DeleteMainOrPreviewPhoto(id uint, is_preview bool) error
 	GetMainPhoto(id uint) (entity.Photo, error)
 	UpdateArtsPosition(positions []int) error
 	UpdatePhotosInStripe(id uint) error
@@ -60,6 +61,8 @@ type EventService interface {
 	AddPhotosToEvent(id uint, photos []*multipart.FileHeader) (entity.Event, error)
 	AddPhotosToEventReplaceOld(id uint, photos []*multipart.FileHeader) (entity.Event, error)
 
+	DeleteMainOrPreviewPhoto(id uint, is_preview bool) error
+
 	DeleteEvent(id uint) error
 }
 
@@ -83,7 +86,7 @@ type PressAndArticleService interface {
 	PartialUpdatePressOrArticle(press_or_article string, id uint, kwargs map[string]interface{}) (*entity.Press, *entity.Article, error)
 	FullUpdatePressOrArticle(press_or_article string, press entity.Press, article entity.Article) (*entity.Press, *entity.Article, error)
 
-	DeleteMainOrPreviewPhoto(id uint, press_or_article string, type_of_photo string) error
+	DeleteMainOrPreviewPhoto(id uint, press_or_article string, is_preview bool) error
 	AddMainOrPreviewPhotoToPressOrArticle(press_or_article string, id uint, fileHeader *multipart.FileHeader, is_main bool, is_preview bool) (*entity.Press, *entity.Article, error)
 	AddPhotosToPressOrArticle(id uint, press_or_article string, photos []*multipart.FileHeader) (*entity.Press, *entity.Article, error)
 	PatchPressOrArticlePhotos(id uint, press_or_article string, photos []*multipart.FileHeader) (*entity.Press, *entity.Article, error)

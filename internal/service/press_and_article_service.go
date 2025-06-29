@@ -300,18 +300,19 @@ func (s *pressAndArticleService) DeleteAllNoSpecialPhotos(id uint, press_or_arti
 	return nil
 }
 
-func (s *pressAndArticleService) DeleteMainOrPreviewPhoto(id uint, press_or_article string, type_of_photo string) error {
-	var is_main bool = true
-	if type_of_photo == "preview" {
-		is_main = false
-	}
-	photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(id, press_or_article, is_main)
+func (s *pressAndArticleService) DeleteMainOrPreviewPhoto(id uint, press_or_article string, is_preview bool) error {
+
+	photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(id, press_or_article, !is_preview)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
 		fmt.Println("ERROR DELETING PHOTO", err)
 		return err
+	}
+
+	if err := s.pressAndArticleRepository.RemoveSpecificPhotoFromPressOrArticle(press_or_article, id, !is_preview); err != nil {
+		return fmt.Errorf("failed to remove photo reference: %w", err)
 	}
 
 	filePath := photo.Path

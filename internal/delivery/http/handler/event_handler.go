@@ -431,3 +431,33 @@ func (h *EventHandler) AddMainPhotoToEvent(c *gin.Context) {
 	baseUrl := config.GetBaseURL()
 	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent, baseUrl))
 }
+
+// @Summary Delete main photo from event
+// @Description Удаляет главную/preview фотографию к событию
+// @Accept json
+// @Produce json
+// @Tags Events
+// @Param id path int true "Event ID"
+// @Param is_preview query bool false "Is preview" default(false)
+// @Success 200 {object} map[string]string
+// @Router /api/events/{id}/main_photo [delete]
+func (h *EventHandler) DeleteMainPhotoFromEvent(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+		return
+	}
+	is_preview_str := c.DefaultQuery("is_preview", "false")
+	is_preview, err := strconv.ParseBool(is_preview_str)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+		return
+	}
+	err = h.eventService.DeleteMainOrPreviewPhoto(uint(id), is_preview)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Main photo deleted successfully"})
+}

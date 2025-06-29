@@ -63,6 +63,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 
 			arts.GET("/:id/main_photo", artHandler.GetMainPhoto)
 			arts.POST("/:id/main_photo", artHandler.AddMainPhotoToArt)
+			arts.DELETE("/:id/main_photo", artHandler.DeleteMainPhotoFromArt)
 
 			arts.POST("/:id/photos", artHandler.AddPhotosToArt)
 			arts.PATCH("/:id/photos", artHandler.PatchArtPhotos)
@@ -82,27 +83,23 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 
 			events.GET("/:id/main_photo", eventHandler.GetMainPhoto)
 			events.POST("/:id/main_photo", eventHandler.AddMainPhotoToEvent)
-
+			events.DELETE("/:id/main_photo", eventHandler.DeleteMainPhotoFromEvent)
 			events.POST("/:id/photos", eventHandler.AddPhotosToEvent)
 			events.PATCH("/:id/photos", eventHandler.PatchEventPhotos)
 		}
 		payments := api.Group("/payments")
 		{
-			// Эндпоинты для управления продуктами
 			payments.POST("/products", paymentHandler.CreateProduct)
 			payments.GET("/products/:id", paymentHandler.GetProduct)
 			payments.PUT("/products/:id", paymentHandler.UpdateProduct)
 			payments.DELETE("/products/:id", paymentHandler.DeleteProduct)
 
-			// Эндпоинты для управления клиентами
 			payments.GET("/customers", paymentHandler.GetCustomers)
 
-			// Эндпоинты для платежей и возвратов
 			payments.GET("/payment-intents", paymentHandler.GetPayments)
 			payments.POST("/payment-links", paymentHandler.CreatePaymentLink)
 			payments.POST("/refunds", paymentHandler.CreateRefund)
 
-			// Эндпоинты для информации об аккаунте
 			payments.GET("/balance", paymentHandler.GetBalance)
 		}
 		collections := api.Group("/collections")
@@ -124,6 +121,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			press.PUT("/:id", pressHandler.FullUpdatePress)
 			press.PATCH("/:id", pressHandler.PartialUpdatePress)
 			press.POST("/:id/main_photo", pressHandler.AddMainPhotoToPress)
+			press.DELETE("/:id/main_photo", pressHandler.DeleteMainPhotoFromPress)
 			press.POST("/:id/photos", pressHandler.AddPhotosToPress)
 			press.PATCH("/:id/photos", pressHandler.PatchPressPhotos)
 			press.GET("/:id/main_photo", pressHandler.GetMainPhoto)
@@ -138,9 +136,11 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			articles.PUT("/:id", articleHandler.FullUpdateArticle)
 			articles.PATCH("/:id", articleHandler.PartialUpdateArticle)
 			articles.POST("/:id/main_photo", articleHandler.AddMainPhotoToArticle)
+			articles.DELETE("/:id/main_photo", articleHandler.DeleteMainPhotoFromArticle)
 			articles.POST("/:id/photos", articleHandler.AddPhotosToArticle)
 			articles.PATCH("/:id/photos", articleHandler.PatchArticlePhotos)
 			articles.GET("/:id/main_photo", articleHandler.GetMainPhoto)
+
 		}
 	}
 

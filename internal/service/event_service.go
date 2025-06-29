@@ -59,7 +59,7 @@ func (s *eventService) PartialUpdateEvent(id uint, kwargs map[string]interface{}
 		if err != nil {
 			return entity.Event{}, err
 		}
-		s.eventRepository.DeleteMainOrPreviewPhotoFromEvent(id, "main")
+		s.eventRepository.RemoveSpecificPhotoFromEvent(id, true)
 		s.photoRepository.CreatePhoto(main_photo)
 		s.eventRepository.AddMainOrPreviewPhotoToEvent(id, main_photo)
 		delete(kwargs, "main_photo")
@@ -69,7 +69,7 @@ func (s *eventService) PartialUpdateEvent(id uint, kwargs map[string]interface{}
 		if err != nil {
 			return entity.Event{}, err
 		}
-		s.eventRepository.DeleteMainOrPreviewPhotoFromEvent(id, "preview")
+		s.eventRepository.RemoveSpecificPhotoFromEvent(id, false)
 		s.photoRepository.CreatePhoto(preview_photo)
 		s.eventRepository.AddMainOrPreviewPhotoToEvent(id, preview_photo)
 		delete(kwargs, "preview_photo")
@@ -256,18 +256,18 @@ func (s *eventService) DeleteAllNoSpecialPhotos(id uint) error {
 	return nil
 }
 
-func (s *eventService) DeleteMainOrPreviewPhoto(id uint, type_of_photo string) error {
-	var is_main bool = true
-	if type_of_photo == "preview" {
-		is_main = false
-	}
-	photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(id, "event", is_main)
+func (s *eventService) DeleteMainOrPreviewPhoto(id uint, is_preview bool) error {
+	photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(id, "event", !is_preview)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
 		fmt.Printf("ERROR DELETING PHOTO %v\n", err)
 		return err
+	}
+
+	if err := s.eventRepository.RemoveSpecificPhotoFromEvent(id, !is_preview); err != nil {
+		return fmt.Errorf("failed to remove photo reference from event: %w", err)
 	}
 
 	filePath := photo.Path

@@ -110,17 +110,19 @@ func (r *EventRepository) AddMainOrPreviewPhotoToEvent(eventID uint, photo entit
 	return event, nil
 }
 
-func (r *EventRepository) DeleteMainOrPreviewPhotoFromEvent(eventID uint, main_or_preview string) error {
+func (r *EventRepository) RemoveSpecificPhotoFromEvent(eventID uint, is_main bool) error {
 	var event entity.Event
 	err := r.db.First(&event, eventID).Error
 	if err != nil {
 		return err
 	}
-	which_photo_id := "main_photo_id"
-	if main_or_preview == "preview" {
-		which_photo_id = "preview_photo_id"
+	var update_data = make(map[string]interface{})
+	if is_main {
+		update_data["main_photo_id"] = nil
+	} else {
+		update_data["preview_photo_id"] = nil
 	}
-	err = r.db.Model(&event).Update(which_photo_id, nil).Error
+	err = r.db.Model(&event).Updates(update_data).Error
 	if err != nil {
 		return err
 	}

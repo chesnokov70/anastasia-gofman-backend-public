@@ -34,6 +34,7 @@ type ArtRepository interface {
 	AddAuthorToArt(id uint, author_id uint) (entity.Art, error)
 	UpdateArtsPosition(positions []int) error
 	RemoveMainAndPreviewPhotoFromArt(artID uint) error
+	RemoveSpecificPhotoFromArt(artID uint, is_main bool) error
 	GetArtsByAuthorID(authorID uint) ([]entity.Art, error)
 	SplitArtsByAuthors(authors []entity.Author) (map[uint][]entity.Art, error)
 	GetMinAndMaxPrice() (int, int, error)
@@ -60,7 +61,7 @@ type EventRepository interface {
 	AddMainOrPreviewPhotoToEvent(eventID uint, photo entity.Photo) (entity.Event, error)
 
 	DeleteEvent(id uint) error
-	DeleteMainOrPreviewPhotoFromEvent(eventID uint, main_or_preview string) error
+	RemoveSpecificPhotoFromEvent(eventID uint, is_main bool) error
 
 	FullUpdateEvent(event entity.Event) (entity.Event, error)
 	UpdateEvent(event entity.Event) (entity.Event, error)
@@ -121,4 +122,6 @@ type PressAndArticleRepository interface {
 	PartialUpdatePressOrArticle(press_or_article string, id uint, kwargs map[string]interface{}) (*entity.Press, *entity.Article, error)
 	FullUpdatePressOrArticle(press_or_article string, press *entity.Press, article *entity.Article) (*entity.Press, *entity.Article, error)
 	AddMainOrPreviewPhotoToPressOrArticle(photo entity.Photo, press_or_article string) (*entity.Press, *entity.Article, error)
+	RemoveMainAndPreviewPhotoFromPressOrArticle(press_or_article string, id uint) error
+	RemoveSpecificPhotoFromPressOrArticle(press_or_article string, id uint, is_main bool) error
 }

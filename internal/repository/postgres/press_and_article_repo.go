@@ -241,3 +241,21 @@ func (r *PressAndArticleRepository) RemoveMainAndPreviewPhotoFromPressOrArticle(
 		return errors.New("invalid article_or_press")
 	}
 }
+
+func (r *PressAndArticleRepository) RemoveSpecificPhotoFromPressOrArticle(press_or_article string, id uint, is_main bool) error {
+	var update_data = make(map[string]interface{})
+	if is_main {
+		update_data["main_photo_id"] = nil
+	} else {
+		update_data["preview_photo_id"] = nil
+	}
+
+	switch press_or_article {
+	case "press":
+		return r.db.Model(&entity.Press{}).Where("id = ?", id).Updates(update_data).Error
+	case "article":
+		return r.db.Model(&entity.Article{}).Where("id = ?", id).Updates(update_data).Error
+	default:
+		return errors.New("invalid press_or_article")
+	}
+}

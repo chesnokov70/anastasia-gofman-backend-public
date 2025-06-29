@@ -321,6 +321,16 @@ func (r *ArtRepository) RemoveMainAndPreviewPhotoFromArt(artID uint) error {
 	return r.db.Model(&entity.Art{}).Where("id = ?", artID).Updates(map[string]interface{}{"main_photo_id": nil, "preview_photo_id": nil}).Error
 }
 
+func (r *ArtRepository) RemoveSpecificPhotoFromArt(artID uint, is_main bool) error {
+	var update_data = make(map[string]interface{})
+	if is_main {
+		update_data["main_photo_id"] = nil
+	} else {
+		update_data["preview_photo_id"] = nil
+	}
+	return r.db.Model(&entity.Art{}).Where("id = ?", artID).Updates(update_data).Error
+}
+
 func (r *ArtRepository) GetArtsByAuthorID(authorID uint) ([]entity.Art, error) {
 	var arts []entity.Art
 	err := r.db.Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {

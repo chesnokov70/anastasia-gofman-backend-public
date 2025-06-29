@@ -511,18 +511,18 @@ func (s *artService) DeleteAllNoSpecialPhotos(id uint) error {
 	return nil
 }
 
-func (s *artService) DeleteMainOrPreviewPhoto(id uint, type_of_photo string) error {
-	var is_main bool = true
-	if type_of_photo == "preview" {
-		is_main = false
-	}
-	photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(id, "arts", is_main)
+func (s *artService) DeleteMainOrPreviewPhoto(id uint, is_preview bool) error {
+	photo, err := s.photoRepository.GetMainOrPreviewPhotoByOwnerID(id, "arts", !is_preview)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
 		fmt.Println("ERROR DELETING PHOTO", err)
 		return err
+	}
+
+	if err := s.artRepository.RemoveSpecificPhotoFromArt(id, !is_preview); err != nil {
+		return fmt.Errorf("failed to remove photo reference from art: %w", err)
 	}
 
 	filePath := photo.Path

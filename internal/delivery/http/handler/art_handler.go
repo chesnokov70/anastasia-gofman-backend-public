@@ -457,6 +457,44 @@ func (h *ArtHandler) AddMainPhotoToArt(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art, base_url))
 }
 
+// @Summary Delete main photo from art
+// @Description Удаляет главную/preview фотографию к картине
+// @Accept json
+// @Produce json
+// @Tags Arts
+// @Param id path int true "Art ID"
+// @Param is_preview query bool false "Is preview" default(false)
+// @Success 200 {object} map[string]string
+// @Router /api/arts/{id}/main_photo [delete]
+func (h *ArtHandler) DeleteMainPhotoFromArt(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	is_preview_str := c.DefaultQuery("is_preview", "false")
+	is_preview, err := strconv.ParseBool(is_preview_str)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+		return
+	}
+	err = h.artService.DeleteMainOrPreviewPhoto(uint(id), is_preview)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	art, err := h.artService.GetArtByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// h.artService.UpdatePhotosInStripe(uint(id))
+	// фон
+	go func(artID uint) {
+		if err := h.artService.UpdatePhotosInStripe(artID); err != nil {
+			log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
+		}
+	}(uint(id))
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art, base_url))
+}
+
 // @Summary Add photos to art
 // @Description Добавляет фотографии к картине(имеющиеся не трогаются) - передается []base64 в формате multipart/form-data в поле photos
 // @Accept multipart/form-data

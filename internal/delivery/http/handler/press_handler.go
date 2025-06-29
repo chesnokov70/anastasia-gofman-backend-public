@@ -26,45 +26,57 @@ func NewPressHandler(pressService service.PressAndArticleService) *PressHandler 
 // @Accept json
 // @Produce json
 // @Tags Press
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Page size"
+// @Param page query int false "Page number" default(1)
+// @Param size query int false "Page size" default(10)
 // @Param sorting query string false "Sorting type" Enums(NEW, CLOSEST, FARTHEST) default(NEW)
-// @Param with_pagination query bool false "With pagination"
+// @Param with_pagination query bool false "With pagination" default(true)
 // @Router /api/press [get]
 func (h *PressHandler) GetAllPress(c *gin.Context) {
-	page, err := strconv.Atoi(c.Query("page"))
-	if err != nil {
-		page = 1
-	}
-	pageSize, err := strconv.Atoi(c.Query("pageSize"))
-	if err != nil {
-		pageSize = 10
-	}
-	withPagination, err := strconv.ParseBool(c.Query("with_pagination"))
-	if err != nil {
-		withPagination = false
-	}
+	page := c.DefaultQuery("page", "1")
+	size := c.DefaultQuery("size", "10")
 	sorting := c.Query("sorting")
 	if sorting == "" {
 		sorting = "NEW"
 	}
 
-	press, _, pages, total, err := h.pressService.GetAllPressAndArticles(page, pageSize, withPagination, "press", sorting)
+	page_int, err := strconv.Atoi(page)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page format"})
+		return
+	}
+	size_int, err := strconv.Atoi(size)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid size format"})
+		return
+	}
+
+	with_pagination := c.DefaultQuery("with_pagination", "true")
+	with_pagination_bool, err := strconv.ParseBool(with_pagination)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_pagination format"})
+		return
+	}
+
+	press, _, pages, total, err := h.pressService.GetAllPressAndArticles(page_int, size_int, with_pagination_bool, "press", sorting)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	base_url := config.GetBaseURL()
-	if withPagination {
+	if with_pagination_bool {
 		c.JSON(http.StatusOK, gin.H{
-			"press": dto.ToPressResponseDTOs(press, base_url),
+			"data": dto.ToPressResponseDTOs(press, base_url),
 			"pagination": gin.H{
-				"total":       total,
-				"total_pages": pages,
+				"total_pages":  int(pages),
+				"current_page": int(page_int),
+				"page_size":    int(size_int),
+				"total_items":  int(total),
 			},
 		})
 	} else {
-		c.JSON(http.StatusOK, dto.ToPressResponseDTOs(press, base_url))
+		c.JSON(http.StatusOK, gin.H{
+			"data": dto.ToPressResponseDTOs(press, base_url),
+		})
 	}
 }
 
@@ -293,10 +305,14 @@ func (h *PressHandler) DeletePress(c *gin.Context) {
 // @Router /api/press/{id}/main_photo [post]
 func (h *PressHandler) AddMainPhotoToPress(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+		return
+	}
 	is_preview_str := c.DefaultQuery("is_preview", "false")
 	is_preview, err := strconv.ParseBool(is_preview_str)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid is_preview format"})
 		return
 	}
 	main_photo, err := c.FormFile("main_photo")
@@ -311,6 +327,35 @@ func (h *PressHandler) AddMainPhotoToPress(c *gin.Context) {
 	}
 	base_url := config.GetBaseURL()
 	c.JSON(http.StatusOK, dto.ToPressResponseDTO(*press_response, base_url))
+}
+
+// @Summary Delete main photo from press
+// @Description Удаляет главную/preview фотографию к прессу
+// @Accept json
+// @Produce json
+// @Tags Press
+// @Param id path int true "Press ID"
+// @Param is_preview query bool false "Is Preview"
+// @Success 200 {object} map[string]string
+// @Router /api/press/{id}/main_photo [delete]
+func (h *PressHandler) DeleteMainPhotoFromPress(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+		return
+	}
+	is_preview_str := c.DefaultQuery("is_preview", "false")
+	is_preview, err := strconv.ParseBool(is_preview_str)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid is_preview format"})
+		return
+	}
+	err = h.pressService.DeleteMainOrPreviewPhoto(uint(id), "press", is_preview)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "photo deleted"})
 }
 
 // @Summary Add photos to press
