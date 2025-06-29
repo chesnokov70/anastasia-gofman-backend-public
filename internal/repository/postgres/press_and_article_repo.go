@@ -174,12 +174,12 @@ func (r *PressAndArticleRepository) FullUpdatePressOrArticle(press_or_article st
 	switch press_or_article {
 	case "press":
 		err = r.db.Model(press).Where("id = ?", press.ID).
-			Select("title", "description", "full_text", "link", "position").
+			Select("title", "description", "full_text", "link", "position", "event_at").
 			Updates(press).Error
 		id = press.ID
 	case "article":
 		err = r.db.Model(article).Where("id = ?", article.ID).
-			Select("title", "description", "full_text", "link", "position").
+			Select("title", "description", "full_text", "link", "position", "event_at").
 			Updates(article).Error
 		id = article.ID
 	default:
