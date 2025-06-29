@@ -44,8 +44,8 @@ func (h *PressHandler) GetAllPress(c *gin.Context) {
 	if err != nil {
 		withPagination = false
 	}
-	sorting, err := c.GetQuery("sorting")
-	if err != nil {
+	sorting := c.Query("sorting")
+	if sorting == "" {
 		sorting = "NEW"
 	}
 

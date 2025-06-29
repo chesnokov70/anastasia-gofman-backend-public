@@ -28,6 +28,7 @@ func NewArticleHandler(articleService service.PressAndArticleService) *ArticleHa
 // @Tags Articles
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Page size"
+// @Param sorting query string false "Sorting type" Enums(NEW, CLOSEST, FARTHEST) default(NEW)
 // @Param with_pagination query bool false "With pagination"
 // @Router /api/articles [get]
 func (h *ArticleHandler) GetAllArticles(c *gin.Context) {
@@ -43,8 +44,12 @@ func (h *ArticleHandler) GetAllArticles(c *gin.Context) {
 	if err != nil {
 		withPagination = false
 	}
+	sorting := c.Query("sorting")
+	if sorting == "" {
+		sorting = "NEW"
+	}
 
-	_, articles, pages, total, err := h.articleService.GetAllPressAndArticles(page, pageSize, withPagination, "article")
+	_, articles, pages, total, err := h.articleService.GetAllPressAndArticles(page, pageSize, withPagination, "article", sorting)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
