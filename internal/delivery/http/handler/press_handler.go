@@ -28,6 +28,7 @@ func NewPressHandler(pressService service.PressAndArticleService) *PressHandler 
 // @Tags Press
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Page size"
+// @Param sorting query string false "Sorting type" Enums(NEW, CLOSEST, FARTHEST) default(NEW)
 // @Param with_pagination query bool false "With pagination"
 // @Router /api/press [get]
 func (h *PressHandler) GetAllPress(c *gin.Context) {
@@ -43,8 +44,12 @@ func (h *PressHandler) GetAllPress(c *gin.Context) {
 	if err != nil {
 		withPagination = false
 	}
+	sorting, err := c.GetQuery("sorting")
+	if err != nil {
+		sorting = "NEW"
+	}
 
-	press, _, pages, total, err := h.pressService.GetAllPressAndArticles(page, pageSize, withPagination, "press")
+	press, _, pages, total, err := h.pressService.GetAllPressAndArticles(page, pageSize, withPagination, "press", sorting)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -112,7 +112,7 @@ type ArtCollectionRepository interface {
 }
 
 type PressAndArticleRepository interface {
-	GetAllPressAndArticles(offset int, limit int, with_pagination bool, article_or_press string) ([]entity.Press, []entity.Article, int64, error)
+	GetAllPressAndArticles(offset int, limit int, with_pagination bool, article_or_press string, sorting string) ([]entity.Press, []entity.Article, int64, error)
 	GetPressOrArticleByID(id uint, article_or_press string) (*entity.Press, *entity.Article, error)
 	CreatePressOrArticle(press_or_article string, press entity.Press, article entity.Article) (*entity.Press, *entity.Article, error)
 	GetCountOfPressOrArticle(article_or_press string) (int, error)

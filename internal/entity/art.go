@@ -142,6 +142,7 @@ type Article struct {
 	Position  int       `json:"position" example:"1"`
 	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
 	UpdatedAt time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+	EventAt   time.Time `json:"event_at" example:"2021-01-01T00:00:00Z"`
 }
 
 type Press struct {
@@ -162,4 +163,5 @@ type Press struct {
 	Position  int       `json:"position" example:"1"`
 	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
 	UpdatedAt time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+	EventAt   time.Time `json:"event_at" example:"2021-01-01T00:00:00Z"`
 }

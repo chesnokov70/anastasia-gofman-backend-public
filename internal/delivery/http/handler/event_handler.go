@@ -3,6 +3,7 @@ package handler
 import (
 	"anastasia_gofman_backend/internal/delivery/http/dto"
 	"anastasia_gofman_backend/internal/service"
+	"anastasia_gofman_backend/pkg/config"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -61,9 +62,9 @@ func (h *EventHandler) GetAllEvents(c *gin.Context) {
 	if limit > 0 {
 		current_page = (offset / limit) + 1
 	}
-
+	baseUrl := config.GetBaseURL()
 	c.JSON(http.StatusOK, gin.H{
-		"data": dto.ToEventResponseDTOs(events),
+		"data": dto.ToEventResponseDTOs(events, baseUrl),
 		"pagination": gin.H{
 			"total_items":  int(total_items),
 			"offset":       offset,
@@ -121,7 +122,8 @@ func (h *EventHandler) CreateEvent(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.ToEventResponseDTO(createdEvent))
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusCreated, dto.ToEventResponseDTO(createdEvent, baseUrl))
 }
 
 // @Summary Create event with photos
@@ -204,7 +206,8 @@ func (h *EventHandler) CreateEventWithPhotos(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.ToEventResponseDTO(finalEvent))
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToEventResponseDTO(finalEvent, baseUrl))
 }
 
 // @Summary Full update event
@@ -239,7 +242,8 @@ func (h *EventHandler) FullUpdateEvent(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent))
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent, baseUrl))
 }
 
 // @Summary Partial update event
@@ -271,7 +275,8 @@ func (h *EventHandler) PartialUpdateEvent(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent))
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent, baseUrl))
 }
 
 // @Summary Delete event
@@ -359,7 +364,8 @@ func (h *EventHandler) AddPhotosToEvent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant add photos"})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent))
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent, baseUrl))
 }
 
 // @Summary Patch event photos
@@ -390,7 +396,8 @@ func (h *EventHandler) PatchEventPhotos(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent))
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent, baseUrl))
 }
 
 // @Summary Add main photo to event
@@ -421,5 +428,6 @@ func (h *EventHandler) AddMainPhotoToEvent(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent))
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent, baseUrl))
 }

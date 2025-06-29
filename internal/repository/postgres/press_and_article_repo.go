@@ -15,7 +15,7 @@ func NewPressAndArticleRepository(db *gorm.DB) *PressAndArticleRepository {
 	return &PressAndArticleRepository{db: db}
 }
 
-func (r *PressAndArticleRepository) GetAllPressAndArticles(offset int, limit int, with_pagination bool, article_or_press string) ([]entity.Press, []entity.Article, int64, error) {
+func (r *PressAndArticleRepository) GetAllPressAndArticles(offset int, limit int, with_pagination bool, article_or_press string, sorting string) ([]entity.Press, []entity.Article, int64, error) {
 	var press []entity.Press
 	var articles []entity.Article
 	var count int64
@@ -33,7 +33,15 @@ func (r *PressAndArticleRepository) GetAllPressAndArticles(offset int, limit int
 		return nil, nil, 0, errors.New("invalid article_or_press")
 	}
 
-	query = query.Order("created_at DESC")
+	if sorting == "NEW" {
+		query = query.Order("created_at DESC")
+	} else if sorting == "CLOSEST" {
+		query = query.Order("event_at ASC")
+	} else if sorting == "FARTHEST" {
+		query = query.Order("event_at DESC")
+	} else {
+		query = query.Order("created_at DESC")
+	}
 
 	err := query.Count(&count).Error
 	if err != nil {

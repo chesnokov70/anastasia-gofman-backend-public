@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"anastasia_gofman_backend/pkg/config"
 
@@ -32,8 +33,9 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 // @Param without_collection query bool false "Without collection" default(true)
 // @Param with_type_discrimination query bool false "With type discrimination" default(false)
 // @Param sorting query string false "Sorting type" Enums(NEW, RATED, PRICE_HIGH, PRICE_LOW) default()
-// @Param filtering query string false "JSON filter object with price_from, price_to, size, direction, style, author fields, type, archive_type, search"
+// @Param filtering query string false "JSON filter object. Example: {\"price_from\": 100, \"price_to\": 1000, \"size\": \"MEDIUM\", \"direction\": \"EXCLUSIVE\", \"style\": \"abstract\", \"author\": \"author name\", \"type\": \"_common\", \"archive_type\": \"repeat\", \"search\": {\"name\": {\"en\": \"search text\", \"ru\": \"текст поиска\", \"es\": \"texto de búsqueda\"}, \"title\": {\"en\": \"title search\"}, \"description\": {\"en\": \"desc search\"}, \"medium\": {\"en\": \"medium search\"}, \"technique\": {\"en\": \"technique search\"}, \"year\": \"2024\", \"frame\": {\"en\": \"frame search\"}, \"style\": \"abstract\", \"direction\": \"EXCLUSIVE\", \"dimension_str\": \"100x100\"}}"
 // @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /api/arts [get]
 func (h *ArtHandler) GetAllArts(c *gin.Context) {
@@ -83,8 +85,10 @@ func (h *ArtHandler) GetAllArts(c *gin.Context) {
 	var filteringDTO *dto.ArtFilteringDTO
 	if filtering != "" {
 		filteringDTO = &dto.ArtFilteringDTO{}
-		if err := json.Unmarshal([]byte(filtering), filteringDTO); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid filtering JSON format: " + err.Error()})
+		decoder := json.NewDecoder(strings.NewReader(filtering))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(filteringDTO); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid filtering JSON format: " + err.Error() + "Example: {\"price_from\": 100, \"price_to\": 1000, \"size\": \"MEDIUM\", \"direction\": \"EXCLUSIVE\", \"style\": \"abstract\", \"author\": \"author name\", \"type\": \"_common\", \"archive_type\": \"repeat\", \"search\": {\"name\": {\"en\": \"search text\", \"ru\": \"текст поиска\", \"es\": \"texto de búsqueda\"}, \"title\": {\"en\": \"title search\"}, \"description\": {\"en\": \"desc search\"}, \"medium\": {\"en\": \"medium search\"}, \"technique\": {\"en\": \"technique search\"}, \"year\": \"2024\", \"frame\": {\"en\": \"frame search\"}, \"style\": \"abstract\", \"direction\": \"EXCLUSIVE\", \"dimension_str\": \"100x100\"}}"})
 			return
 		}
 

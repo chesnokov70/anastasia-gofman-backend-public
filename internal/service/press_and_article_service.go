@@ -25,13 +25,13 @@ func NewPressAndArticleService(pressAndArticleRepository repository.PressAndArti
 	}
 }
 
-func (s *pressAndArticleService) GetAllPressAndArticles(page int, size int, with_pagination bool, article_or_press string) ([]entity.Press, []entity.Article, int64, int64, error) {
+func (s *pressAndArticleService) GetAllPressAndArticles(page int, size int, with_pagination bool, article_or_press string, sorting string) ([]entity.Press, []entity.Article, int64, int64, error) {
 	offset, limit := 0, 0
 	if page > 0 && size > 0 {
 		offset = (page - 1) * size
 		limit = size
 	}
-	press, articles, total, err := s.pressAndArticleRepository.GetAllPressAndArticles(offset, limit, with_pagination, article_or_press)
+	press, articles, total, err := s.pressAndArticleRepository.GetAllPressAndArticles(offset, limit, with_pagination, article_or_press, sorting)
 	if err != nil {
 		return nil, nil, 0, 0, err
 	}

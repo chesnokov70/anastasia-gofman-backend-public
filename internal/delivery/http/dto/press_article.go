@@ -15,6 +15,7 @@ type CreatePressDTO struct {
 	FullText    TranslatedTextDTO `json:"full_text"`
 	Link        string            `json:"link" example:"https://example.com"`
 	Position    int               `json:"position" example:"1"`
+	EventAt     FlexibleTime      `json:"event_at" example:"2021-01-01T00:00:00Z"`
 }
 
 // @name CreateArticle
@@ -25,6 +26,7 @@ type CreateArticleDTO struct {
 	FullText    TranslatedTextDTO `json:"full_text"`
 	Link        string            `json:"link" example:"https://example.com"`
 	Position    int               `json:"position" example:"1"`
+	EventAt     FlexibleTime      `json:"event_at" example:"2021-01-01T00:00:00Z"`
 }
 
 // @name UpdatePress
@@ -34,6 +36,7 @@ type UpdatePressDTO struct {
 	FullText    TranslatedTextDTO `json:"full_text"`
 	Link        string            `json:"link" example:"https://example.com"`
 	Position    int               `json:"position" example:"1"`
+	EventAt     FlexibleTime      `json:"event_at" example:"2021-01-01T00:00:00Z"`
 }
 
 // @name UpdateArticle
@@ -43,6 +46,7 @@ type UpdateArticleDTO struct {
 	FullText    TranslatedTextDTO `json:"full_text"`
 	Link        string            `json:"link" example:"https://example.com"`
 	Position    int               `json:"position" example:"1"`
+	EventAt     FlexibleTime      `json:"event_at" example:"2021-01-01T00:00:00Z"`
 }
 
 func (dto *CreatePressDTO) ToEntity(id *uint) entity.Press {
@@ -52,6 +56,7 @@ func (dto *CreatePressDTO) ToEntity(id *uint) entity.Press {
 		FullText:    dto.FullText.ToEntity(),
 		Link:        dto.Link,
 		Position:    dto.Position,
+		EventAt:     dto.EventAt.ToTime(),
 	}
 	if id != nil {
 		press.ID = *id
@@ -66,6 +71,7 @@ func (dto *CreateArticleDTO) ToEntity(id *uint) entity.Article {
 		FullText:    dto.FullText.ToEntity(),
 		Link:        dto.Link,
 		Position:    dto.Position,
+		EventAt:     dto.EventAt.ToTime(),
 	}
 	if id != nil {
 		article.ID = *id
@@ -80,6 +86,7 @@ func (dto *UpdatePressDTO) ToEntity(id *uint) entity.Press {
 		FullText:    dto.FullText.ToEntity(),
 		Link:        dto.Link,
 		Position:    dto.Position,
+		EventAt:     dto.EventAt.ToTime(),
 	}
 	if id != nil {
 		press.ID = *id
@@ -94,6 +101,7 @@ func (dto *UpdateArticleDTO) ToEntity(id *uint) entity.Article {
 		FullText:    dto.FullText.ToEntity(),
 		Link:        dto.Link,
 		Position:    dto.Position,
+		EventAt:     dto.EventAt.ToTime(),
 	}
 	if id != nil {
 		article.ID = *id
@@ -112,8 +120,8 @@ type PressResponseDTO struct {
 	UpdatedAt        string                `json:"updated_at" example:"2021-01-01T00:00:00Z"`
 	MainPhotoPath    string                `json:"main_photo_path,omitempty"`
 	PreviewPhotoPath string                `json:"preview_photo_path,omitempty"`
-
-	Photos []PhotoResponseDTO `json:"photos"`
+	EventAt          string                `json:"event_at" example:"2021-01-01T00:00:00Z"`
+	Photos           []PhotoResponseDTO    `json:"photos"`
 }
 
 type ArticleResponseDTO struct {
@@ -127,8 +135,8 @@ type ArticleResponseDTO struct {
 	UpdatedAt        string                `json:"updated_at" example:"2021-01-01T00:00:00Z"`
 	MainPhotoPath    string                `json:"main_photo_path,omitempty"`
 	PreviewPhotoPath string                `json:"preview_photo_path,omitempty"`
-
-	Photos []PhotoResponseDTO `json:"photos"`
+	EventAt          string                `json:"event_at" example:"2021-01-01T00:00:00Z"`
+	Photos           []PhotoResponseDTO    `json:"photos"`
 }
 
 func ToPressResponseDTO(press entity.Press, base_url string) PressResponseDTO {
@@ -144,6 +152,7 @@ func ToPressResponseDTO(press entity.Press, base_url string) PressResponseDTO {
 		MainPhotoPath:    "",
 		PreviewPhotoPath: "",
 		Photos:           []PhotoResponseDTO{},
+		EventAt:          press.EventAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 
 	if press.MainPhotoID != nil && press.MainPhoto.Path != "" {
@@ -183,6 +192,7 @@ func ToArticleResponseDTO(article entity.Article, base_url string) ArticleRespon
 		MainPhotoPath:    "",
 		PreviewPhotoPath: "",
 		Photos:           []PhotoResponseDTO{},
+		EventAt:          article.EventAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 
 	if article.MainPhotoID != nil && article.MainPhoto.Path != "" {

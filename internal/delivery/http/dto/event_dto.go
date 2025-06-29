@@ -167,7 +167,7 @@ type EventResponseDTO struct {
 	Photos           []PhotoResponseDTO    `json:"photos"`
 }
 
-func ToEventResponseDTO(event entity.Event) EventResponseDTO {
+func ToEventResponseDTO(event entity.Event, baseURL string) EventResponseDTO {
 	dto := EventResponseDTO{
 		ID:               event.ID,
 		Title:            event.Title,
@@ -185,17 +185,17 @@ func ToEventResponseDTO(event entity.Event) EventResponseDTO {
 
 	if event.MainPhotoID != nil && event.MainPhoto.Path != "" {
 		path := strings.TrimPrefix(event.MainPhoto.Path, "/")
-		dto.MainPhotoPath = fmt.Sprintf("%s/%s", BaseURL, path)
+		dto.MainPhotoPath = fmt.Sprintf("%s/%s", baseURL, path)
 	}
 	if event.PreviewPhotoID != nil && event.PreviewPhoto.Path != "" {
 		path := strings.TrimPrefix(event.PreviewPhoto.Path, "/")
-		dto.PreviewPhotoPath = fmt.Sprintf("%s/%s", BaseURL, path)
+		dto.PreviewPhotoPath = fmt.Sprintf("%s/%s", baseURL, path)
 	}
 
 	for _, photo := range event.Photos {
 		if !photo.IsMain && !photo.IsPreview {
 			path := strings.TrimPrefix(photo.Path, "/")
-			fullPath := fmt.Sprintf("%s/%s", BaseURL, path)
+			fullPath := fmt.Sprintf("%s/%s", baseURL, path)
 			dto.Photos = append(dto.Photos, PhotoResponseDTO{
 				ID:       photo.ID,
 				Path:     fullPath,
@@ -207,10 +207,10 @@ func ToEventResponseDTO(event entity.Event) EventResponseDTO {
 	return dto
 }
 
-func ToEventResponseDTOs(events []entity.Event) []EventResponseDTO {
+func ToEventResponseDTOs(events []entity.Event, baseURL string) []EventResponseDTO {
 	eventDTOs := make([]EventResponseDTO, len(events))
 	for i, event := range events {
-		eventDTOs[i] = ToEventResponseDTO(event)
+		eventDTOs[i] = ToEventResponseDTO(event, baseURL)
 	}
 	return eventDTOs
 }
