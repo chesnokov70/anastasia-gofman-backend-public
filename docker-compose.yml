@@ -41,6 +41,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-anastasia_gofman}
       DB_SSLMODE: ${DB_SSLMODE:-disable}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY}
     volumes:
       - ./uploads:/root/uploads
     depends_on:

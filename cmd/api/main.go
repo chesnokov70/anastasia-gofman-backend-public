@@ -78,7 +78,6 @@ func main() {
 
 	eventRepository := postgres.NewEventRepository(db)
 	eventService := service.NewEventService(eventRepository, photoRepository)
-	eventHandler := handler.NewEventHandler(eventService)
 
 	welcomeHandler := handler.NewWelcomeHandler()
 
@@ -93,7 +92,12 @@ func main() {
 	pressHandler := handler.NewPressHandler(pressArticleService)
 	articleHandler := handler.NewArticleHandler(pressArticleService)
 
-	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler)
+	translationService := service.NewTranslationService(cfg.OpenAI.APIKey)
+	translationHandler := handler.NewTranslationHandler(translationService)
+
+	eventHandler := handler.NewEventHandler(eventService, translationService)
+
+	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler)
 	router.Static("/uploads", "./uploads")
 	// / Swagger route
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.DefaultModelsExpandDepth(2)))

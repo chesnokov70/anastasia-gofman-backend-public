@@ -9,7 +9,7 @@ import (
 	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
 )
 
-func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler, pressHandler *handler.PressHandler, articleHandler *handler.ArticleHandler) *gin.Engine {
+func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler, pressHandler *handler.PressHandler, articleHandler *handler.ArticleHandler, translationHandler *handler.TranslationHandler) *gin.Engine {
 	// func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler) *gin.Engine {
 	router := gin.Default()
 	router.RedirectTrailingSlash = false // Disable automatic redirect for trailing slashes
@@ -142,6 +142,8 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			articles.GET("/:id/main_photo", articleHandler.GetMainPhoto)
 
 		}
+
+		api.POST("/translate", translationHandler.TranslateText)
 	}
 
 	return router

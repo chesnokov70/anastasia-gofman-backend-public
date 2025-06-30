@@ -12,11 +12,15 @@ import (
 )
 
 type EventHandler struct {
-	eventService service.EventService
+	eventService       service.EventService
+	translationService service.TranslationService
 }
 
-func NewEventHandler(eventService service.EventService) *EventHandler {
-	return &EventHandler{eventService: eventService}
+func NewEventHandler(eventService service.EventService, translationService service.TranslationService) *EventHandler {
+	return &EventHandler{
+		eventService:       eventService,
+		translationService: translationService,
+	}
 }
 
 // @Summary Get all events
@@ -106,6 +110,7 @@ func (h *EventHandler) GetEventByID(c *gin.Context) {
 // @Produce json
 // @Tags Events
 // @Param event body dto.CreateEventDTO true "Event"
+// @Param with_translation query bool false "Автоматически переводить отсутствующие языки для всех переданных в формате мультиязычных полей" default(false)
 // @Success 201 {object} dto.EventResponseDTO
 // @Failure 400 {object} map[string]string
 // @Router /api/events [post]
@@ -114,6 +119,16 @@ func (h *EventHandler) CreateEvent(c *gin.Context) {
 	if err := c.ShouldBindJSON(&eventDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	withTranslation := c.DefaultQuery("with_translation", "false")
+	if withTranslation == "true" {
+		if err := h.translationService.AutoCompleteEventTranslations(&eventDTO, 3); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to auto-translate event fields: " + err.Error(),
+			})
+			return
+		}
 	}
 
 	createdEvent, err := h.eventService.CreateEvent(eventDTO.ToEntity(nil))
@@ -132,6 +147,7 @@ func (h *EventHandler) CreateEvent(c *gin.Context) {
 // @Produce json
 // @Tags Events
 // @Param data formData string true "JSON payload for Event details with flexible date formats." Extensions(x-example={ "title": {"en": "Event Title", "ru": "Заголовок События", "es": "Título del Evento"}, "description": {"en": "Event description", "ru": "Описание события", "es": "Descripción del evento"}, "location": {"en": "Event location", "ru": "Место проведения", "es": "Ubicación del evento"}, "start_date": "01.01.2024", "end_date": "02.01.2024" })
+// @Param with_translation query bool false "Автоматически переводить отсутствующие языки" default(false)
 // @Param main_photo formData file false "Main Photo"
 // @Param preview_photo formData file false "Preview Photo"
 // @Param photos formData []file false "Photos"
@@ -151,6 +167,16 @@ func (h *EventHandler) CreateEventWithPhotos(c *gin.Context) {
 	if err := json.Unmarshal([]byte(jsonData), &eventDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON in 'data' field: " + err.Error()})
 		return
+	}
+
+	withTranslation := c.DefaultQuery("with_translation", "false")
+	if withTranslation == "true" {
+		if err := h.translationService.AutoCompleteEventWithPhotosTranslations(&eventDTO, 3); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to auto-translate event fields: " + err.Error(),
+			})
+			return
+		}
 	}
 
 	if err := c.Request.ParseMultipartForm(1 << 30); err != nil {

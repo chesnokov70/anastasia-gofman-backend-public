@@ -1,6 +1,7 @@
 package service
 
 import (
+	"anastasia_gofman_backend/internal/delivery/http/dto"
 	"anastasia_gofman_backend/internal/entity"
 	"mime/multipart"
 )
@@ -93,4 +94,12 @@ type PressAndArticleService interface {
 	GetMainPhoto(id uint, press_or_article string) (entity.Photo, error)
 	DeleteAllPhotos(id uint, press_or_article string) error
 	DeleteAllNoSpecialPhotos(id uint, press_or_article string) error
+}
+
+type TranslationService interface {
+	TranslateText(text string, languages []string) (map[string]string, error)
+	AutoCompleteTranslation(text map[string]string, supportedLanguages []string, maxRetries int) (map[string]string, error)
+	AutoCompleteTranslatedTextDTO(textDTO dto.TranslatedTextDTO, maxRetries int) (dto.TranslatedTextDTO, error)
+	AutoCompleteEventTranslations(eventDTO *dto.CreateEventDTO, maxRetries int) error
+	AutoCompleteEventWithPhotosTranslations(eventDTO *dto.CreateEventWithPhotosDTO, maxRetries int) error
 }

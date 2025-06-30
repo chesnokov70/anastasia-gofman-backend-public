@@ -14,6 +14,10 @@ type Event struct {
 	StartDate   time.Time      `json:"start_date" example:"2021-01-01T00:00:00Z"`
 	EndDate     time.Time      `json:"end_date" example:"2021-01-01T00:00:00Z"`
 	Location    TranslatedText `json:"location" gorm:"type:jsonb"`
+	Language    TranslatedText `json:"language" gorm:"type:jsonb"`
+	Organizer   TranslatedText `json:"organizer" gorm:"type:jsonb"`
+	Format      TranslatedText `json:"format" gorm:"type:jsonb"`
+	Venue       TranslatedText `json:"venue" gorm:"type:jsonb"`
 
 	MainPhotoID *int  `json:"main_photo_id" example:"1"`
 	MainPhoto   Photo `json:"-" gorm:"foreignKey:MainPhotoID;references:ID"`

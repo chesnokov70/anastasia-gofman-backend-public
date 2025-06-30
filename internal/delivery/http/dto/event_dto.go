@@ -66,6 +66,10 @@ type CreateEventDTO struct {
 	Location    TranslatedTextDTO `json:"location"`
 	StartDate   FlexibleTime      `json:"start_date" swaggertype:"string" example:"2024-01-01T00:00:00Z"`
 	EndDate     FlexibleTime      `json:"end_date" swaggertype:"string" example:"2024-01-02T00:00:00Z"`
+	Language    TranslatedTextDTO `json:"language"`
+	Format      TranslatedTextDTO `json:"format"`
+	Venue       TranslatedTextDTO `json:"venue"`
+	Organizer   TranslatedTextDTO `json:"organizer"`
 }
 
 // @name CreateEventWithPhotos
@@ -76,6 +80,10 @@ type CreateEventWithPhotosDTO struct {
 	Location    TranslatedTextDTO `json:"location"`
 	StartDate   FlexibleTime      `json:"start_date" example:"2024-01-01T00:00:00Z или 01.01.2024"`
 	EndDate     FlexibleTime      `json:"end_date" example:"2024-01-02T00:00:00Z или 02.01.2024"`
+	Language    TranslatedTextDTO `json:"language"`
+	Format      TranslatedTextDTO `json:"format"`
+	Venue       TranslatedTextDTO `json:"venue"`
+	Organizer   TranslatedTextDTO `json:"organizer"`
 }
 
 func (dto *CreateEventDTO) ToEntity(id *int) entity.Event {
@@ -85,6 +93,10 @@ func (dto *CreateEventDTO) ToEntity(id *int) entity.Event {
 		Location:    dto.Location.ToEntity(),
 		StartDate:   dto.StartDate.ToTime(),
 		EndDate:     dto.EndDate.ToTime(),
+		Language:    dto.Language.ToEntity(),
+		Format:      dto.Format.ToEntity(),
+		Venue:       dto.Venue.ToEntity(),
+		Organizer:   dto.Organizer.ToEntity(),
 	}
 	if id != nil {
 		event.ID = *id
@@ -99,6 +111,10 @@ func (dto *CreateEventWithPhotosDTO) ToEntity(id *int) entity.Event {
 		Location:    dto.Location.ToEntity(),
 		StartDate:   dto.StartDate.ToTime(),
 		EndDate:     dto.EndDate.ToTime(),
+		Language:    dto.Language.ToEntity(),
+		Format:      dto.Format.ToEntity(),
+		Venue:       dto.Venue.ToEntity(),
+		Organizer:   dto.Organizer.ToEntity(),
 	}
 	if id != nil {
 		event.ID = *id
@@ -114,6 +130,10 @@ type UpdateEventDTO struct {
 	Location    TranslatedTextDTO `json:"location"`
 	StartDate   FlexibleTime      `json:"start_date" example:"2024-01-01T00:00:00Z или 01.01.2024"`
 	EndDate     FlexibleTime      `json:"end_date" example:"2024-01-02T00:00:00Z или 02.01.2024"`
+	Language    TranslatedTextDTO `json:"language"`
+	Format      TranslatedTextDTO `json:"format"`
+	Venue       TranslatedTextDTO `json:"venue"`
+	Organizer   TranslatedTextDTO `json:"organizer"`
 }
 
 func (dto *UpdateEventDTO) ToEntity(id *int) entity.Event {
@@ -123,6 +143,10 @@ func (dto *UpdateEventDTO) ToEntity(id *int) entity.Event {
 		Location:    dto.Location.ToEntity(),
 		StartDate:   dto.StartDate.ToTime(),
 		EndDate:     dto.EndDate.ToTime(),
+		Language:    dto.Language.ToEntity(),
+		Format:      dto.Format.ToEntity(),
+		Venue:       dto.Venue.ToEntity(),
+		Organizer:   dto.Organizer.ToEntity(),
 	}
 	if id != nil {
 		event.ID = *id
@@ -159,6 +183,10 @@ type EventResponseDTO struct {
 	Location         entity.TranslatedText `json:"location"`
 	StartDate        string                `json:"start_date"`
 	EndDate          string                `json:"end_date"`
+	Language         entity.TranslatedText `json:"language"`
+	Format           entity.TranslatedText `json:"format"`
+	Venue            entity.TranslatedText `json:"venue"`
+	Organizer        entity.TranslatedText `json:"organizer"`
 	MainPhotoPath    string                `json:"main_photo_path,omitempty"`
 	PreviewPhotoPath string                `json:"preview_photo_path,omitempty"`
 	Position         int                   `json:"position"`
@@ -178,6 +206,10 @@ func ToEventResponseDTO(event entity.Event, baseURL string) EventResponseDTO {
 		Position:         event.Position,
 		CreatedAt:        event.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:        event.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Language:         event.Language,
+		Format:           event.Format,
+		Venue:            event.Venue,
+		Organizer:        event.Organizer,
 		MainPhotoPath:    "",
 		PreviewPhotoPath: "",
 		Photos:           []PhotoResponseDTO{}, // Initialize with empty slice

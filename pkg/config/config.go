@@ -13,6 +13,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Server   ServerConfig   `mapstructure:"server"`
 	Stripe   StripeConfig   `mapstructure:"stripe"`
+	OpenAI   OpenAIConfig   `mapstructure:"openai"`
 	BaseURL  string         `mapstructure:"base_url"`
 }
 
@@ -33,6 +34,10 @@ type ServerConfig struct {
 type StripeConfig struct {
 	SecretKey string `mapstructure:"secret_key"`
 	PublicKey string `mapstructure:"public_key"`
+}
+
+type OpenAIConfig struct {
+	APIKey string `mapstructure:"api_key"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -56,6 +61,7 @@ func LoadConfig() (*Config, error) {
 	viper.BindEnv("server.mode", "GIN_MODE")
 	viper.BindEnv("stripe.secret_key", "STRIPE_SECRET_KEY")
 	viper.BindEnv("stripe.public_key", "STRIPE_PUBLIC_KEY")
+	viper.BindEnv("openai.api_key", "OPENAI_API_KEY")
 	viper.BindEnv("base_url", "http://91.105.196.19:8080/")
 	log.Printf("!!!Stripe secret key: %s", viper.GetString("stripe.secret_key"))
 	log.Printf("!!!Stripe public key: %s", viper.GetString("stripe.public_key"))
@@ -71,6 +77,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("server.mode", "debug")
 	viper.SetDefault("stripe.secret_key", "sk_test_")
 	viper.SetDefault("stripe.public_key", "pk_test_")
+	viper.SetDefault("openai.api_key", "")
 
 	viper.AddConfigPath("./configs")
 	viper.SetConfigName("config")
