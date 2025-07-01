@@ -101,7 +101,7 @@ func (h *EventHandler) GetEventByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, event)
+	c.JSON(http.StatusOK, dto.ToEventResponseDTO(event, config.GetBaseURL()))
 }
 
 // @Summary Create event
