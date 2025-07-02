@@ -98,7 +98,7 @@ func main() {
 	eventHandler := handler.NewEventHandler(eventService, translationService)
 
 	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler)
-	router.Static("/uploads", "./uploads")
+	// router.Static("/uploads", "./uploads")
 	// / Swagger route
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.DefaultModelsExpandDepth(2)))
 
