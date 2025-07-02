@@ -79,7 +79,14 @@ func (r *PhotoRepository) DeleteAllNoSpecialPhotos(ownerID uint, ownerType strin
 
 // Create
 func (r *PhotoRepository) CreatePhoto(photo entity.Photo) (entity.Photo, error) {
-	photo.Position, _ = r.GetCountOfPhotos(photo.OwnerID, photo.OwnerType)
-	photo.Position += 1
+	if photo.Position == 0 {
+		photo.Position, _ = r.GetCountOfPhotos(photo.OwnerID, photo.OwnerType)
+		photo.Position += 1
+	}
 	return photo, r.db.Create(&photo).Error
+}
+
+// Update
+func (r *PhotoRepository) UpdatePhotoPosition(photoID uint, newPosition int) error {
+	return r.db.Model(&entity.Photo{}).Where("id = ?", photoID).Update("position", newPosition).Error
 }

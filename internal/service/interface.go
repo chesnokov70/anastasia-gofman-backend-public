@@ -61,6 +61,7 @@ type EventService interface {
 	AddMainOrPreviewPhotoToEvent(eventID uint, fileHeader *multipart.FileHeader, is_main bool, is_preview bool) (entity.Event, error)
 	AddPhotosToEvent(id uint, photos []*multipart.FileHeader) (entity.Event, error)
 	AddPhotosToEventReplaceOld(id uint, photos []*multipart.FileHeader) (entity.Event, error)
+	PatchEventPhotosFromStrings(eventID uint, photoStrings []string) (entity.Event, error)
 
 	DeleteMainOrPreviewPhoto(id uint, is_preview bool) error
 

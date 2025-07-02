@@ -394,16 +394,17 @@ func (h *EventHandler) AddPhotosToEvent(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent, baseUrl))
 }
 
-// @Summary Patch event photos
-// @Description Обновляет фотографии события(имеющиеся удаляются) - передается []base64 в формате multipart/form-data в поле photos
 // @Accept multipart/form-data
+
+// @Summary Patch event photos
+// @Description Обновляет фотографии события - передается JSON массив строк: URLs для существующих мальчишек, а base64 для новых мальчишек
+// @Accept json
 // @Produce json
 // @Tags Events
 // @Param id path int true "Event ID"
-// @Param photos formData []file true "Photos"
+// @Param photos body []string true "Array of photo data: URLs for existing photos, base64 data URLs for new ones"
 // @Success 200 {object} dto.EventResponseDTO
 // @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
 // @Router /api/events/{id}/photos [patch]
 func (h *EventHandler) PatchEventPhotos(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -411,17 +412,24 @@ func (h *EventHandler) PatchEventPhotos(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
 		return
 	}
-	form, err := c.MultipartForm()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form"})
+
+	var photoStrings []string
+	if err := c.ShouldBindJSON(&photoStrings); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse JSON: " + err.Error()})
 		return
 	}
-	photos := form.File["photos"]
-	updatedEvent, err := h.eventService.AddPhotosToEventReplaceOld(uint(id), photos)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
+
+	if len(photoStrings) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no photos provided"})
 		return
 	}
+
+	updatedEvent, err := h.eventService.PatchEventPhotosFromStrings(uint(id), photoStrings)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Can't patch photos: " + err.Error()})
+		return
+	}
+
 	baseUrl := config.GetBaseURL()
 	c.JSON(http.StatusOK, dto.ToEventResponseDTO(updatedEvent, baseUrl))
 }

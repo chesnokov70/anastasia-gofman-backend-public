@@ -99,6 +99,9 @@ type PhotoRepository interface {
 
 	// Create
 	CreatePhoto(photo entity.Photo) (entity.Photo, error)
+
+	// Update
+	UpdatePhotoPosition(photoID uint, newPosition int) error
 }
 
 type ArtCollectionRepository interface {
