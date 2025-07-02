@@ -3,7 +3,6 @@ package http
 import (
 	"anastasia_gofman_backend/internal/delivery/http/handler"
 	"anastasia_gofman_backend/internal/delivery/http/middleware"
-	"path/filepath"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -28,20 +27,6 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 	}
 	config.AllowCredentials = true
 	router.Use(cors.New(config))
-
-	router.GET("/uploads/*filepath", func(c *gin.Context) {
-		filePath := c.Param("filepath")
-
-		if len(filePath) > 0 && filePath[0] == '/' {
-			filePath = filePath[1:]
-		}
-		fullPath := filepath.Join("./uploads", filePath)
-
-		c.Header("Cache-Control", "public, max-age=86400")
-		c.Header("Content-Type", "")
-
-		c.File(fullPath)
-	})
 
 	paginationMiddleware := pagination.New(
 		pagination.WithMinPageSize(2),
