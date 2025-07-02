@@ -29,7 +29,7 @@ func (r *PhotoRepository) GetMainPhotoByOwnerID(ownerID uint, ownerType string) 
 
 func (r *PhotoRepository) GetAllNoSpecialPhotosByOwnerID(ownerID uint, ownerType string) ([]entity.Photo, error) {
 	var photos []entity.Photo
-	err := r.db.Where("owner_id = ? AND owner_type = ? AND is_main = ? AND is_preview = ?", ownerID, ownerType, false, false).Find(&photos).Error
+	err := r.db.Where("owner_id = ? AND owner_type = ? AND is_main = ? AND is_preview = ?", ownerID, ownerType, false, false).Order("position ASC").Find(&photos).Error
 	return photos, err
 }
 
@@ -89,4 +89,18 @@ func (r *PhotoRepository) CreatePhoto(photo entity.Photo) (entity.Photo, error) 
 // Update
 func (r *PhotoRepository) UpdatePhotoPosition(photoID uint, newPosition int) error {
 	return r.db.Model(&entity.Photo{}).Where("id = ?", photoID).Update("position", newPosition).Error
+}
+
+func (r *PhotoRepository) GetPhotoByPath(path string) (entity.Photo, error) {
+	var photo entity.Photo
+	err := r.db.Where("path = ?", path).First(&photo).Error
+	return photo, err
+}
+
+func (r *PhotoRepository) UpdatePhotoOwnerAndPosition(id uint, ownerID uint, ownerType string, position int) error {
+	return r.db.Model(&entity.Photo{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"owner_id":   ownerID,
+		"owner_type": ownerType,
+		"position":   position,
+	}).Error
 }

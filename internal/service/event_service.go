@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -296,60 +297,71 @@ func (s *eventService) DeleteEvent(id uint) error {
 }
 
 func (s *eventService) PatchEventPhotosFromStrings(eventID uint, photoStrings []string) (entity.Event, error) {
-	baseURL := config.GetBaseURL()
-
 	currentEvent, err := s.GetEventByID(eventID)
 	if err != nil {
 		return entity.Event{}, err
 	}
 
-	existingPhotosByURL := make(map[string]entity.Photo)
-	for _, photo := range currentEvent.Photos {
-		if !photo.IsMain && !photo.IsPreview {
-			photoPath := strings.TrimPrefix(photo.Path, "/")
-			fullPhotoURL := fmt.Sprintf("%s/%s", baseURL, photoPath)
-			existingPhotosByURL[fullPhotoURL] = photo
+	currentEventPhotosByPath := make(map[string]entity.Photo)
+	for _, p := range currentEvent.Photos {
+		if !p.IsMain && !p.IsPreview {
+			currentEventPhotosByPath[p.Path] = p
 		}
 	}
 
-	newPhotoURLSet := make(map[string]bool)
-	for _, photoString := range photoStrings {
-		if strings.HasPrefix(photoString, "http://") || strings.HasPrefix(photoString, "https://") {
-			newPhotoURLSet[photoString] = true
-		}
-	}
-
-	var photosToDelete []entity.Photo
-	for url, photo := range existingPhotosByURL {
-		if !newPhotoURLSet[url] {
-			photosToDelete = append(photosToDelete, photo)
-		}
-	}
-
-	for _, photo := range photosToDelete {
-		if err := s.deletePhotoFile(photo.Path); err != nil {
-			fmt.Printf("Warning: couldn't delete photo file %s: %v\n", photo.Path, err)
-		}
-		if err := s.photoRepository.DeletePhoto(photo.ID); err != nil {
-			fmt.Printf("Warning: couldn't delete photo from DB %d: %v\n", photo.ID, err)
-		}
-	}
+	requestedPaths := make(map[string]bool)
 
 	for i, photoString := range photoStrings {
-		if strings.HasPrefix(photoString, "http://") || strings.HasPrefix(photoString, "https://") {
-			if photo, exists := existingPhotosByURL[photoString]; exists {
-				if photo.Position != i {
-					if err := s.updatePhotoPosition(photo.ID, i); err != nil {
-						fmt.Printf("Warning: couldn't update photo position for photo ID %d: %v\n", photo.ID, err)
-					}
+		position := i
+		if strings.HasPrefix(photoString, "http") {
+			idx := strings.Index(photoString, "/uploads/")
+			if idx == -1 {
+				return entity.Event{}, fmt.Errorf("invalid photo URL format: %s", photoString)
+			}
+			relativePath := photoString[idx:]
+			relativePath = path.Clean(relativePath)
+
+			requestedPaths[relativePath] = true
+
+			photo, err := s.photoRepository.GetPhotoByPath(relativePath)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return entity.Event{}, fmt.Errorf("photo with path %s not found in database", relativePath)
+				}
+				return entity.Event{}, err // other db error
+			}
+
+			if photo.OwnerID != eventID || photo.OwnerType != "event" {
+				err = s.photoRepository.UpdatePhotoOwnerAndPosition(photo.ID, eventID, "event", position)
+				if err != nil {
+					return entity.Event{}, fmt.Errorf("failed to move photo %d to event %d: %w", photo.ID, eventID, err)
+				}
+			} else if photo.Position != position {
+				err = s.photoRepository.UpdatePhotoPosition(photo.ID, position)
+				if err != nil {
+					return entity.Event{}, fmt.Errorf("failed to update position for photo %d: %w", photo.ID, err)
 				}
 			}
+
 		} else if strings.HasPrefix(photoString, "data:") {
-			if err := s.createPhotoFromBase64(eventID, photoString, i); err != nil {
-				return entity.Event{}, fmt.Errorf("failed to create photo from base64: %w", err)
+			newPhoto, err := s.createPhotoFromBase64(eventID, photoString, position)
+			if err != nil {
+				return entity.Event{}, err
 			}
+			requestedPaths[newPhoto.Path] = true
 		} else {
-			return entity.Event{}, fmt.Errorf("unsupported photo format: %s", photoString[:min(50, len(photoString))])
+			return entity.Event{}, fmt.Errorf("unsupported photo format: %s", photoString)
+		}
+	}
+
+	for path, photo := range currentEventPhotosByPath {
+		if !requestedPaths[path] {
+			if err := s.deletePhotoFile(photo.Path); err != nil {
+				fmt.Printf("Warning: couldn't delete photo file %s: %v\n", photo.Path, err)
+			}
+			if err := s.photoRepository.DeletePhoto(photo.ID); err != nil {
+				fmt.Printf("Warning: couldn't delete photo from DB %d: %v\n", photo.ID, err)
+			}
 		}
 	}
 
@@ -368,10 +380,10 @@ func (s *eventService) updatePhotoPosition(photoID uint, newPosition int) error 
 	return s.photoRepository.UpdatePhotoPosition(photoID, newPosition)
 }
 
-func (s *eventService) createPhotoFromBase64(eventID uint, base64Data string, position int) error {
+func (s *eventService) createPhotoFromBase64(eventID uint, base64Data string, position int) (entity.Photo, error) {
 	parts := strings.Split(base64Data, ",")
 	if len(parts) != 2 {
-		return fmt.Errorf("invalid base64 format")
+		return entity.Photo{}, fmt.Errorf("invalid base64 format")
 	}
 
 	mimeType := strings.Split(parts[0], ";")[0]
@@ -391,7 +403,7 @@ func (s *eventService) createPhotoFromBase64(eventID uint, base64Data string, po
 
 	imageData, err := base64.StdEncoding.DecodeString(parts[1])
 	if err != nil {
-		return fmt.Errorf("failed to decode base64: %w", err)
+		return entity.Photo{}, fmt.Errorf("failed to decode base64: %w", err)
 	}
 
 	subdir := "events_photos"
@@ -399,11 +411,11 @@ func (s *eventService) createPhotoFromBase64(eventID uint, base64Data string, po
 	fullPath := config.GetUploadFilePath(subdir, filename)
 
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
+		return entity.Photo{}, fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	if err := os.WriteFile(fullPath, imageData, 0644); err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
+		return entity.Photo{}, fmt.Errorf("failed to write file: %w", err)
 	}
 
 	relativePath := fmt.Sprintf("/uploads/%s/%s", subdir, filename)
@@ -416,8 +428,7 @@ func (s *eventService) createPhotoFromBase64(eventID uint, base64Data string, po
 		Position:  position,
 	}
 
-	_, err = s.photoRepository.CreatePhoto(photo)
-	return err
+	return s.photoRepository.CreatePhoto(photo)
 }
 
 func generateFilenameWithUUID2(ownerID uint, ownerType string, originalName string) string {

@@ -82,26 +82,23 @@ type EventRepository interface {
 }
 
 type PhotoRepository interface {
-	// GET
-	GetAllPhotosByOwnerID(ownerID uint, ownerType string) ([]entity.Photo, error)
-	GetMainPhotoByOwnerID(ownerID uint, ownerType string) (entity.Photo, error)
-	GetPreviewPhotoByOwnerID(ownerID uint, ownerType string) (entity.Photo, error)
+	CreatePhoto(photo entity.Photo) (entity.Photo, error)
+	DeletePhoto(id uint) error
 	GetMainOrPreviewPhotoByOwnerID(ownerID uint, ownerType string, isMain bool) (entity.Photo, error)
+	GetAllPhotosByOwnerID(ownerID uint, ownerType string) ([]entity.Photo, error)
 	GetCountOfPhotos(ownerID uint, ownerType string) (int, error)
 	GetAllNoSpecialPhotosByOwnerID(ownerID uint, ownerType string) ([]entity.Photo, error)
+	UpdatePhotoPosition(photoID uint, newPosition int) error
+	GetPhotoByPath(path string) (entity.Photo, error)
+	UpdatePhotoOwnerAndPosition(id uint, ownerID uint, ownerType string, position int) error
 
-	// Delete
-	DeletePhoto(photoID uint) error
+	GetMainPhotoByOwnerID(ownerID uint, ownerType string) (entity.Photo, error)
+	GetPreviewPhotoByOwnerID(ownerID uint, ownerType string) (entity.Photo, error)
+
 	DeleteAllPhotos(ownerID uint, ownerType string) error
 	DeleteMainPhoto(ownerID uint, ownerType string) error
 	DeletePreviewPhoto(ownerID uint, ownerType string) error
 	DeleteAllNoSpecialPhotos(ownerID uint, ownerType string) error
-
-	// Create
-	CreatePhoto(photo entity.Photo) (entity.Photo, error)
-
-	// Update
-	UpdatePhotoPosition(photoID uint, newPosition int) error
 }
 
 type ArtCollectionRepository interface {
