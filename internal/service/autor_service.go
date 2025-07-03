@@ -388,6 +388,24 @@ func (s *authorService) GetAuthorWithArts(id uint) (entity.Author, []entity.Art,
 	return author, arts, nil
 }
 
+func (s *authorService) PatchAuthorPhotosFromStrings(authorID uint, photoStrings []string) (entity.Author, error) {
+	currentAuthor, err := s.authorRepository.GetAuthorByID(authorID)
+	if err != nil {
+		return entity.Author{}, err
+	}
+
+	getCurrentPhotos := func() []entity.Photo {
+		return currentAuthor.Photos
+	}
+
+	err = PatchPhotosFromStrings(authorID, "authors", photoStrings, s.photoRepository, getCurrentPhotos)
+	if err != nil {
+		return entity.Author{}, err
+	}
+
+	return s.authorRepository.GetAuthorByID(authorID)
+}
+
 func NewAuthorService(authorRepository repository.AuthorRepository, photoRepository repository.PhotoRepository, artRepository repository.ArtRepository) AuthorService {
 	return &authorService{
 		authorRepository: authorRepository,

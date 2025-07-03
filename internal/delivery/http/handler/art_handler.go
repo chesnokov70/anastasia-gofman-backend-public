@@ -504,7 +504,6 @@ func (h *ArtHandler) DeleteMainPhotoFromArt(c *gin.Context) {
 // @Param photos formData []file true "Photos"
 // @Success 200 {object} dto.ArtResponseDTO "Art"
 // @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
 // @Router /api/arts/{id}/photos [post]
 func (h *ArtHandler) AddPhotosToArt(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -542,12 +541,12 @@ func (h *ArtHandler) AddPhotosToArt(c *gin.Context) {
 }
 
 // @Summary Patch art photos
-// @Description Обновляет фотографии к картине(имеющиеся удаляются) - передается []base64 в формате multipart/form-data в поле photos
-// @Accept multipart/form-data
+// @Description Обновляет фотографии картины - передается JSON массив строк: URLs для существующих мальчишек, а base64 для новых мальчишек
+// @Accept json
 // @Produce json
 // @Tags Arts
 // @Param id path int true "Art ID"
-// @Param photos formData []file true "Photos"
+// @Param photos body []string true "Array of photo data: URLs for existing photos, base64 data URLs for new ones"
 // @Success 200 {object} dto.ArtResponseDTO "Art"
 // @Router /api/arts/{id}/photos [patch]
 func (h *ArtHandler) PatchArtPhotos(c *gin.Context) {
@@ -556,26 +555,31 @@ func (h *ArtHandler) PatchArtPhotos(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
 		return
 	}
-	form, err := c.MultipartForm()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form"})
+
+	var photoStrings []string
+	if err := c.ShouldBindJSON(&photoStrings); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse JSON: " + err.Error()})
 		return
 	}
-	photos := form.File["photos"]
-	photos_result, err := h.artService.PatchArtPhotos(uint(id), photos)
+
+	// if len(photoStrings) == 0 {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "no photos provided"})
+	// 	return
+	// }
+
+	updatedEvent, err := h.artService.PatchArtPhotosFromStrings(uint(id), photoStrings)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Can't patch photos: " + err.Error()})
 		return
 	}
-	// h.artService.UpdatePhotosInStripe(uint(id))
-	// фон
 	go func(artID uint) {
 		if err := h.artService.UpdatePhotosInStripe(artID); err != nil {
 			log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
 		}
 	}(uint(id))
-	base_url := config.GetBaseURL()
-	c.JSON(http.StatusOK, dto.ToArtResponseDTO(photos_result, base_url))
+
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToArtResponseDTO(updatedEvent, baseUrl))
 }
 
 // @Summary Add author to art
@@ -587,7 +591,6 @@ func (h *ArtHandler) PatchArtPhotos(c *gin.Context) {
 // @Param author_id path int true "Author ID"
 // @Success 200 {object} dto.ArtResponseDTO
 // @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
 // @Router /api/arts/{id}/author/{author_id} [post]
 func (h *ArtHandler) AddAuthorToArt(c *gin.Context) {
 	// fmt.Println("AddAuthorToArt")
@@ -652,4 +655,41 @@ func (h *ArtHandler) GetMainPhoto(c *gin.Context) {
 // 		return
 // 	}
 // 	c.JSON(http.StatusOK, art)
+// }
+
+// // @Summary Patch art photos
+// // @Description Обновляет фотографии к картине(имеющиеся удаляются) - передается []base64 в формате multipart/form-data в поле photos
+// // @Accept multipart/form-data
+// // @Produce json
+// // @Tags Arts
+// // @Param id path int true "Art ID"
+// // @Param photos formData []file true "Photos"
+// // @Success 200 {object} dto.ArtResponseDTO "Art"
+// // @Router /api/arts/{id}/photos [patch]
+// func (h *ArtHandler) PatchArtPhotos(c *gin.Context) {
+// 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+// 		return
+// 	}
+// 	form, err := c.MultipartForm()
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form"})
+// 		return
+// 	}
+// 	photos := form.File["photos"]
+// 	photos_result, err := h.artService.PatchArtPhotos(uint(id), photos)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
+// 		return
+// 	}
+// 	// h.artService.UpdatePhotosInStripe(uint(id))
+// 	// фон
+// 	go func(artID uint) {
+// 		if err := h.artService.UpdatePhotosInStripe(artID); err != nil {
+// 			log.Printf("Failed to update photos in Stripe for art %d: %v", artID, err)
+// 		}
+// 	}(uint(id))
+// 	base_url := config.GetBaseURL()
+// 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(photos_result, base_url))
 // }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"os"
+
 	"strings"
 
 	"gorm.io/gorm"
@@ -329,4 +330,27 @@ func (s *pressAndArticleService) DeleteMainOrPreviewPhoto(id uint, press_or_arti
 	}
 
 	return s.photoRepository.DeletePhoto(photo.ID)
+}
+
+func (s *pressAndArticleService) PatchPhotosFromStrings(press_or_article string, objectID uint, photoStrings []string) (*entity.Press, *entity.Article, error) {
+	currentPress, currentArticle, err := s.pressAndArticleRepository.GetPressOrArticleByID(objectID, press_or_article)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	getCurrentPhotos := func() []entity.Photo {
+		if press_or_article == "press" && currentPress != nil {
+			return currentPress.Photos
+		} else if press_or_article == "article" && currentArticle != nil {
+			return currentArticle.Photos
+		}
+		return []entity.Photo{}
+	}
+
+	err = PatchPhotosFromStrings(objectID, press_or_article, photoStrings, s.photoRepository, getCurrentPhotos)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return s.pressAndArticleRepository.GetPressOrArticleByID(objectID, press_or_article)
 }

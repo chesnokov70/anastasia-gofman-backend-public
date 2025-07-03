@@ -419,10 +419,10 @@ func (h *EventHandler) PatchEventPhotos(c *gin.Context) {
 		return
 	}
 
-	if len(photoStrings) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no photos provided"})
-		return
-	}
+	// if len(photoStrings) == 0 {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "no photos provided"})
+	// 	return
+	// }
 
 	updatedEvent, err := h.eventService.PatchEventPhotosFromStrings(uint(id), photoStrings)
 	if err != nil {

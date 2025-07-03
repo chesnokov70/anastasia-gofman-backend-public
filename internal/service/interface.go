@@ -22,6 +22,7 @@ type AuthorService interface {
 	UpdateAuthorsPosition(positions []int) error
 	GetAuthorWithArts(id uint) (entity.Author, []entity.Art, error)
 	DeleteMainOrPreviewPhoto(id uint, is_main bool, is_preview bool) error
+	PatchAuthorPhotosFromStrings(authorID uint, photoStrings []string) (entity.Author, error)
 }
 
 type ArtService interface {
@@ -44,6 +45,7 @@ type ArtService interface {
 	GetMinAndMaxPrice() (int, int, error)
 	DeleteArtsByCollectionID(id uint) error
 	DeleteArtsByCollectionIDSync(id uint) error
+	PatchArtPhotosFromStrings(artID uint, photoStrings []string) (entity.Art, error)
 }
 
 type EventService interface {
@@ -95,6 +97,7 @@ type PressAndArticleService interface {
 	GetMainPhoto(id uint, press_or_article string) (entity.Photo, error)
 	DeleteAllPhotos(id uint, press_or_article string) error
 	DeleteAllNoSpecialPhotos(id uint, press_or_article string) error
+	PatchPhotosFromStrings(press_or_article string, objectID uint, photoStrings []string) (*entity.Press, *entity.Article, error)
 }
 
 type TranslationService interface {

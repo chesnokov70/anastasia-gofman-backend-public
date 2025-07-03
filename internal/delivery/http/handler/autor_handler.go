@@ -486,14 +486,45 @@ func (h *AuthorHandler) AddPhotosToAuthor(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(photos_result, base_url))
 }
 
+// // @Summary Patch author photos
+// // @Description Обновляет фотографии к автору(имеющиеся удаляются) - multipart/form-data в поле photos
+// // @Accept multipart/form-data
+// // @Produce json
+// // @Tags Authors
+// // @Param id path int true "Author ID"
+// // @Param photos formData []file true "Photos"
+// // @Success 200 {object} dto.AuthorResponseDTO "Author"
+// // @Router /api/authors/{id}/photos [patch]
+// func (h *AuthorHandler) PatchAuthorPhotos(c *gin.Context) {
+// 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+// 		return
+// 	}
+// 	form, err := c.MultipartForm()
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form"})
+// 		return
+// 	}
+// 	photos := form.File["photos"]
+// 	photos_result, err := h.authorService.PatchAuthorPhotos(uint(id), photos)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
+// 		return
+// 	}
+// 	base_url := config.GetBaseURL()
+// 	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(photos_result, base_url))
+// }
+
 // @Summary Patch author photos
-// @Description Обновляет фотографии к автору(имеющиеся удаляются) - multipart/form-data в поле photos
-// @Accept multipart/form-data
+// @Description Обновляет фотографии автора - передается JSON массив строк: URLs для существующих мальчишек, а base64 для новых мальчишек
+// @Accept json
 // @Produce json
 // @Tags Authors
 // @Param id path int true "Author ID"
-// @Param photos formData []file true "Photos"
+// @Param photos body []string true "Array of photo data: URLs for existing photos, base64 data URLs for new ones"
 // @Success 200 {object} dto.AuthorResponseDTO "Author"
+// @Failure 400 {object} map[string]string
 // @Router /api/authors/{id}/photos [patch]
 func (h *AuthorHandler) PatchAuthorPhotos(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -501,19 +532,26 @@ func (h *AuthorHandler) PatchAuthorPhotos(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
 		return
 	}
-	form, err := c.MultipartForm()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form"})
+
+	var photoStrings []string
+	if err := c.ShouldBindJSON(&photoStrings); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse JSON: " + err.Error()})
 		return
 	}
-	photos := form.File["photos"]
-	photos_result, err := h.authorService.PatchAuthorPhotos(uint(id), photos)
+
+	// if len(photoStrings) == 0 {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "no photos provided"})
+	// 	return
+	// }
+
+	updatedEvent, err := h.authorService.PatchAuthorPhotosFromStrings(uint(id), photoStrings)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Can't patch photos: " + err.Error()})
 		return
 	}
-	base_url := config.GetBaseURL()
-	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(photos_result, base_url))
+
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToAuthorResponseDTO(updatedEvent, baseUrl))
 }
 
 // @Summary Update main photo to author

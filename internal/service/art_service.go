@@ -654,3 +654,22 @@ func (s *artService) DeleteArtsByCollectionIDSync(id uint) error {
 
 	return nil
 }
+
+func (s *artService) PatchArtPhotosFromStrings(artID uint, photoStrings []string) (entity.Art, error) {
+	currentArt, err := s.GetArtByID(artID)
+	if err != nil {
+		return entity.Art{}, err
+	}
+
+	getCurrentPhotos := func() []entity.Photo {
+		return currentArt.Photos
+	}
+
+	err = PatchPhotosFromStrings(artID, "arts", photoStrings, s.photoRepository, getCurrentPhotos)
+	if err != nil {
+		return entity.Art{}, err
+	}
+
+	return s.GetArtByID(artID)
+}
+

@@ -395,36 +395,6 @@ func (h *PressHandler) AddPhotosToPress(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToPressResponseDTO(*press, base_url))
 }
 
-// @Summary Patch press photos
-// @Description Обновляет фотографии к прессу(имеющиеся удаляются) - передается []base64 в формате multipart/form-data в поле photos
-// @Accept multipart/form-data
-// @Produce json
-// @Tags Press
-// @Param id path int true "Press ID"
-// @Param photos formData []file true "Photos"
-// @Success 200 {object} dto.PressResponseDTO "Press"
-// @Router /api/press/{id}/photos [patch]
-func (h *PressHandler) PatchPressPhotos(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
-		return
-	}
-	form, err := c.MultipartForm()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form"})
-		return
-	}
-	photos := form.File["photos"]
-	press, _, err := h.pressService.PatchPressOrArticlePhotos(uint(id), "press", photos)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
-		return
-	}
-	base_url := config.GetBaseURL()
-	c.JSON(http.StatusOK, dto.ToPressResponseDTO(*press, base_url))
-}
-
 // @Summary Get main photo
 // @Description Получает главную фотографию пресса
 // @Accept json
@@ -445,4 +415,72 @@ func (h *PressHandler) GetMainPhoto(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, photo)
+}
+
+// @Summary Patch press photos
+// @Description Обновляет фотографии к прессу(имеющиеся удаляются) - передается []base64 в формате multipart/form-data в поле photos
+// @Accept multipart/form-data
+// @Produce json
+// @Tags Press
+// @Param id path int true "Press ID"
+// @Param photos formData []file true "Photos"
+// @Success 200 {object} dto.PressResponseDTO "Press"
+// @Router /api/press/{id}/photos [patch]
+// func (h *PressHandler) PatchPressPhotos(c *gin.Context) {
+// 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+// 		return
+// 	}
+// 	form, err := c.MultipartForm()
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form"})
+// 		return
+// 	}
+// 	photos := form.File["photos"]
+// 	press, _, err := h.pressService.PatchPressOrArticlePhotos(uint(id), "press", photos)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cant patch photos"})
+// 		return
+// 	}
+// 	base_url := config.GetBaseURL()
+// 	c.JSON(http.StatusOK, dto.ToPressResponseDTO(*press, base_url))
+// }
+
+// @Summary Patch event photos
+// @Description Обновляет фотографии события - передается JSON массив строк: URLs для существующих мальчишек, а base64 для новых мальчишек
+// @Accept json
+// @Produce json
+// @Tags Press
+// @Param id path int true "Press ID"
+// @Param photos body []string true "Array of photo data: URLs for existing photos, base64 data URLs for new ones"
+// @Success 200 {object} dto.PressResponseDTO "Press"
+// @Failure 400 {object} map[string]string
+// @Router /api/press/{id}/photos [patch]
+func (h *PressHandler) PatchPressPhotos(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id format"})
+		return
+	}
+
+	var photoStrings []string
+	if err := c.ShouldBindJSON(&photoStrings); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse JSON: " + err.Error()})
+		return
+	}
+
+	// if len(photoStrings) == 0 {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "no photos provided"})
+	// 	return
+	// }
+
+	updatedEvent, _, err := h.pressService.PatchPhotosFromStrings("press", uint(id), photoStrings)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Can't patch photos: " + err.Error()})
+		return
+	}
+
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToPressResponseDTO(*updatedEvent, baseUrl))
 }
