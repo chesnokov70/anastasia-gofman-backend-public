@@ -193,3 +193,31 @@ func (h *CollectionHandler) DeleteCollection(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Collection deleted successfully"})
 }
+
+// @Summary Add arts to collection
+// @Description Добавляет арты в коллекцию
+// @Tags Collections
+// @Param id path int true "Collection ID"
+// @Param arts body []uint true "Arts"
+// @Success 200 {object} map[string]string
+// @Router /api/collections/{id}/arts [post]
+func (h *CollectionHandler) AddArtsToCollection(c *gin.Context) {
+	id := c.Param("id")
+	id_uint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter"})
+		return
+	}
+	var arts []uint
+	if err := c.ShouldBindJSON(&arts); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	collection_result, err := h.collectionService.AddArtsToCollection(uint(id_uint), arts)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	base_url := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToCollectionResponseDTO(collection_result, base_url))
+}

@@ -46,6 +46,7 @@ func parseSpecializations(specializationStr string) pq.StringArray {
 // @Param page query int false "Page number" default(1)
 // @Param size query int false "Page size" default(10)
 // @Param with_pagination query bool false "With pagination" default(true)
+// @Param full query bool false "Everybody" default(false)
 // @Param specialization query []string false "Filter by specialization" collectionFormat(csv)
 // @Success 200 {array} dto.AuthorResponseWithArtsDTO
 // @Router /api/authors [get]
@@ -62,6 +63,12 @@ func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 	with_arts, err := strconv.ParseBool(with_arts_str)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_arts format"})
+		return
+	}
+	full_str := c.DefaultQuery("full", "false")
+	full, err := strconv.ParseBool(full_str)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid full format"})
 		return
 	}
 
@@ -82,9 +89,9 @@ func (h *AuthorHandler) GetAllAuthors(c *gin.Context) {
 
 	// Используем фильтрацию по специализации если указана
 	if len(specializations) > 0 {
-		authors, arts, total_pages, total_items, err = h.authorService.GetAuthorsBySpecialization(specializations, with_arts, page, size, with_pagination)
+		authors, arts, total_pages, total_items, err = h.authorService.GetAuthorsBySpecialization(specializations, with_arts, page, size, with_pagination, full)
 	} else {
-		authors, arts, total_pages, total_items, err = h.authorService.GetAllAuthors(with_arts, page, size, with_pagination)
+		authors, arts, total_pages, total_items, err = h.authorService.GetAllAuthors(with_arts, page, size, with_pagination, full)
 	}
 
 	if err != nil {

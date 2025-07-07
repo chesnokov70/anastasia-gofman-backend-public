@@ -7,8 +7,8 @@ import (
 )
 
 type AuthorService interface {
-	GetAllAuthors(with_arts bool, page int, size int, with_pagination bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error)
-	GetAuthorsBySpecialization(specializations []string, with_arts bool, page int, size int, with_pagination bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error)
+	GetAllAuthors(with_arts bool, page int, size int, with_pagination bool, full bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error)
+	GetAuthorsBySpecialization(specializations []string, with_arts bool, page int, size int, with_pagination bool, full bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error)
 	GetAuthorByID(id uint, with_arts bool) (entity.Author, map[uint][]entity.Art, error)
 	CreateAuthor(author entity.Author) (entity.Author, error)
 	UpdateAuthor(author entity.Author) (entity.Author, error)
@@ -78,6 +78,7 @@ type ArtCollectionService interface {
 	DeleteCollection(id uint, delete_action string, artService ArtService) error
 	PartialUpdateCollection(id uint, kwargs map[string]interface{}) (entity.ArtCollection, error)
 	FullUpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
+	AddArtsToCollection(id uint, arts []uint) (entity.ArtCollection, error)
 }
 
 type PressAndArticleService interface {

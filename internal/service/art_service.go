@@ -571,7 +571,26 @@ func (s *artService) UpdatePhotosInStripe(id uint) error {
 	current_price := int64(art.Price)
 	currency := "usd"
 	active := true
-	_, err = s.stripeService.UpdateProduct(art.StripeProductID, &art.Name.EN, &art.Description.EN, &list_of_photos, &current_price, &currency, &active)
+	name := art.NameForStripe
+	if name == "" {
+		name = art.Name.EN
+	}
+	description := art.DescriptionForStripe
+	if description == "" {
+		description = art.Description.EN
+	}
+	ProductAndLink, err := s.stripeService.UpdateProduct(art.StripeProductID, &name, &description, &list_of_photos, &current_price, &currency, &active)
+	if err != nil {
+		return err
+	}
+	if ProductAndLink != nil {
+		art.StripeProductID = ProductAndLink.Product.ID
+		art.PaymentLink = ProductAndLink.Link.URL
+	}
+	_, err = s.artRepository.PartialUpdateArt(id, map[string]interface{}{
+		"stripe_product_id": art.StripeProductID,
+		"payment_link":      art.PaymentLink,
+	})
 	if err != nil {
 		return err
 	}

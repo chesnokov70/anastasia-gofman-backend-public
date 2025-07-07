@@ -118,3 +118,13 @@ func (r *ArtCollectionRepository) FullUpdateCollection(collection entity.ArtColl
 	err := r.db.Save(&collection).Error
 	return collection, err
 }
+
+func (r *ArtCollectionRepository) AddArtsToCollection(id uint, arts []uint) (entity.ArtCollection, error) {
+	for _, art := range arts {
+		err := r.db.Model(&entity.Art{}).Where("id = ?", art).Update("collection_id", id).Error
+		if err != nil {
+			return entity.ArtCollection{}, err
+		}
+	}
+	return r.GetCollectionByID(id, true)
+}

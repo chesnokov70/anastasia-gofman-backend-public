@@ -71,3 +71,11 @@ func (s *artCollectionService) FullUpdateCollection(collection entity.ArtCollect
 	}
 	return collection, nil
 }
+
+func (s *artCollectionService) AddArtsToCollection(id uint, arts []uint) (entity.ArtCollection, error) {
+	collection, err := s.artCollectionRepository.AddArtsToCollection(id, arts)
+	if err != nil {
+		return entity.ArtCollection{}, err
+	}
+	return collection, nil
+}

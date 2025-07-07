@@ -15,12 +15,15 @@ type AuthorRepository struct {
 	db *gorm.DB
 }
 
-func (r *AuthorRepository) GetAllAuthors(offset int, limit int, with_pagination bool) ([]entity.Author, int64, error) {
+func (r *AuthorRepository) GetAllAuthors(offset int, limit int, with_pagination bool, full bool) ([]entity.Author, int64, error) {
 	var authors []entity.Author
 	var count int64
-	query := r.db.Model(&entity.Author{}).Where("id != ?", 3333).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+	query := r.db.Model(&entity.Author{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
 	}).Order("position ASC")
+	if !full {
+		query = query.Where("id != ?", 3333)
+	}
 
 	err := query.Count(&count).Error
 	if err != nil {
@@ -35,13 +38,16 @@ func (r *AuthorRepository) GetAllAuthors(offset int, limit int, with_pagination 
 	return authors, count, err
 }
 
-func (r *AuthorRepository) GetAuthorsBySpecialization(specializations []string, offset int, limit int, with_pagination bool) ([]entity.Author, int64, error) {
+func (r *AuthorRepository) GetAuthorsBySpecialization(specializations []string, offset int, limit int, with_pagination bool, full bool) ([]entity.Author, int64, error) {
 	var authors []entity.Author
 	var count int64
 
-	query := r.db.Model(&entity.Author{}).Where("id != ?", 3333).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+	query := r.db.Model(&entity.Author{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
 	}).Order("position ASC")
+	if !full {
+		query = query.Where("id != ?", 3333)
+	}
 
 	if len(specializations) > 0 {
 		query = query.Where("specialization && ?", pq.Array(specializations))

@@ -22,14 +22,14 @@ type authorService struct {
 	artRepository    repository.ArtRepository
 }
 
-func (s *authorService) GetAllAuthors(with_arts bool, page int, size int, with_pagination bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error) {
+func (s *authorService) GetAllAuthors(with_arts bool, page int, size int, with_pagination bool, full bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error) {
 	offset, limit := 0, 0
 	if page > 0 && size > 0 {
 		offset = (page - 1) * size
 		limit = size
 	}
 	if !with_arts {
-		all_autors, total, err := s.authorRepository.GetAllAuthors(offset, limit, with_pagination)
+		all_autors, total, err := s.authorRepository.GetAllAuthors(offset, limit, with_pagination, full)
 		if err != nil {
 			return nil, nil, 0, 0, err
 		}
@@ -42,7 +42,7 @@ func (s *authorService) GetAllAuthors(with_arts bool, page int, size int, with_p
 		return all_autors, nil, total_pages, int64(total), nil
 	}
 
-	authors, total, err := s.authorRepository.GetAllAuthors(offset, limit, with_pagination)
+	authors, total, err := s.authorRepository.GetAllAuthors(offset, limit, with_pagination, full)
 	if err != nil {
 		return nil, nil, 0, 0, err
 	}
@@ -60,7 +60,7 @@ func (s *authorService) GetAllAuthors(with_arts bool, page int, size int, with_p
 	return authors, arts, total_pages, int64(total), nil
 }
 
-func (s *authorService) GetAuthorsBySpecialization(specializations []string, with_arts bool, page int, size int, with_pagination bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error) {
+func (s *authorService) GetAuthorsBySpecialization(specializations []string, with_arts bool, page int, size int, with_pagination bool, full bool) ([]entity.Author, map[uint][]entity.Art, int64, int64, error) {
 	offset, limit := 0, 0
 	if page > 0 && size > 0 {
 		offset = (page - 1) * size
@@ -68,7 +68,7 @@ func (s *authorService) GetAuthorsBySpecialization(specializations []string, wit
 	}
 
 	if !with_arts {
-		authors, total, err := s.authorRepository.GetAuthorsBySpecialization(specializations, offset, limit, with_pagination)
+		authors, total, err := s.authorRepository.GetAuthorsBySpecialization(specializations, offset, limit, with_pagination, full)
 		if err != nil {
 			return nil, nil, 0, 0, err
 		}
@@ -81,7 +81,7 @@ func (s *authorService) GetAuthorsBySpecialization(specializations []string, wit
 		return authors, nil, total_pages, int64(total), nil
 	}
 
-	authors, total, err := s.authorRepository.GetAuthorsBySpecialization(specializations, offset, limit, with_pagination)
+	authors, total, err := s.authorRepository.GetAuthorsBySpecialization(specializations, offset, limit, with_pagination, full)
 	if err != nil {
 		return nil, nil, 0, 0, err
 	}

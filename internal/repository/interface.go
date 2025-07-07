@@ -6,8 +6,8 @@ import (
 )
 
 type AuthorRepository interface {
-	GetAllAuthors(offset int, limit int, with_pagination bool) ([]entity.Author, int64, error)
-	GetAuthorsBySpecialization(specializations []string, offset int, limit int, with_pagination bool) ([]entity.Author, int64, error)
+	GetAllAuthors(offset int, limit int, with_pagination bool, full bool) ([]entity.Author, int64, error)
+	GetAuthorsBySpecialization(specializations []string, offset int, limit int, with_pagination bool, full bool) ([]entity.Author, int64, error)
 	GetAuthorByID(id uint) (entity.Author, error)
 	GetCountOfAuthors() (int, error)
 	CreateAuthor(author entity.Author) (entity.Author, error)
@@ -110,6 +110,7 @@ type ArtCollectionRepository interface {
 	PartialUpdateCollection(id uint, kwargs map[string]interface{}) (entity.ArtCollection, error)
 	FullUpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
 	GetArtsByCollectionID(collectionID uint) ([]entity.Art, error)
+	AddArtsToCollection(id uint, arts []uint) (entity.ArtCollection, error)
 }
 
 type PressAndArticleRepository interface {
