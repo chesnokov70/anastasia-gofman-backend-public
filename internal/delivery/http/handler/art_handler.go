@@ -394,6 +394,11 @@ func (h *ArtHandler) PartialUpdateArt(c *gin.Context) {
 		}
 		// }(uint(id))
 	}
+	art, err = h.artService.GetArtByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve art after updates: " + err.Error()})
+		return
+	}
 	base_url := config.GetBaseURL()
 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(art, base_url))
 }
