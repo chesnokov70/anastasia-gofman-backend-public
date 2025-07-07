@@ -72,11 +72,15 @@ func (s *artService) CreateArt(art entity.Art, with_stripe bool) (entity.Art, er
 		}
 		art.StripeProductID = product.Product.ID
 		art.PaymentLink = product.Link.URL
+		art.NameForStripe = nameForStripe
+		art.DescriptionForStripe = descriptionForStripe
 	} else if with_stripe && art.Price == 0 {
 		return entity.Art{}, errors.New("price can't be 0")
 	} else {
 		art.StripeProductID = ""
 		art.PaymentLink = ""
+		art.NameForStripe = ""
+		art.DescriptionForStripe = ""
 	}
 	return s.artRepository.CreateArt(art)
 }
@@ -287,18 +291,33 @@ func partial_update_stripe_product(s *artService, art entity.Art, nameForStripe 
 }
 
 func (s *artService) FullUpdateArt(art entity.Art, with_stripe bool) (entity.Art, error) {
+	existingArt, err := s.artRepository.GetArtByID(art.ID)
+	if err != nil {
+		return entity.Art{}, err
+	}
+	art.StripeProductID = existingArt.StripeProductID
+
 	nameForStripe, descriptionForStripe := get_name_and_description_for_stripe(art)
 	price := int64(art.Price)
 	currency := "usd"
 	active := true
 	if with_stripe {
-		product, err := s.stripeService.UpdateProduct(art.StripeProductID, &nameForStripe, &descriptionForStripe, &[]string{}, &price, &currency, &active)
-		if err != nil {
-			return entity.Art{}, err
-		}
-		if product != nil {
+		if art.StripeProductID == "" && art.Price > 0 {
+			product, err := s.stripeService.CreateProduct(nameForStripe, descriptionForStripe, []string{}, price, currency)
+			if err != nil {
+				return entity.Art{}, err
+			}
 			art.StripeProductID = product.Product.ID
 			art.PaymentLink = product.Link.URL
+		} else if art.StripeProductID != "" {
+			product, err := s.stripeService.UpdateProduct(art.StripeProductID, &nameForStripe, &descriptionForStripe, &[]string{}, &price, &currency, &active)
+			if err != nil {
+				return entity.Art{}, err
+			}
+			if product != nil {
+				art.StripeProductID = product.Product.ID
+				art.PaymentLink = product.Link.URL
+			}
 		}
 	}
 	return s.artRepository.FullUpdateArt(art)
