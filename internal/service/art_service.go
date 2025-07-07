@@ -72,6 +72,8 @@ func (s *artService) CreateArt(art entity.Art, with_stripe bool) (entity.Art, er
 		}
 		art.StripeProductID = product.Product.ID
 		art.PaymentLink = product.Link.URL
+	} else if with_stripe && art.Price == 0 {
+		return entity.Art{}, errors.New("price can't be 0")
 	} else {
 		art.StripeProductID = ""
 		art.PaymentLink = ""
@@ -672,4 +674,3 @@ func (s *artService) PatchArtPhotosFromStrings(artID uint, photoStrings []string
 
 	return s.GetArtByID(artID)
 }
-
