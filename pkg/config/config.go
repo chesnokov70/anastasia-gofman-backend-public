@@ -9,11 +9,21 @@ import (
 	"github.com/spf13/viper"
 )
 
+var instance *Config
+
+type EmailConfig struct {
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	From     string `mapstructure:"from"`
+	Admin    string `mapstructure:"admin"`
+}
+
 type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Server   ServerConfig   `mapstructure:"server"`
 	Stripe   StripeConfig   `mapstructure:"stripe"`
 	OpenAI   OpenAIConfig   `mapstructure:"openai"`
+	Email    EmailConfig    `mapstructure:"email"`
 	BaseURL  string         `mapstructure:"base_url"`
 }
 
@@ -62,10 +72,20 @@ func LoadConfig() (*Config, error) {
 	viper.BindEnv("stripe.secret_key", "STRIPE_SECRET_KEY")
 	viper.BindEnv("stripe.public_key", "STRIPE_PUBLIC_KEY")
 	viper.BindEnv("openai.api_key", "OPENAI_API_KEY")
-	viper.BindEnv("base_url", "http://91.105.196.19:8080/")
+
+	viper.BindEnv("email.username", "EMAIL_USERNAME")
+	viper.BindEnv("email.password", "EMAIL_PASSWORD")
+	viper.BindEnv("email.from", "EMAIL_FROM")
+	viper.BindEnv("email.admin", "EMAIL_ADMIN")
+
+	viper.BindEnv("base_url", "BASE_URL")
 	log.Printf("!!!Stripe secret key: %s", viper.GetString("stripe.secret_key"))
 	log.Printf("!!!Stripe public key: %s", viper.GetString("stripe.public_key"))
 	log.Printf("!!!Base URL: %s", viper.GetString("base_url"))
+	log.Printf("!!!Email username: %s", viper.GetString("email.username"))
+	log.Printf("!!!Email password: %s", viper.GetString("email.password"))
+	log.Printf("!!!Email from: %s", viper.GetString("email.from"))
+	log.Printf("!!!Admin email: %s", viper.GetString("email.admin"))
 
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 5432)
@@ -78,6 +98,11 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("stripe.secret_key", "sk_test_")
 	viper.SetDefault("stripe.public_key", "pk_test_")
 	viper.SetDefault("openai.api_key", "")
+	viper.SetDefault("base_url", "http://91.105.196.19:8080/")
+	viper.SetDefault("email.username", "")
+	viper.SetDefault("email.password", "")
+	viper.SetDefault("email.from", "")
+	viper.SetDefault("email.admin", "")
 
 	viper.AddConfigPath("./configs")
 	viper.SetConfigName("config")
@@ -99,8 +124,8 @@ func LoadConfig() (*Config, error) {
 	if err := validateConfig(&config); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
-
-	return &config, nil
+	instance = &config
+	return instance, nil
 }
 
 func validateConfig(cfg *Config) error {
@@ -139,4 +164,8 @@ func GetBaseURL() string {
 		return "http://91.105.196.19:8080/"
 	}
 	return viper.GetString("base_url")
+}
+
+func GetConfig() *Config {
+	return instance
 }

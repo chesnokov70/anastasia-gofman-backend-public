@@ -2,7 +2,7 @@ package main
 
 import (
 	// _ "anastasia_gofman_backend/docs"
-	_ "anastasia_gofman_backend/cmd/docs"
+	docs "anastasia_gofman_backend/cmd/docs"
 	"anastasia_gofman_backend/internal/delivery/http"
 	_ "anastasia_gofman_backend/internal/delivery/http/dto"
 	"anastasia_gofman_backend/internal/delivery/http/handler"
@@ -16,6 +16,7 @@ import (
 	pkgService "anastasia_gofman_backend/pkg/service"
 	"log"
 	stdhttp "net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 
@@ -33,6 +34,19 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	if baseURL := cfg.BaseURL; baseURL != "" {
+		parsedURL, err := url.Parse(baseURL)
+		if err == nil {
+			docs.SwaggerInfo.Host = parsedURL.Host
+			docs.SwaggerInfo.BasePath = parsedURL.Path
+			if parsedURL.Scheme != "" {
+				docs.SwaggerInfo.Schemes = []string{parsedURL.Scheme}
+			}
+		} else {
+			log.Printf("Warning: Could not parse BaseURL for swagger: %v", err)
+		}
+	}
+
 	gin.SetMode(cfg.Server.Mode)
 
 	db, err := database.NewPostgresDB(cfg)
@@ -45,6 +59,8 @@ func main() {
 		&entity.Event{},
 		&entity.Press{},
 		&entity.Article{},
+		&entity.Mail{},
+		&entity.EventRegistration{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
@@ -61,11 +77,10 @@ func main() {
 	photoRepository := postgres.NewPhotoRepository(db)
 	artRepository := postgres.NewArtRepository(db)
 
-	// Инициализация Stripe сервиса
 	stripeService := pkgService.NewStripeService(
-		cfg.Stripe.SecretKey, // test key
-		cfg.Stripe.PublicKey, // prod key (пока используем тот же)
-		false,                // isLive - по умолчанию тестовый режим
+		cfg.Stripe.SecretKey,
+		cfg.Stripe.PublicKey,
+		false,
 	)
 
 	artService := service.NewArtService(artRepository, photoRepository, stripeService)
@@ -78,6 +93,13 @@ func main() {
 
 	eventRepository := postgres.NewEventRepository(db)
 	eventService := service.NewEventService(eventRepository, photoRepository)
+
+	// Event registration services
+	mailRepository := postgres.NewMailRepository(db)
+	mailService := service.NewMailService(mailRepository)
+	emailService := service.NewEmailService()
+	eventRegistrationRepository := postgres.NewEventRegistrationRepository(db)
+	eventRegistrationService := service.NewEventRegistrationService(eventRegistrationRepository, eventRepository, mailService, emailService)
 
 	welcomeHandler := handler.NewWelcomeHandler()
 
@@ -96,11 +118,14 @@ func main() {
 	translationHandler := handler.NewTranslationHandler(translationService)
 
 	eventHandler := handler.NewEventHandler(eventService, translationService)
+	eventRegistrationHandler := handler.NewEventRegistrationHandler(eventRegistrationService, mailService)
 
-	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler)
+	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler, eventRegistrationHandler)
 	router.Static("/uploads", "./uploads")
-	// / Swagger route
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.DefaultModelsExpandDepth(2)))
+
+	// Use default swagger handler without custom URL to force template processing
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
+		ginSwagger.DefaultModelsExpandDepth(2)))
 
 	// ginSwagger.WrapHandler(swaggerfiles.Handler,
 	// 	ginSwagger.URL("http://localhost:8080/swagger/doc.json"),
@@ -122,6 +147,133 @@ func main() {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
+
+// package main
+
+// import (
+// 	// _ "anastasia_gofman_backend/docs"
+// 	_ "anastasia_gofman_backend/cmd/docs"
+// 	"anastasia_gofman_backend/internal/delivery/http"
+// 	_ "anastasia_gofman_backend/internal/delivery/http/dto"
+// 	"anastasia_gofman_backend/internal/delivery/http/handler"
+
+// 	"anastasia_gofman_backend/internal/entity"
+
+// 	"anastasia_gofman_backend/internal/repository/postgres"
+// 	"anastasia_gofman_backend/internal/service"
+// 	"anastasia_gofman_backend/pkg/config"
+// 	"anastasia_gofman_backend/pkg/database"
+// 	pkgService "anastasia_gofman_backend/pkg/service"
+// 	"log"
+// 	stdhttp "net/http"
+
+// 	"github.com/gin-gonic/gin"
+
+// 	swaggerFiles "github.com/swaggo/files"
+// 	ginSwagger "github.com/swaggo/gin-swagger"
+// )
+
+// // @title Art Gallery API
+// // @version 1.0
+// // @description Backend для галереи anastasii_gofman
+// // @BasePath /
+// func main() {
+// 	cfg, err := config.LoadConfig()
+// 	if err != nil {
+// 		log.Fatalf("Failed to load config: %v", err)
+// 	}
+
+// 	gin.SetMode(cfg.Server.Mode)
+
+// 	db, err := database.NewPostgresDB(cfg)
+
+// 	// имиграция
+// 	err = db.AutoMigrate(
+// 		&entity.Author{},
+// 		&entity.Photo{},
+// 		&entity.Art{},
+// 		&entity.Event{},
+// 		&entity.Press{},
+// 		&entity.Article{},
+// 		// &entity.Mail{},
+// 		// &entity.EventRegistration{},
+// 	)
+// 	if err != nil {
+// 		log.Fatalf("Failed to migrate database: %v", err)
+// 	}
+
+// 	if err := db.Exec(`
+// 		UPDATE arts
+// 		SET author_id = NULL
+// 		WHERE author_id IS NOT NULL AND author_id NOT IN (SELECT id FROM authors)
+// 	`).Error; err != nil {
+// 		log.Printf("Warning: Failed to clean up orphan arts: %v", err)
+// 	}
+
+// 	photoRepository := postgres.NewPhotoRepository(db)
+// 	artRepository := postgres.NewArtRepository(db)
+
+// 	// Инициализация Stripe сервиса
+// 	stripeService := pkgService.NewStripeService(
+// 		cfg.Stripe.SecretKey, // test key
+// 		cfg.Stripe.PublicKey, // prod key (пока используем тот же)
+// 		false,                // isLive - по умолчанию тестовый режим
+// 	)
+
+// 	artService := service.NewArtService(artRepository, photoRepository, stripeService)
+// 	artHandler := handler.NewArtHandler(artService)
+
+// 	authorRepository := postgres.NewAuthorRepository(db)
+// 	authorRepository.CreateDefaultAuthor()
+// 	authorService := service.NewAuthorService(authorRepository, photoRepository, artRepository)
+// 	authorHandler := handler.NewAuthorHandler(authorService)
+
+// 	eventRepository := postgres.NewEventRepository(db)
+// 	eventService := service.NewEventService(eventRepository, photoRepository)
+
+// 	welcomeHandler := handler.NewWelcomeHandler()
+
+// 	paymentHandler := handler.NewPaymentHandler(stripeService)
+
+// 	collectionRepository := postgres.NewArtCollectionRepository(db, artRepository)
+// 	collectionService := service.NewArtCollectionService(collectionRepository)
+// 	collectionHandler := handler.NewCollectionHandler(collectionService, artService)
+
+// 	pressArticleRepository := postgres.NewPressAndArticleRepository(db)
+// 	pressArticleService := service.NewPressAndArticleService(pressArticleRepository, photoRepository)
+// 	pressHandler := handler.NewPressHandler(pressArticleService)
+// 	articleHandler := handler.NewArticleHandler(pressArticleService)
+
+// 	translationService := service.NewTranslationService(cfg.OpenAI.APIKey)
+// 	translationHandler := handler.NewTranslationHandler(translationService)
+
+// 	eventHandler := handler.NewEventHandler(eventService, translationService)
+
+// 	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler)
+// 	router.Static("/uploads", "./uploads")
+// 	// / Swagger route
+// 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.DefaultModelsExpandDepth(2)))
+
+// 	// ginSwagger.WrapHandler(swaggerfiles.Handler,
+// 	// 	ginSwagger.URL("http://localhost:8080/swagger/doc.json"),
+// 	// )
+
+// 	// Redirect /docs to /swagger/index.html
+// 	router.GET("/docs", func(c *gin.Context) {
+// 		c.Redirect(stdhttp.StatusMovedPermanently, "/swagger/index.html")
+// 	})
+
+// 	log.Printf("Starting server on port %s in %s mode", cfg.Server.Port, cfg.Server.Mode)
+// 	if cfg.Stripe.SecretKey == "sk_test_" {
+// 		log.Printf("Warning: Using default Stripe test key. Set STRIPE_SECRET_KEY environment variable.")
+// 	} else {
+// 		log.Printf("Stripe service initialized in production mode")
+// 	}
+
+// 	if err := router.Run(":" + cfg.Server.Port); err != nil {
+// 		log.Fatalf("Failed to start server: %v", err)
+// 	}
+// }
 
 // package main
 
