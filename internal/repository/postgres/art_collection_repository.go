@@ -90,7 +90,7 @@ func (r *ArtCollectionRepository) GetArtsByCollectionID(collectionID uint) ([]en
 	var arts []entity.Art
 	err := r.db.Preload("Author").Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
-	}).Where("collection_id = ?", collectionID).Find(&arts).Error
+	}).Order("position ASC").Where("collection_id = ?", collectionID).Find(&arts).Error
 	return arts, err
 }
 
@@ -120,11 +120,26 @@ func (r *ArtCollectionRepository) FullUpdateCollection(collection entity.ArtColl
 }
 
 func (r *ArtCollectionRepository) AddArtsToCollection(id uint, arts []uint) (entity.ArtCollection, error) {
-	for _, art := range arts {
-		err := r.db.Model(&entity.Art{}).Where("id = ?", art).Update("collection_id", id).Error
-		if err != nil {
-			return entity.ArtCollection{}, err
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		var maxPosition int
+		if err := tx.Model(&entity.Art{}).Where("collection_id = ? AND id NOT IN ?", id, arts).Select("COALESCE(MAX(position), 0)").Row().Scan(&maxPosition); err != nil {
+			return err
 		}
+
+		for i, artID := range arts {
+			if err := tx.Model(&entity.Art{}).Where("id = ?", artID).Updates(map[string]interface{}{
+				"collection_id": id,
+				"position":      maxPosition + i + 1,
+			}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return entity.ArtCollection{}, err
 	}
+
 	return r.GetCollectionByID(id, true)
 }

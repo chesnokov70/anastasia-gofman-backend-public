@@ -164,13 +164,11 @@ func (s *StripeService) UpdateProduct(productID string, name *string, descriptio
 		return nil, errors.New("ID продукта обязателен")
 	}
 
-	// Получаем текущий продукт
 	currentProduct, err := s.GetProduct(productID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Обновляем продукт
 	productParams := &stripe.ProductParams{}
 
 	if name != nil && *name != "" {
@@ -179,7 +177,6 @@ func (s *StripeService) UpdateProduct(productID string, name *string, descriptio
 
 	if description != nil {
 		if *description == "" {
-			// Удаляем description
 			productParams.Description = stripe.String("")
 		} else {
 			productParams.Description = stripe.String(*description)
@@ -188,10 +185,8 @@ func (s *StripeService) UpdateProduct(productID string, name *string, descriptio
 
 	if imageURLs != nil {
 		if len(*imageURLs) == 0 {
-			// Удаляем все изображения
 			productParams.Images = []*string{}
 		} else {
-			// Обновляем изображения
 			for _, imageURL := range *imageURLs {
 				productParams.Images = append(productParams.Images, stripe.String(imageURL))
 			}
@@ -207,9 +202,8 @@ func (s *StripeService) UpdateProduct(productID string, name *string, descriptio
 		return nil, fmt.Errorf("не удалось обновить продукт: %w", err)
 	}
 
-	// Обновляем цену если нужно
 	var updatedPrice *stripe.Price = currentProduct.Price
-	if priceAmount != nil && *priceAmount > 0 {
+	if priceAmount != nil && *priceAmount > 0 && *priceAmount != currentProduct.Price.UnitAmount {
 		currencyValue := "usd"
 		if currency != nil && *currency != "" {
 			currencyValue = *currency
@@ -365,7 +359,6 @@ func (s *StripeService) CreatePaymentLink(productID string, quantity int64) (*st
 		quantity = 1
 	}
 
-	// Получаем активную цену для продукта
 	productWithPrice, err := s.GetProduct(productID)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось найти продукт: %w", err)
