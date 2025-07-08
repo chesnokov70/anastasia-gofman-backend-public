@@ -129,6 +129,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			collections.PUT("/:id", collectionHandler.FullUpdateCollection)
 			collections.PATCH("/:id", collectionHandler.PartialUpdateCollection)
 			collections.DELETE("/:id", collectionHandler.DeleteCollection)
+			collections.POST("/:id/arts", collectionHandler.AddArtsToCollection)
 		}
 		press := api.Group("/press")
 		{
