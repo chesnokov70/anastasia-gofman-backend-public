@@ -212,7 +212,6 @@ func (s *artService) PartialUpdateArt(id uint, kwargs map[string]interface{}, wi
 		delete(kwargs, "photos")
 	}
 
-	// Безопасное извлечение данных для Stripe
 	var nameForStripe, descriptionForStripe *string
 	var price *int64
 
@@ -252,21 +251,59 @@ func (s *artService) PartialUpdateArt(id uint, kwargs map[string]interface{}, wi
 		}
 	}
 
-	// Обновление в Stripe только если есть изменения в соответствующих полях
-	if with_stripe && (nameForStripe != nil || descriptionForStripe != nil || price != nil) {
+	if with_stripe && (nameForStripe != nil || descriptionForStripe != nil || price != nil || kwargs["name"] != nil || kwargs["description"] != nil) {
+		finalNameForStripe := nameForStripe
+		finalDescriptionForStripe := descriptionForStripe
 
-		product, err := partial_update_stripe_product(s, art, nameForStripe, descriptionForStripe, price)
+		if finalNameForStripe == nil {
+			if nameVal, exists := kwargs["name"]; exists && nameVal != nil {
+				var nameEN string
+				if tt, ok := nameVal.(entity.TranslatedText); ok {
+					nameEN = tt.EN
+				} else if tt, ok := nameVal.(*entity.TranslatedText); ok {
+					nameEN = tt.EN
+				} else if mapVal, ok := nameVal.(map[string]interface{}); ok {
+					if en, ok := mapVal["EN"].(string); ok {
+						nameEN = en
+					}
+				}
+
+				if nameEN != "" {
+					finalNameForStripe = &nameEN
+				}
+			}
+		}
+
+		if finalDescriptionForStripe == nil {
+			if descVal, exists := kwargs["description"]; exists && descVal != nil {
+				var descEN string
+				if tt, ok := descVal.(entity.TranslatedText); ok {
+					descEN = tt.EN
+				} else if tt, ok := descVal.(*entity.TranslatedText); ok {
+					descEN = tt.EN
+				} else if mapVal, ok := descVal.(map[string]interface{}); ok {
+					if en, ok := mapVal["EN"].(string); ok {
+						descEN = en
+					}
+				}
+
+				if descEN != "" {
+					finalDescriptionForStripe = &descEN
+				}
+			}
+		}
+
+		product, err := partial_update_stripe_product(s, art, finalNameForStripe, finalDescriptionForStripe, price)
 		if err != nil {
 			return entity.Art{}, fmt.Errorf("failed to update stripe product: %w", err)
 		}
 
-		// Обновляем локальные данные для сохранения в БД
 		if product != nil {
-			if nameForStripe != nil {
-				kwargs["name_for_stripe"] = *nameForStripe
+			if finalNameForStripe != nil {
+				kwargs["name_for_stripe"] = *finalNameForStripe
 			}
-			if descriptionForStripe != nil {
-				kwargs["description_for_stripe"] = *descriptionForStripe
+			if finalDescriptionForStripe != nil {
+				kwargs["description_for_stripe"] = *finalDescriptionForStripe
 			}
 			if price != nil {
 				kwargs["price"] = int(*price)
