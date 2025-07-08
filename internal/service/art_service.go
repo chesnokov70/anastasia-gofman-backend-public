@@ -263,7 +263,7 @@ func (s *artService) PartialUpdateArt(id uint, kwargs map[string]interface{}, wi
 				} else if tt, ok := nameVal.(*entity.TranslatedText); ok {
 					nameEN = tt.EN
 				} else if mapVal, ok := nameVal.(map[string]interface{}); ok {
-					if en, ok := mapVal["EN"].(string); ok {
+					if en, ok := mapVal["en"].(string); ok {
 						nameEN = en
 					}
 				}
@@ -282,7 +282,7 @@ func (s *artService) PartialUpdateArt(id uint, kwargs map[string]interface{}, wi
 				} else if tt, ok := descVal.(*entity.TranslatedText); ok {
 					descEN = tt.EN
 				} else if mapVal, ok := descVal.(map[string]interface{}); ok {
-					if en, ok := mapVal["EN"].(string); ok {
+					if en, ok := mapVal["en"].(string); ok {
 						descEN = en
 					}
 				}
