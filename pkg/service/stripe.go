@@ -63,12 +63,22 @@ func (s *StripeService) CreateProduct(name, description string, imageURLs []stri
 	}
 
 	// 1. Создаем продукт
-	productParams := &stripe.ProductParams{
-		Name:        stripe.String(name),
-		Description: stripe.String(description),
-		Active:      stripe.Bool(true),
-		Type:        stripe.String("good"),
-		Shippable:   stripe.Bool(true),
+	var productParams *stripe.ProductParams
+	if description != "" {
+		productParams = &stripe.ProductParams{
+			Name:        stripe.String(name),
+			Description: stripe.String(description),
+			Active:      stripe.Bool(true),
+			Type:        stripe.String("good"),
+			Shippable:   stripe.Bool(true),
+		}
+	} else {
+		productParams = &stripe.ProductParams{
+			Name:      stripe.String(name),
+			Active:    stripe.Bool(true),
+			Type:      stripe.String("good"),
+			Shippable: stripe.Bool(true),
+		}
 	}
 
 	// Добавляем изображения
