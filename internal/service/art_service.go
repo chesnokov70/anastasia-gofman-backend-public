@@ -63,10 +63,7 @@ func (s *artService) CreateArt(art entity.Art, with_stripe bool) (entity.Art, er
 	art.Position = count + 1
 	var product *service.ProductWithPriceAndLink = nil
 	if with_stripe && art.Price != 0 {
-		fmt.Println("art", art)
 		nameForStripe, descriptionForStripe := get_name_and_description_for_stripe(art)
-		fmt.Println("nameForStripe", nameForStripe)
-		fmt.Println("descriptionForStripe", descriptionForStripe)
 
 		product, err = s.stripeService.CreateProduct(nameForStripe, descriptionForStripe, []string{}, int64(art.Price), "usd")
 
@@ -113,6 +110,8 @@ func (s *artService) UpdateArt(art entity.Art) (entity.Art, error) {
 		}
 		art.StripeProductID = product.Product.ID
 		art.PaymentLink = product.Link.URL
+		art.NameForStripe = nameForStripe
+		art.DescriptionForStripe = descriptionForStripe
 	}
 
 	return s.artRepository.UpdateArt(art)
