@@ -63,7 +63,10 @@ func (s *artService) CreateArt(art entity.Art, with_stripe bool) (entity.Art, er
 	art.Position = count + 1
 	var product *service.ProductWithPriceAndLink = nil
 	if with_stripe && art.Price != 0 {
+		fmt.Println("art", art)
 		nameForStripe, descriptionForStripe := get_name_and_description_for_stripe(art)
+		fmt.Println("nameForStripe", nameForStripe)
+		fmt.Println("descriptionForStripe", descriptionForStripe)
 
 		product, err = s.stripeService.CreateProduct(nameForStripe, descriptionForStripe, []string{}, int64(art.Price), "usd")
 
