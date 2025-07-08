@@ -61,6 +61,7 @@ func main() {
 		&entity.Article{},
 		&entity.Mail{},
 		&entity.EventRegistration{},
+		&entity.AuthorRegistration{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
