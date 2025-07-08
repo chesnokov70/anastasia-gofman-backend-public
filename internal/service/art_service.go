@@ -348,6 +348,8 @@ func (s *artService) FullUpdateArt(art entity.Art, with_stripe bool) (entity.Art
 			}
 			art.StripeProductID = product.Product.ID
 			art.PaymentLink = product.Link.URL
+			art.NameForStripe = nameForStripe
+			art.DescriptionForStripe = descriptionForStripe
 		} else if art.StripeProductID != "" {
 			product, err := s.stripeService.UpdateProduct(art.StripeProductID, &nameForStripe, &descriptionForStripe, &[]string{}, &price, &currency, &active)
 			if err != nil {
@@ -356,6 +358,8 @@ func (s *artService) FullUpdateArt(art entity.Art, with_stripe bool) (entity.Art
 			if product != nil {
 				art.StripeProductID = product.Product.ID
 				art.PaymentLink = product.Link.URL
+				art.NameForStripe = nameForStripe
+				art.DescriptionForStripe = descriptionForStripe
 			}
 		}
 	}
