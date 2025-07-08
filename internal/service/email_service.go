@@ -97,3 +97,21 @@ func (s *EmailService) SendAdminNotification(registration entity.EventRegistrati
 
 	return s.SendEmail(adminEmail, subject, body)
 }
+
+func (s *EmailService) SendAdminNotificationAuthor(registration entity.AuthorRegistration) error {
+	adminEmail := config.GetConfig().Email.Admin
+	// adminEmail := "kachan333.333@gmail.com"
+
+	subject := fmt.Sprintf("New Author Registration - %s", registration.FullName)
+	body := fmt.Sprintf(`
+		<h2>New Author Registration</h2>
+		<p><strong>Name:</strong> %s</p>
+		<p><strong>Email:</strong> %s</p>
+		<p><strong>Language:</strong> %s</p>
+		<p><strong>Phone Number:</strong> %s</p>
+		<p><strong>Portfolio:</strong> %s</p>
+		<p><strong>Registration Time:</strong> %s</p>
+	`, registration.FullName, registration.Email, registration.Language, registration.PhoneNumber, registration.Portfolio, registration.CreatedAt.Format("2006-01-02 15:04"))
+
+	return s.SendEmail(adminEmail, subject, body)
+}

@@ -97,6 +97,9 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		}
 
 		api.GET("/registrations", eventRegistrationHandler.GetAllRegistrations)
+		api.GET("/author-registrations", eventRegistrationHandler.GetAllAuthorRegistrations)
+		// api.GET("/author-registrations/:id", eventRegistrationHandler.GetAuthorRegistrationByID)
+		api.POST("/author-registrations", eventRegistrationHandler.RegisterForAuthor)
 
 		mailTemplates := api.Group("/mail-templates")
 		{

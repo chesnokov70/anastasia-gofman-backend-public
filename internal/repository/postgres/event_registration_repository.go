@@ -42,3 +42,20 @@ func (r *EventRegistrationRepository) GetAllRegistrations() ([]entity.EventRegis
 	err := r.db.Preload("Event").Find(&registrations).Error
 	return registrations, err
 }
+
+func (r *EventRegistrationRepository) CreateAuthorRegistration(registration entity.AuthorRegistration) (entity.AuthorRegistration, error) {
+	err := r.db.Create(&registration).Error
+	return registration, err
+}
+
+func (r *EventRegistrationRepository) GetAllAuthorRegistrations() ([]entity.AuthorRegistration, error) {
+	var registrations []entity.AuthorRegistration
+	err := r.db.Find(&registrations).Error
+	return registrations, err
+}
+
+func (r *EventRegistrationRepository) GetAuthorRegistrationByID(id int) (entity.AuthorRegistration, error) {
+	var registration entity.AuthorRegistration
+	err := r.db.First(&registration, id).Error
+	return registration, err
+}

@@ -14,3 +14,14 @@ type EventRegistration struct {
 	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
 	UpdatedAt time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
 }
+
+type AuthorRegistration struct {
+	ID          int       `json:"id" gorm:"primaryKey" example:"1"`
+	Email       string    `json:"email" example:"user@example.com"`
+	FullName    string    `json:"full_name" example:"John Doe"`
+	Language    string    `json:"language" example:"en"`
+	PhoneNumber string    `json:"phone_number" example:"+79991234567"`
+	Portfolio   string    `json:"portfolio" example:"https://example.com"`
+	CreatedAt   time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt   time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+}

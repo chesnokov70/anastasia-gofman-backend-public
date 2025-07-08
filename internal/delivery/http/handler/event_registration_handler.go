@@ -2,6 +2,7 @@ package handler
 
 import (
 	"anastasia_gofman_backend/internal/delivery/http/dto"
+	"anastasia_gofman_backend/internal/entity"
 	"anastasia_gofman_backend/internal/service"
 	"net/http"
 	"strconv"
@@ -12,6 +13,34 @@ import (
 type EventRegistrationHandler struct {
 	registrationService *service.EventRegistrationService
 	mailService         *service.MailService
+}
+
+type AuthorRegistrationRequestDTO struct {
+	Email       string `json:"email"`
+	FullName    string `json:"full_name"`
+	Language    string `json:"language"`
+	PhoneNumber string `json:"phone_number"`
+	Portfolio   string `json:"portfolio"`
+}
+
+type AuthorRegistrationResponseDTO struct {
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	FullName    string `json:"full_name"`
+	Language    string `json:"language"`
+	PhoneNumber string `json:"phone_number"`
+	Portfolio   string `json:"portfolio"`
+}
+
+func ToAuthorRegistrationRequestDTO(registration entity.AuthorRegistration) AuthorRegistrationResponseDTO {
+	return AuthorRegistrationResponseDTO{
+		ID:          registration.ID,
+		Email:       registration.Email,
+		FullName:    registration.FullName,
+		Language:    registration.Language,
+		PhoneNumber: registration.PhoneNumber,
+		Portfolio:   registration.Portfolio,
+	}
 }
 
 func NewEventRegistrationHandler(
@@ -164,3 +193,71 @@ func (h *EventRegistrationHandler) GetMailTemplates(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
+
+// @Summary Register for author
+// @Description Регистрирует автора и отправляет письмо с подтверждением ему и админу
+// @Accept json
+// @Produce json
+// @Tags Author Registration
+// @Param registration body AuthorRegistrationRequestDTO true "Registration details"
+// @Success 201 {object} AuthorRegistrationResponseDTO
+// @Router /api/author-registrations [post]
+func (h *EventRegistrationHandler) RegisterForAuthor(c *gin.Context) {
+	var req AuthorRegistrationRequestDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	registration, err := h.registrationService.RegisterForAuthor(req.Email, req.FullName, req.Language, req.PhoneNumber, req.Portfolio)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, ToAuthorRegistrationRequestDTO(registration))
+}
+
+// @Summary Get all author registrations
+// @Description Получает все регистрации авторов
+// @Accept json
+// @Produce json
+// @Tags Author Registration
+// @Success 200 {array} AuthorRegistrationResponseDTO
+// @Router /api/author-registrations [get]
+func (h *EventRegistrationHandler) GetAllAuthorRegistrations(c *gin.Context) {
+	registrations, err := h.registrationService.GetAllAuthorRegistrations()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var response []AuthorRegistrationResponseDTO
+	for _, registration := range registrations {
+		response = append(response, ToAuthorRegistrationRequestDTO(registration))
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// // @Summary Get author registration by id
+// // @Description Получает регистрацию автора по id
+// // @Accept json
+// // @Produce json
+// // @Tags Author Registration
+// // @Param id path int true "Author ID"
+// func (h *EventRegistrationHandler) GetAuthorRegistrationByID(c *gin.Context) {
+// 	id, err := strconv.Atoi(c.Param("id"))
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid author id"})
+// 		return
+// 	}
+
+// 	registration, err := h.registrationService.GetAuthorRegistrationByID(id)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, ToAuthorRegistrationRequestDTO(registration))
+// }

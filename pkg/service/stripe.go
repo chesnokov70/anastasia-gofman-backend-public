@@ -395,7 +395,7 @@ func (s *StripeService) CreatePaymentLink(productID string, quantity int64) (*st
 		return nil, fmt.Errorf("не удалось создать платежную ссылку: %w", err)
 	}
 
-	log.Printf("Платежная ссылка создана: %s (ID: %s)", paymentLink.URL, paymentLink.ID)
+	// log.Printf("Платежная ссылка создана: %s (ID: %s)", paymentLink.URL, paymentLink.ID)
 	return paymentLink, nil
 }
 

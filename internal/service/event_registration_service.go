@@ -82,3 +82,35 @@ func (s *EventRegistrationService) GetRegistrationsByEventID(eventID int) ([]ent
 func (s *EventRegistrationService) GetAllRegistrations() ([]entity.EventRegistration, error) {
 	return s.registrationRepo.GetAllRegistrations()
 }
+
+func (s *EventRegistrationService) RegisterForAuthor(email, fullName, language, phoneNumber, portfolio string) (entity.AuthorRegistration, error) {
+	registration := entity.AuthorRegistration{
+		Email:       email,
+		FullName:    fullName,
+		Language:    language,
+		PhoneNumber: phoneNumber,
+		Portfolio:   portfolio,
+	}
+
+	createdRegistration, err := s.registrationRepo.CreateAuthorRegistration(registration)
+	if err != nil {
+		return entity.AuthorRegistration{}, err
+	}
+
+	go func() {
+		err = s.emailService.SendAdminNotificationAuthor(createdRegistration)
+		if err != nil {
+			fmt.Printf("Warning: Failed to send admin notification: %v\n", err)
+		}
+	}()
+
+	return createdRegistration, nil
+}
+
+func (s *EventRegistrationService) GetAllAuthorRegistrations() ([]entity.AuthorRegistration, error) {
+	return s.registrationRepo.GetAllAuthorRegistrations()
+}
+
+func (s *EventRegistrationService) GetAuthorRegistrationByID(id int) (entity.AuthorRegistration, error) {
+	return s.registrationRepo.GetAuthorRegistrationByID(id)
+}
