@@ -118,41 +118,6 @@
             margin-bottom: 15px;
         }
         
-        .artwork-photos {
-            margin-top: 15px;
-        }
-        
-        .artwork-photos h4 {
-            margin: 0 0 10px 0;
-            color: #555;
-            font-size: 14px;
-        }
-        
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .photo-item {
-            text-align: center;
-        }
-        
-        .photo-item img {
-            width: 100%;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 2px solid #e9ecef;
-        }
-        
-        .photo-label {
-            font-size: 11px;
-            color: #666;
-            margin-top: 5px;
-        }
-        
         .amount {
             font-size: 24px;
             font-weight: 700;
@@ -202,10 +167,6 @@
                 gap: 10px;
             }
             
-            .photo-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            }
-            
             .info-row {
                 flex-direction: column;
                 gap: 2px;
@@ -218,6 +179,45 @@
     </style>
 </head>
 <body>
-    <!-- Шаблон будет заполняться динамически через Go код -->
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Новый заказ картины</h1>
+            <p>Поступил новый заказ, требуется отправка</p>
+        </div>
+        <div class="content">
+            <!-- Информация о платеже -->
+            <div class="section">
+                <h2>💳 Информация о платеже</h2>
+                {{PAYMENT_INFO}}
+            </div>
+
+            <!-- Информация о покупателе -->
+            <div class="section">
+                <h2>👤 Информация о покупателе</h2>
+                {{CUSTOMER_INFO}}
+            </div>
+
+            <!-- Адрес доставки -->
+            {{SHIPPING_ADDRESS}}
+
+            <!-- Биллинговый адрес -->
+            {{BILLING_ADDRESS}}
+
+            <!-- Информация о картинах -->
+            {{ARTWORKS_INFO}}
+
+            <!-- Приоритетное уведомление -->
+            <div class="priority-notice">
+                <h3>🚨 Требуется действие</h3>
+                <p><strong>Необходимо подготовить картину к отправке по указанному адресу доставки.</strong></p>
+                <p>Пожалуйста, свяжитесь с покупателем для уточнения деталей доставки и подтверждения адреса.</p>
+                <p><em>Фотографии картин прикреплены к этому письму отдельными файлами.</em></p>
+            </div>
+        </div>
+        <div class="footer">
+            <p>Это автоматическое уведомление от системы Anastasia Gofman Art</p>
+            <p>{{FOOTER_INFO}}</p>
+        </div>
+    </div>
 </body>
 </html> 

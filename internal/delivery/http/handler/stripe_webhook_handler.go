@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v82"
@@ -18,14 +17,16 @@ import (
 )
 
 type StripeWebhookHandler struct {
-	emailService *service.EmailService
-	artService   service.ArtService
+	emailService         *service.EmailService
+	artService           service.ArtService
+	emailTemplateService *service.EmailTemplateService
 }
 
 func NewStripeWebhookHandler(emailService *service.EmailService, artService service.ArtService) *StripeWebhookHandler {
 	return &StripeWebhookHandler{
-		emailService: emailService,
-		artService:   artService,
+		emailService:         emailService,
+		artService:           artService,
+		emailTemplateService: service.NewEmailTemplateService(),
 	}
 }
 
@@ -116,7 +117,6 @@ func (h *StripeWebhookHandler) handleCheckoutSessionCompleted(event stripe.Event
 		log.Println("No line items found in checkout session.")
 	}
 
-	// Собираем полную информацию о покупателе и адресах
 	orderData := map[string]interface{}{
 		"session_id":     session.ID,
 		"amount_total":   totalAmount,
@@ -125,7 +125,6 @@ func (h *StripeWebhookHandler) handleCheckoutSessionCompleted(event stripe.Event
 		"session":        session,
 	}
 
-	// Извлекаем информацию о покупателе
 	if session.CustomerDetails != nil {
 		orderData["customer_email"] = session.CustomerDetails.Email
 		orderData["customer_name"] = session.CustomerDetails.Name
@@ -184,437 +183,46 @@ func (h *StripeWebhookHandler) sendAdminNotificationWithArtInfo(eventType string
 	}
 
 	subject := fmt.Sprintf("🎨 Новый заказ картины - Платеж подтвержден!")
-	body := h.generateBeautifulEmailHTML(eventType, data, arts)
 
-	err := h.emailService.SendEmail(adminEmail, subject, body)
+	htmlBody, attachments, err := h.emailTemplateService.GeneratePaymentNotificationHTML(eventType, data, arts)
+	if err != nil {
+		log.Printf("Failed to generate email template: %v", err)
+		htmlBody = h.generateSimpleFallbackEmail(eventType, data, arts)
+		attachments = []service.EmailAttachment{}
+	}
+
+	err = h.emailService.SendEmailWithAttachments(adminEmail, subject, htmlBody, attachments)
 	if err != nil {
 		log.Printf("Failed to send admin notification email: %v", err)
 	} else {
-		log.Printf("Admin notification email sent successfully for %s", eventType)
+		log.Printf("Admin notification email sent successfully for %s with %d attachments", eventType, len(attachments))
 	}
 }
 
-func (h *StripeWebhookHandler) generateBeautifulEmailHTML(eventType string, data map[string]interface{}, arts []entity.Art) string {
-	baseURL := config.GetBaseURL()
-
-	// Начинаем с HTML структуры и CSS стилей
-	html := `<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Новый заказ</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #f8f9fa;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 300;
-        }
-        .content {
-            padding: 30px;
-        }
-        .section {
-            margin-bottom: 30px;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            background-color: #f8f9fa;
-        }
-        .section h2 {
-            margin-top: 0;
-            color: #667eea;
-            font-size: 20px;
-            font-weight: 600;
-        }
-        .info-row {
-            display: flex;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-        .info-label {
-            font-weight: 600;
-            min-width: 120px;
-            color: #555;
-        }
-        .info-value {
-            color: #333;
-        }
-        .address-block {
-            background: white;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #e9ecef;
-            margin-top: 10px;
-        }
-        .artwork-card {
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            background: white;
-        }
-        .artwork-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .artwork-header h3 {
-            margin: 0;
-            color: #667eea;
-            font-size: 18px;
-        }
-        .artwork-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .artwork-photos {
-            margin-top: 15px;
-        }
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .photo-item {
-            text-align: center;
-        }
-        .photo-item img {
-            max-width: 100%;
-            height: 120px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 2px solid #e9ecef;
-        }
-        .photo-label {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-        .amount {
-            font-size: 24px;
-            font-weight: 700;
-            color: #28a745;
-        }
-        .priority-notice {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 6px;
-            padding: 15px;
-            margin-top: 20px;
-        }
-        .priority-notice h3 {
-            margin-top: 0;
-            color: #856404;
-        }
-        .footer {
-            background: #f8f9fa;
-            padding: 20px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🎨 Новый заказ картины</h1>
-            <p>Поступил новый заказ, требуется отправка</p>
-        </div>
-        <div class="content">`
-
-	// Информация о платеже
-	html += `<div class="section">
-            <h2>💳 Информация о платеже</h2>`
+func (h *StripeWebhookHandler) generateSimpleFallbackEmail(eventType string, data map[string]interface{}, arts []entity.Art) string {
+	html := `<html><body><h2>🎨 Новый заказ картины</h2>`
 
 	if eventType == "checkout.session.completed" {
 		amountInDollars := float64(data["amount_total"].(int64)) / 100.0
 		html += fmt.Sprintf(`
-            <div class="info-row">
-                <span class="info-label">Сумма:</span>
-                <span class="info-value amount">$%.2f %v</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">ID сессии:</span>
-                <span class="info-value">%v</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Статус:</span>
-                <span class="info-value">%v</span>
-            </div>`,
-			amountInDollars, data["currency"], data["session_id"], data["payment_status"])
-	} else if eventType == "payment_intent.succeeded" {
-		amountInDollars := float64(data["amount"].(int64)) / 100.0
-		html += fmt.Sprintf(`
-            <div class="info-row">
-                <span class="info-label">Сумма:</span>
-                <span class="info-value amount">$%.2f %v</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Payment Intent ID:</span>
-                <span class="info-value">%v</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Статус:</span>
-                <span class="info-value">%v</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Описание:</span>
-                <span class="info-value">%v</span>
-            </div>`,
-			amountInDollars, data["currency"], data["payment_intent_id"], data["status"], data["description"])
-	}
-
-	html += `</div>`
-
-	// Информация о покупателе
-	html += `<div class="section">
-            <h2>👤 Информация о покупателе</h2>`
-
-	if email, ok := data["customer_email"]; ok && email != nil {
-		html += fmt.Sprintf(`<div class="info-row">
-                <span class="info-label">Email:</span>
-                <span class="info-value">%v</span>
-            </div>`, email)
-	}
-
-	if name, ok := data["customer_name"]; ok && name != nil {
-		html += fmt.Sprintf(`<div class="info-row">
-                <span class="info-label">Имя:</span>
-                <span class="info-value">%v</span>
-            </div>`, name)
-	}
-
-	if phone, ok := data["customer_phone"]; ok && phone != nil && phone != "" {
-		html += fmt.Sprintf(`<div class="info-row">
-                <span class="info-label">Телефон:</span>
-                <span class="info-value">%v</span>
-            </div>`, phone)
-	}
-
-	html += `</div>`
-
-	// Адрес доставки
-	if shippingAddr, ok := data["shipping_address"]; ok && shippingAddr != nil {
-		html += `<div class="section">
-                <h2>�� Адрес доставки</h2>
-                <div class="address-block">`
-
-		if shippingName, ok := data["shipping_name"]; ok && shippingName != nil {
-			html += fmt.Sprintf(`<div class="info-row">
-                    <span class="info-label">Получатель:</span>
-                    <span class="info-value">%v</span>
-                </div>`, shippingName)
-		}
-
-		html += `<div class="address-block">`
-		if addr, ok := shippingAddr.(*stripe.Address); ok {
-			if addr.Line1 != "" {
-				html += fmt.Sprintf(`<div><strong>Адрес:</strong> %s</div>`, addr.Line1)
-			}
-			if addr.Line2 != "" {
-				html += fmt.Sprintf(`<div><strong>Доп. адрес:</strong> %s</div>`, addr.Line2)
-			}
-			if addr.City != "" {
-				html += fmt.Sprintf(`<div><strong>Город:</strong> %s</div>`, addr.City)
-			}
-			if addr.State != "" {
-				html += fmt.Sprintf(`<div><strong>Штат/Регион:</strong> %s</div>`, addr.State)
-			}
-			if addr.PostalCode != "" {
-				html += fmt.Sprintf(`<div><strong>Почтовый код:</strong> %s</div>`, addr.PostalCode)
-			}
-			if addr.Country != "" {
-				html += fmt.Sprintf(`<div><strong>Страна:</strong> %s</div>`, addr.Country)
-			}
-		}
-		html += `</div></div>`
-	}
-
-	// Биллинговый адрес (если отличается от адреса доставки)
-	if billingAddr, ok := data["billing_address"]; ok && billingAddr != nil {
-		html += `<div class="section">
-                <h2>🏠 Биллинговый адрес</h2>
-                <div class="address-block">`
-
-		if addr, ok := billingAddr.(*stripe.Address); ok {
-			if addr.Line1 != "" {
-				html += fmt.Sprintf(`<div><strong>Адрес:</strong> %s</div>`, addr.Line1)
-			}
-			if addr.Line2 != "" {
-				html += fmt.Sprintf(`<div><strong>Доп. адрес:</strong> %s</div>`, addr.Line2)
-			}
-			if addr.City != "" {
-				html += fmt.Sprintf(`<div><strong>Город:</strong> %s</div>`, addr.City)
-			}
-			if addr.State != "" {
-				html += fmt.Sprintf(`<div><strong>Штат/Регион:</strong> %s</div>`, addr.State)
-			}
-			if addr.PostalCode != "" {
-				html += fmt.Sprintf(`<div><strong>Почтовый код:</strong> %s</div>`, addr.PostalCode)
-			}
-			if addr.Country != "" {
-				html += fmt.Sprintf(`<div><strong>Страна:</strong> %s</div>`, addr.Country)
-			}
-		}
-		html += `</div></div>`
+			<p><strong>Сумма:</strong> $%.2f %v</p>
+			<p><strong>ID сессии:</strong> %v</p>
+			<p><strong>Email клиента:</strong> %v</p>
+			<p><strong>Имя клиента:</strong> %v</p>`,
+			amountInDollars, data["currency"], data["session_id"],
+			data["customer_email"], data["customer_name"])
 	}
 
 	if len(arts) > 0 {
-		html += `<div class="section">
-                <h2>🖼️ Заказанные картины</h2>`
-
+		html += `<h3>Заказанные картины:</h3><ul>`
 		for _, art := range arts {
-			html += fmt.Sprintf(`<div class="artwork-card">
-                    <div class="artwork-header">
-                        <h3>%s (ID: %d)</h3>
-                    </div>
-                    <div class="artwork-details">
-                        <div>
-                            <div class="info-row">
-                                <span class="info-label">Цена:</span>
-                                <span class="info-value">$%d</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Год:</span>
-                                <span class="info-value">%d</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Размеры:</span>
-                                <span class="info-value">%d x %d см</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="info-row">
-                                <span class="info-label">Автор:</span>
-                                <span class="info-value">%s</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Техника:</span>
-                                <span class="info-value">%s</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Материал:</span>
-                                <span class="info-value">%s</span>
-                            </div>
-                        </div>
-                    </div>`,
-				art.Name.EN, art.ID, art.Price, art.Year, art.DimensionX, art.DimensionY,
-				func() string {
-					if art.Author.Name.EN != "" {
-						return art.Author.Name.EN
-					}
-					return "Неизвестный автор"
-				}(),
-				art.Technique.EN, art.Medium.EN)
-
-			// Добавляем фотографии
-			photos := h.collectArtPhotos(art, baseURL)
-			if len(photos) > 0 {
-				html += `<div class="artwork-photos">
-                        <h4>📸 Фотографии:</h4>
-                        <div class="photo-grid">`
-
-				for _, photo := range photos {
-					html += fmt.Sprintf(`<div class="photo-item">
-                            <img src="%s" alt="%s" />
-                            <div class="photo-label">%s</div>
-                        </div>`, photo.URL, photo.Label, photo.Label)
-				}
-
-				html += `</div></div>`
-			}
-
-			html += `</div>`
+			html += fmt.Sprintf(`<li>%s (ID: %d) - $%d</li>`, art.Name.EN, art.ID, art.Price)
 		}
-
-		html += `</div>`
-	} else {
-		html += `<div class="section">
-                <h2>⚠️ Внимание</h2>
-                <p>Не удалось определить заказанные картины из данных платежа.</p>
-            </div>`
+		html += `</ul>`
 	}
 
-	html += `<div class="priority-notice">
-            <h3>🚨 Требуется действие</h3>
-            <p><strong>Необходимо подготовить картину к отправке по указанному адресу доставки.</strong></p>
-            <p>Пожалуйста, свяжитесь с покупателем для уточнения деталей доставки и подтверждения адреса.</p>
-        </div>`
-
-	html += `</div>
-        <div class="footer">
-            <p>Это автоматическое уведомление от системы Anastasia Gofman Art</p>
-            <p>Дата отправки: ` + fmt.Sprintf("%v", data["session_id"]) + `</p>
-        </div>
-    </div>
-</body>
-</html>`
+	html += `<p><strong>Внимание:</strong> Не удалось загрузить полный шаблон письма. Фотографии не прикреплены.</p>`
+	html += `</body></html>`
 
 	return html
-}
-
-type ArtPhoto struct {
-	URL   string
-	Label string
-}
-
-// Собираем все фотографии арта
-func (h *StripeWebhookHandler) collectArtPhotos(art entity.Art, baseURL string) []ArtPhoto {
-	var photos []ArtPhoto
-
-	// Главная фотография
-	if art.MainPhotoID != nil && art.MainPhoto.Path != "" {
-		photoURL := baseURL + strings.TrimPrefix(art.MainPhoto.Path, "/")
-		photos = append(photos, ArtPhoto{
-			URL:   photoURL,
-			Label: "Главное фото",
-		})
-	}
-
-	// Превью фотография
-	if art.PreviewPhotoID != nil && art.PreviewPhoto.Path != "" {
-		photoURL := baseURL + strings.TrimPrefix(art.PreviewPhoto.Path, "/")
-		photos = append(photos, ArtPhoto{
-			URL:   photoURL,
-			Label: "Превью",
-		})
-	}
-
-	// Дополнительные фотографии
-	for i, photo := range art.Photos {
-		if !photo.IsMain && !photo.IsPreview && photo.Path != "" {
-			photoURL := baseURL + strings.TrimPrefix(photo.Path, "/")
-			photos = append(photos, ArtPhoto{
-				URL:   photoURL,
-				Label: fmt.Sprintf("Фото %d", i+1),
-			})
-		}
-	}
-
-	return photos
 }

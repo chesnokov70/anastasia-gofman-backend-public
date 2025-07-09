@@ -3,8 +3,14 @@ package service
 import (
 	"anastasia_gofman_backend/internal/entity"
 	"anastasia_gofman_backend/pkg/config"
+	"bytes"
+	"encoding/base64"
 	"fmt"
+	"log"
+	"mime/multipart"
 	"net/smtp"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -14,6 +20,12 @@ type EmailService struct {
 	smtpUsername string
 	smtpPassword string
 	fromEmail    string
+}
+
+type EmailAttachment struct {
+	Filename string
+	Content  []byte
+	MimeType string
 }
 
 func NewEmailService() *EmailService {
@@ -30,18 +42,98 @@ func NewEmailService() *EmailService {
 }
 
 func (s *EmailService) SendEmail(to, subject, body string) error {
+	return s.SendEmailWithAttachments(to, subject, body, nil)
+}
+
+func (s *EmailService) SendEmailWithAttachments(to, subject, body string, attachments []EmailAttachment) error {
 	auth := smtp.PlainAuth("", s.smtpUsername, s.smtpPassword, s.smtpHost)
 
-	msg := fmt.Sprintf("From: %s\r\n", s.fromEmail)
-	msg += fmt.Sprintf("To: %s\r\n", to)
-	msg += fmt.Sprintf("Subject: %s\r\n", subject)
-	msg += "MIME-Version: 1.0\r\n"
-	msg += "Content-Type: text/html; charset=\"UTF-8\"\r\n"
-	msg += "\r\n"
-	msg += body
+	// Создаем multipart сообщение
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
 
-	err := smtp.SendMail(s.smtpHost+":"+s.smtpPort, auth, s.fromEmail, []string{to}, []byte(msg))
+	// Headers
+	boundary := writer.Boundary()
+	buf.WriteString(fmt.Sprintf("From: %s\r\n", s.fromEmail))
+	buf.WriteString(fmt.Sprintf("To: %s\r\n", to))
+	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
+	buf.WriteString("MIME-Version: 1.0\r\n")
+	buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\r\n", boundary))
+	buf.WriteString("\r\n")
+
+	// HTML body part
+	bodyHeader := make(map[string][]string)
+	bodyHeader["Content-Type"] = []string{"text/html; charset=UTF-8"}
+	bodyPart, err := writer.CreatePart(bodyHeader)
+	if err != nil {
+		return fmt.Errorf("failed to create body part: %w", err)
+	}
+	bodyPart.Write([]byte(body))
+
+	// Attachments
+	for _, attachment := range attachments {
+		attachHeader := make(map[string][]string)
+		attachHeader["Content-Type"] = []string{fmt.Sprintf("%s; name=\"%s\"", attachment.MimeType, attachment.Filename)}
+		attachHeader["Content-Disposition"] = []string{fmt.Sprintf("attachment; filename=\"%s\"", attachment.Filename)}
+		attachHeader["Content-Transfer-Encoding"] = []string{"base64"}
+
+		attachPart, err := writer.CreatePart(attachHeader)
+		if err != nil {
+			log.Printf("Failed to create attachment part for %s: %v", attachment.Filename, err)
+			continue
+		}
+
+		// Кодируем в base64
+		encoded := base64.StdEncoding.EncodeToString(attachment.Content)
+		// Разбиваем на строки по 76 символов (стандарт RFC)
+		for i := 0; i < len(encoded); i += 76 {
+			end := i + 76
+			if end > len(encoded) {
+				end = len(encoded)
+			}
+			attachPart.Write([]byte(encoded[i:end] + "\r\n"))
+		}
+	}
+
+	writer.Close()
+
+	err = smtp.SendMail(s.smtpHost+":"+s.smtpPort, auth, s.fromEmail, []string{to}, buf.Bytes())
 	return err
+}
+
+// Функция для создания прикрепления из файла
+func CreateAttachmentFromFile(filePath string) (EmailAttachment, error) {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return EmailAttachment{}, fmt.Errorf("failed to read file %s: %w", filePath, err)
+	}
+
+	filename := filepath.Base(filePath)
+	mimeType := getMimeTypeFromExtension(filepath.Ext(filePath))
+
+	return EmailAttachment{
+		Filename: filename,
+		Content:  content,
+		MimeType: mimeType,
+	}, nil
+}
+
+// Определяем MIME тип по расширению файла
+func getMimeTypeFromExtension(ext string) string {
+	switch strings.ToLower(ext) {
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".png":
+		return "image/png"
+	case ".gif":
+		return "image/gif"
+	case ".webp":
+		return "image/webp"
+	case ".pdf":
+		return "application/pdf"
+	default:
+		return "application/octet-stream"
+	}
 }
 
 func (s *EmailService) getTranslatedText(translatedText entity.TranslatedText, language string) string {
