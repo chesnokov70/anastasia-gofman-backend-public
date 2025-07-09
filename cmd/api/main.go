@@ -120,8 +120,9 @@ func main() {
 
 	eventHandler := handler.NewEventHandler(eventService, translationService)
 	eventRegistrationHandler := handler.NewEventRegistrationHandler(eventRegistrationService, mailService)
+	stripeWebhookHandler := handler.NewStripeWebhookHandler(emailService, artService)
 
-	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler, eventRegistrationHandler)
+	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler, eventRegistrationHandler, stripeWebhookHandler)
 	router.Static("/uploads", "./uploads")
 
 	// Use default swagger handler without custom URL to force template processing

@@ -28,6 +28,7 @@ type AuthorService interface {
 type ArtService interface {
 	GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool, with_type_discrimination bool) ([]entity.Art, int64, int64, error)
 	GetArtByID(id uint) (entity.Art, error)
+	GetArtByStripeProductID(stripeProductID string) (entity.Art, error)
 	CreateArt(art entity.Art, with_stripe bool) (entity.Art, error)
 	UpdateArt(art entity.Art) (entity.Art, error)
 	DeleteArt(id uint) error
@@ -78,7 +79,7 @@ type ArtCollectionService interface {
 	DeleteCollection(id uint, delete_action string, artService ArtService) error
 	PartialUpdateCollection(id uint, kwargs map[string]interface{}) (entity.ArtCollection, error)
 	FullUpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error)
-	AddArtsToCollection(id uint, arts []uint) (entity.ArtCollection, error)
+	AddArtsToCollection(id uint, arts []uint, remove_not_in_ids bool) (entity.ArtCollection, error)
 }
 
 type PressAndArticleService interface {

@@ -42,8 +42,9 @@ type ServerConfig struct {
 }
 
 type StripeConfig struct {
-	SecretKey string `mapstructure:"secret_key"`
-	PublicKey string `mapstructure:"public_key"`
+	SecretKey     string `mapstructure:"secret_key"`
+	PublicKey     string `mapstructure:"public_key"`
+	WebhookSecret string `mapstructure:"webhook_secret"`
 }
 
 type OpenAIConfig struct {
@@ -71,6 +72,7 @@ func LoadConfig() (*Config, error) {
 	viper.BindEnv("server.mode", "GIN_MODE")
 	viper.BindEnv("stripe.secret_key", "STRIPE_SECRET_KEY")
 	viper.BindEnv("stripe.public_key", "STRIPE_PUBLIC_KEY")
+	viper.BindEnv("stripe.webhook_secret", "STRIPE_WEBHOOK_SECRET")
 	viper.BindEnv("openai.api_key", "OPENAI_API_KEY")
 
 	viper.BindEnv("email.username", "EMAIL_USERNAME")
@@ -97,6 +99,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("server.mode", "debug")
 	viper.SetDefault("stripe.secret_key", "sk_test_")
 	viper.SetDefault("stripe.public_key", "pk_test_")
+	viper.SetDefault("stripe.webhook_secret", "")
 	viper.SetDefault("openai.api_key", "")
 	viper.SetDefault("base_url", "http://91.105.196.19:8080/")
 	viper.SetDefault("email.username", "")

@@ -9,7 +9,7 @@ import (
 	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
 )
 
-func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler, pressHandler *handler.PressHandler, articleHandler *handler.ArticleHandler, translationHandler *handler.TranslationHandler, eventRegistrationHandler *handler.EventRegistrationHandler) *gin.Engine {
+func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler, pressHandler *handler.PressHandler, articleHandler *handler.ArticleHandler, translationHandler *handler.TranslationHandler, eventRegistrationHandler *handler.EventRegistrationHandler, stripeWebhookHandler *handler.StripeWebhookHandler) *gin.Engine {
 	// func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHandler, welcomeHandler *handler.WelcomeHandler, eventHandler *handler.EventHandler, paymentHandler *handler.PaymentHandler, collectionHandler *handler.CollectionHandler) *gin.Engine {
 	router := gin.Default()
 	router.RedirectTrailingSlash = false
@@ -35,6 +35,10 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 
 	welcom := router.Group("/")
 	welcom.GET("/", welcomeHandler.Welcome)
+
+	// Stripe webhook endpoint
+	router.POST("/recive-checkoutevent", stripeWebhookHandler.HandleStripeWebhook)
+
 	api := router.Group("/api")
 	{
 		authors := api.Group("/authors")

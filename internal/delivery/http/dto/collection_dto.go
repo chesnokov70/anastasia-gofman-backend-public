@@ -10,8 +10,10 @@ type CreateCollectionDTO struct {
 }
 
 type UpdateCollectionDTO struct {
-	Name        entity.TranslatedText `json:"name"`
-	Description entity.TranslatedText `json:"description"`
+	Name           entity.TranslatedText `json:"name"`
+	Description    entity.TranslatedText `json:"description"`
+	ArtsIds        []uint                `json:"arts_ids"`
+	RemoveNotInIds bool                  `json:"remove_not_in_ids"`
 }
 
 type CollectionResponseDTO struct {

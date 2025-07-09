@@ -72,8 +72,8 @@ func (s *artCollectionService) FullUpdateCollection(collection entity.ArtCollect
 	return collection, nil
 }
 
-func (s *artCollectionService) AddArtsToCollection(id uint, arts []uint) (entity.ArtCollection, error) {
-	collection, err := s.artCollectionRepository.AddArtsToCollection(id, arts)
+func (s *artCollectionService) AddArtsToCollection(id uint, arts []uint, remove_not_in_ids bool) (entity.ArtCollection, error) {
+	collection, err := s.artCollectionRepository.AddArtsToCollection(id, arts, remove_not_in_ids)
 	if err != nil {
 		return entity.ArtCollection{}, err
 	}

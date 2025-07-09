@@ -132,6 +132,13 @@ func (h *CollectionHandler) FullUpdateCollection(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	if collection.ArtsIds != nil {
+		collection_entity, err = h.collectionService.AddArtsToCollection(collection_entity.ID, collection.ArtsIds, collection.RemoveNotInIds || false)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
 
 	base_url := config.GetBaseURL()
 	c.JSON(http.StatusOK, dto.ToCollectionResponseDTO(collection_entity, base_url))
@@ -158,6 +165,12 @@ func (h *CollectionHandler) PartialUpdateCollection(c *gin.Context) {
 		return
 	}
 	collection_entity, err := h.collectionService.PartialUpdateCollection(uint(id_uint), updateData)
+
+	if updateData["arts_ids"] != nil {
+		arts_ids := updateData["arts_ids"].([]uint)
+		remove_not_in_ids := updateData["remove_not_in_ids"].(bool) || false
+		collection_entity, err = h.collectionService.AddArtsToCollection(uint(id_uint), arts_ids, remove_not_in_ids)
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -199,6 +212,7 @@ func (h *CollectionHandler) DeleteCollection(c *gin.Context) {
 // @Tags Collections
 // @Param id path int true "Collection ID"
 // @Param arts body []uint true "Arts"
+// @Param remove_not_in_ids query bool false "Remove not in ids" default(false)
 // @Success 200 {object} map[string]string
 // @Router /api/collections/{id}/arts [post]
 func (h *CollectionHandler) AddArtsToCollection(c *gin.Context) {
@@ -213,7 +227,13 @@ func (h *CollectionHandler) AddArtsToCollection(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	collection_result, err := h.collectionService.AddArtsToCollection(uint(id_uint), arts)
+	remove_not_in_ids := c.DefaultQuery("remove_not_in_ids", "false")
+	remove_not_in_ids_bool, err := strconv.ParseBool(remove_not_in_ids)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid remove_not_in_ids parameter"})
+		return
+	}
+	collection_result, err := h.collectionService.AddArtsToCollection(uint(id_uint), arts, remove_not_in_ids_bool)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

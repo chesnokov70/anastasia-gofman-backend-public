@@ -224,6 +224,18 @@ func (r *ArtRepository) GetArtByID(id uint) (entity.Art, error) {
 	return art, err
 }
 
+func (r *ArtRepository) GetArtByStripeProductID(stripeProductID string) (entity.Art, error) {
+	var art entity.Art
+	err := r.db.Where("stripe_product_id = ?", stripeProductID).
+		Preload("Photos").
+		Preload("Author").
+		Preload("MainPhoto").
+		Preload("PreviewPhoto").
+		Preload("Collection").
+		First(&art).Error
+	return art, err
+}
+
 func (r *ArtRepository) CreateArt(art entity.Art) (entity.Art, error) {
 	err := r.db.Create(&art).Error
 	return art, err

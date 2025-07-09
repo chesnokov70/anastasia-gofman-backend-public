@@ -55,6 +55,13 @@ func (s *artService) GetArtByID(id uint) (entity.Art, error) {
 	return s.artRepository.GetArtByID(id)
 }
 
+func (s *artService) GetArtByStripeProductID(stripeProductID string) (entity.Art, error) {
+	if stripeProductID == "" {
+		return entity.Art{}, errors.New("stripe product ID cannot be empty")
+	}
+	return s.artRepository.GetArtByStripeProductID(stripeProductID)
+}
+
 func (s *artService) CreateArt(art entity.Art, with_stripe bool) (entity.Art, error) {
 	count, err := s.artRepository.GetCountOfArts()
 	if err != nil {
