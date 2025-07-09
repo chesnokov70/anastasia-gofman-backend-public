@@ -122,21 +122,30 @@ func (r *ArtCollectionRepository) FullUpdateCollection(collection entity.ArtColl
 func (r *ArtCollectionRepository) AddArtsToCollection(id uint, arts []uint, remove_not_in_ids bool) (entity.ArtCollection, error) {
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		if remove_not_in_ids {
-			if err := tx.Model(&entity.Art{}).Where("collection_id = ? AND id NOT IN ?", id, arts).Update("collection_id", nil).Error; err != nil {
-				return err
+			if len(arts) == 0 {
+				if err := tx.Model(&entity.Art{}).Where("collection_id = ?", id).Update("collection_id", nil).Error; err != nil {
+					return err
+				}
+			} else {
+				if err := tx.Model(&entity.Art{}).Where("collection_id = ? AND id NOT IN ?", id, arts).Update("collection_id", nil).Error; err != nil {
+					return err
+				}
 			}
 		}
-		var maxPosition int
-		if err := tx.Model(&entity.Art{}).Where("collection_id = ? AND id NOT IN ?", id, arts).Select("COALESCE(MAX(position), 0)").Row().Scan(&maxPosition); err != nil {
-			return err
-		}
 
-		for i, artID := range arts {
-			if err := tx.Model(&entity.Art{}).Where("id = ?", artID).Updates(map[string]interface{}{
-				"collection_id": id,
-				"position":      maxPosition + i + 1,
-			}).Error; err != nil {
+		if len(arts) > 0 {
+			var maxPosition int
+			if err := tx.Model(&entity.Art{}).Where("collection_id = ? AND id NOT IN ?", id, arts).Select("COALESCE(MAX(position), 0)").Row().Scan(&maxPosition); err != nil {
 				return err
+			}
+
+			for i, artID := range arts {
+				if err := tx.Model(&entity.Art{}).Where("id = ?", artID).Updates(map[string]interface{}{
+					"collection_id": id,
+					"position":      maxPosition + i + 1,
+				}).Error; err != nil {
+					return err
+				}
 			}
 		}
 		return nil
