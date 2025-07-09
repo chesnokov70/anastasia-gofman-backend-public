@@ -42,6 +42,8 @@ func (h *StripeWebhookHandler) HandleStripeWebhook(c *gin.Context) {
 	}
 
 	sig := c.GetHeader("Stripe-Signature")
+	log.Printf("Received stripe webhook. Signature: %s", sig)
+	log.Printf("Payload: %s", string(payload))
 
 	webhookSecret := config.GetConfig().Stripe.WebhookSecret
 
@@ -75,21 +77,33 @@ func (h *StripeWebhookHandler) handleCheckoutSessionCompleted(event stripe.Event
 		return
 	}
 
+	sessionJSON, _ := json.MarshalIndent(session, "", "  ")
+	log.Printf("Parsed checkout session object: %s", string(sessionJSON))
+
 	log.Printf("Checkout session completed: %s", session.ID)
 
 	var purchasedArts []entity.Art
 	var totalAmount int64 = session.AmountTotal
 
-	if len(session.LineItems.Data) > 0 {
+	if session.LineItems != nil && len(session.LineItems.Data) > 0 {
+		log.Printf("Processing %d line items...", len(session.LineItems.Data))
 		for _, item := range session.LineItems.Data {
 			if item.Price != nil && item.Price.Product != nil {
 				productID := item.Price.Product.ID
+				log.Printf("Found product ID in line item: %s", productID)
 				art, err := h.findArtByStripeProductID(productID)
 				if err == nil {
 					purchasedArts = append(purchasedArts, art)
+					log.Printf("Found art for product ID %s: %s", productID, art.Name.EN)
+				} else {
+					log.Printf("Error finding art for product ID %s: %v", productID, err)
 				}
+			} else {
+				log.Println("Line item does not have price or product information.")
 			}
 		}
+	} else {
+		log.Println("No line items found in checkout session.")
 	}
 
 	go h.sendAdminNotificationWithArtInfo("checkout.session.completed", map[string]interface{}{
