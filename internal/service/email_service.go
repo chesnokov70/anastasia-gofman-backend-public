@@ -101,7 +101,41 @@ func (s *EmailService) SendEmailWithAttachments(to, subject, body string, attach
 	return err
 }
 
-// Функция для создания прикрепления из файла
+func (s *EmailService) SendToAllAdmins(subject, body string) error {
+	return s.SendToAllAdminsWithAttachments(subject, body, nil)
+}
+
+func (s *EmailService) SendToAllAdminsWithAttachments(subject, body string, attachments []EmailAttachment) error {
+	adminEmails := config.GetConfig().Email.Admin
+
+	if len(adminEmails) == 0 {
+		log.Printf("No admin emails configured, skipping notification")
+		return nil
+	}
+
+	var errors []error
+
+	for _, adminEmail := range adminEmails {
+		if adminEmail == "" {
+			continue
+		}
+
+		err := s.SendEmailWithAttachments(adminEmail, subject, body, attachments)
+		if err != nil {
+			log.Printf("Failed to send email to admin %s: %v", adminEmail, err)
+			errors = append(errors, fmt.Errorf("failed to send to %s: %w", adminEmail, err))
+		} else {
+			log.Printf("Successfully sent email to admin: %s", adminEmail)
+		}
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("failed to send to %d admin(s): %v", len(errors), errors)
+	}
+
+	return nil
+}
+
 func CreateAttachmentFromFile(filePath string) (EmailAttachment, error) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
@@ -170,9 +204,6 @@ func (s *EmailService) SendRegistrationConfirmation(registration entity.EventReg
 }
 
 func (s *EmailService) SendAdminNotification(registration entity.EventRegistration) error {
-	adminEmail := config.GetConfig().Email.Admin
-	// adminEmail := "kachan333.333@gmail.com"
-
 	eventTitle := s.getTranslatedText(registration.Event.Title, "en")
 	subject := fmt.Sprintf("New Event Registration - %s", eventTitle)
 	body := fmt.Sprintf(`
@@ -187,13 +218,10 @@ func (s *EmailService) SendAdminNotification(registration entity.EventRegistrati
 		eventTitle, registration.Event.StartDate.Format("2006-01-02 15:04"),
 		registration.CreatedAt.Format("2006-01-02 15:04"))
 
-	return s.SendEmail(adminEmail, subject, body)
+	return s.SendToAllAdmins(subject, body)
 }
 
 func (s *EmailService) SendAdminNotificationAuthor(registration entity.AuthorRegistration) error {
-	adminEmail := config.GetConfig().Email.Admin
-	// adminEmail := "kachan333.333@gmail.com"
-
 	subject := fmt.Sprintf("New Author Registration - %s", registration.FullName)
 	body := fmt.Sprintf(`
 		<h2>New Author Registration</h2>
@@ -205,5 +233,5 @@ func (s *EmailService) SendAdminNotificationAuthor(registration entity.AuthorReg
 		<p><strong>Registration Time:</strong> %s</p>
 	`, registration.FullName, registration.Email, registration.Language, registration.PhoneNumber, registration.Portfolio, registration.CreatedAt.Format("2006-01-02 15:04"))
 
-	return s.SendEmail(adminEmail, subject, body)
+	return s.SendToAllAdmins(subject, body)
 }

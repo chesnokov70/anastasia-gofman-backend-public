@@ -191,9 +191,9 @@ func (h *StripeWebhookHandler) findArtByStripeProductID(productID string) (entit
 }
 
 func (h *StripeWebhookHandler) sendAdminNotificationWithArtInfo(eventType string, data map[string]interface{}, arts []entity.Art) error {
-	adminEmail := config.GetConfig().Email.Admin
-	if adminEmail == "" {
-		log.Printf("Admin email not configured, skipping notification")
+	adminEmails := config.GetConfig().Email.Admin
+	if len(adminEmails) == 0 {
+		log.Printf("No admin emails configured, skipping notification")
 		return nil
 	}
 
@@ -206,13 +206,13 @@ func (h *StripeWebhookHandler) sendAdminNotificationWithArtInfo(eventType string
 		attachments = []service.EmailAttachment{}
 	}
 
-	err = h.emailService.SendEmailWithAttachments(adminEmail, subject, htmlBody, attachments)
+	err = h.emailService.SendToAllAdminsWithAttachments(subject, htmlBody, attachments)
 	if err != nil {
-		log.Printf("Failed to send admin notification email: %v", err)
+		log.Printf("Failed to send admin notification emails: %v", err)
 		return err // Вернуть ошибку для retry
 	}
 
-	log.Printf("Admin notification email sent successfully")
+	log.Printf("Admin notification emails sent successfully to %d admin(s)", len(adminEmails))
 	return nil
 }
 

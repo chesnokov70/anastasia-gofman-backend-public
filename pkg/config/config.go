@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -12,10 +13,10 @@ import (
 var instance *Config
 
 type EmailConfig struct {
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
-	From     string `mapstructure:"from"`
-	Admin    string `mapstructure:"admin"`
+	Username string   `mapstructure:"username"`
+	Password string   `mapstructure:"password"`
+	From     string   `mapstructure:"from"`
+	Admin    []string `mapstructure:"admin"`
 }
 
 type Config struct {
@@ -87,7 +88,7 @@ func LoadConfig() (*Config, error) {
 	log.Printf("!!!Email username: %s", viper.GetString("email.username"))
 	log.Printf("!!!Email password: %s", viper.GetString("email.password"))
 	log.Printf("!!!Email from: %s", viper.GetString("email.from"))
-	log.Printf("!!!Admin email: %s", viper.GetString("email.admin"))
+	log.Printf("!!!Admin emails: %v", viper.GetStringSlice("email.admin"))
 
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 5432)
@@ -105,7 +106,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("email.username", "")
 	viper.SetDefault("email.password", "")
 	viper.SetDefault("email.from", "")
-	viper.SetDefault("email.admin", "")
+	viper.SetDefault("email.admin", []string{})
 
 	viper.AddConfigPath("./configs")
 	viper.SetConfigName("config")
@@ -122,6 +123,15 @@ func LoadConfig() (*Config, error) {
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("unable to decode config: %w", err)
+	}
+
+	if len(config.Email.Admin) == 0 {
+		if adminEmailsEnv := viper.GetString("email.admin"); adminEmailsEnv != "" {
+			config.Email.Admin = strings.Split(adminEmailsEnv, ",")
+			for i := range config.Email.Admin {
+				config.Email.Admin[i] = strings.TrimSpace(config.Email.Admin[i])
+			}
+		}
 	}
 
 	if err := validateConfig(&config); err != nil {
