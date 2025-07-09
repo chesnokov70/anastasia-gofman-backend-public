@@ -47,6 +47,7 @@ type ArtService interface {
 	DeleteArtsByCollectionID(id uint) error
 	DeleteArtsByCollectionIDSync(id uint) error
 	PatchArtPhotosFromStrings(artID uint, photoStrings []string) (entity.Art, error)
+	ChangeArtTypeAfterBuy(stripeProductID string) (entity.Art, error)
 }
 
 type EventService interface {

@@ -762,3 +762,14 @@ func (s *artService) PatchArtPhotosFromStrings(artID uint, photoStrings []string
 
 	return s.GetArtByID(artID)
 }
+
+func (s *artService) ChangeArtTypeAfterBuy(stripeProductID string) (entity.Art, error) {
+	art, err := s.GetArtByStripeProductID(stripeProductID)
+	if err != nil {
+		return entity.Art{}, err
+	}
+	return s.artRepository.PartialUpdateArt(art.ID, map[string]interface{}{
+		"type":         "archive",
+		"archive_type": "sold",
+	})
+}

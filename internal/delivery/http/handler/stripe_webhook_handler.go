@@ -60,24 +60,34 @@ func (h *StripeWebhookHandler) HandleStripeWebhook(c *gin.Context) {
 		return
 	}
 
+	var processingError error
 	switch event.Type {
 	case "checkout.session.completed":
-		h.handleCheckoutSessionCompleted(event)
+		processingError = h.handleCheckoutSessionCompleted(event)
 	case "payment_intent.succeeded":
-		h.handlePaymentIntentSucceeded(event)
+		processingError = h.handlePaymentIntentSucceeded(event)
 	default:
 		log.Printf("Unhandled event type: %s", event.Type)
+	}
+
+	if processingError != nil {
+		log.Printf("Error processing webhook: %v", processingError)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to process webhook",
+			"retry": true,
+		})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"received": true})
 }
 
-func (h *StripeWebhookHandler) handleCheckoutSessionCompleted(event stripe.Event) {
+func (h *StripeWebhookHandler) handleCheckoutSessionCompleted(event stripe.Event) error {
 	var sessionStub stripe.CheckoutSession
 	err := json.Unmarshal(event.Data.Raw, &sessionStub)
 	if err != nil {
 		log.Printf("Error parsing checkout session stub: %v", err)
-		return
+		return err
 	}
 
 	log.Printf("Checkout session completed event received for session ID: %s", sessionStub.ID)
@@ -87,7 +97,7 @@ func (h *StripeWebhookHandler) handleCheckoutSessionCompleted(event stripe.Event
 	session, err := session.Get(sessionStub.ID, params)
 	if err != nil {
 		log.Printf("Error retrieving full checkout session from Stripe: %v", err)
-		return
+		return err
 	}
 
 	sessionJSON, _ := json.MarshalIndent(session, "", "  ")
@@ -132,21 +142,26 @@ func (h *StripeWebhookHandler) handleCheckoutSessionCompleted(event stripe.Event
 		orderData["billing_address"] = session.CustomerDetails.Address
 	}
 
-	// Извлекаем информацию об адресе доставки
 	if session.CollectedInformation != nil && session.CollectedInformation.ShippingDetails != nil {
 		orderData["shipping_name"] = session.CollectedInformation.ShippingDetails.Name
 		orderData["shipping_address"] = session.CollectedInformation.ShippingDetails.Address
 	}
 
-	go h.sendAdminNotificationWithArtInfo("checkout.session.completed", orderData, purchasedArts)
+	for _, art := range purchasedArts {
+		_, err := h.artService.ChangeArtTypeAfterBuy(art.StripeProductID)
+		if err != nil {
+			log.Printf("Error changing art type after buy: %v", err)
+		}
+	}
+	return h.sendAdminNotificationWithArtInfo("checkout.session.completed", orderData, purchasedArts)
 }
 
-func (h *StripeWebhookHandler) handlePaymentIntentSucceeded(event stripe.Event) {
+func (h *StripeWebhookHandler) handlePaymentIntentSucceeded(event stripe.Event) error {
 	var paymentIntent stripe.PaymentIntent
 	err := json.Unmarshal(event.Data.Raw, &paymentIntent)
 	if err != nil {
 		log.Printf("Error parsing payment intent: %v", err)
-		return
+		return err
 	}
 
 	log.Printf("Payment intent succeeded: %s", paymentIntent.ID)
@@ -159,7 +174,6 @@ func (h *StripeWebhookHandler) handlePaymentIntentSucceeded(event stripe.Event) 
 		}
 	}
 
-	// Собираем информацию о платеже
 	orderData := map[string]interface{}{
 		"payment_intent_id": paymentIntent.ID,
 		"amount":            paymentIntent.Amount,
@@ -169,17 +183,18 @@ func (h *StripeWebhookHandler) handlePaymentIntentSucceeded(event stripe.Event) 
 	}
 
 	go h.sendAdminNotificationWithArtInfo("payment_intent.succeeded", orderData, purchasedArts)
+	return nil
 }
 
 func (h *StripeWebhookHandler) findArtByStripeProductID(productID string) (entity.Art, error) {
 	return h.artService.GetArtByStripeProductID(productID)
 }
 
-func (h *StripeWebhookHandler) sendAdminNotificationWithArtInfo(eventType string, data map[string]interface{}, arts []entity.Art) {
+func (h *StripeWebhookHandler) sendAdminNotificationWithArtInfo(eventType string, data map[string]interface{}, arts []entity.Art) error {
 	adminEmail := config.GetConfig().Email.Admin
 	if adminEmail == "" {
 		log.Printf("Admin email not configured, skipping notification")
-		return
+		return nil
 	}
 
 	subject := fmt.Sprintf("🎨 Новый заказ картины - Платеж подтвержден!")
@@ -194,9 +209,11 @@ func (h *StripeWebhookHandler) sendAdminNotificationWithArtInfo(eventType string
 	err = h.emailService.SendEmailWithAttachments(adminEmail, subject, htmlBody, attachments)
 	if err != nil {
 		log.Printf("Failed to send admin notification email: %v", err)
-	} else {
-		log.Printf("Admin notification email sent successfully for %s with %d attachments", eventType, len(attachments))
+		return err // Вернуть ошибку для retry
 	}
+
+	log.Printf("Admin notification email sent successfully")
+	return nil
 }
 
 func (h *StripeWebhookHandler) generateSimpleFallbackEmail(eventType string, data map[string]interface{}, arts []entity.Art) string {
