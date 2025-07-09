@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v82"
+	"github.com/stripe/stripe-go/v82/checkout/session"
 	"github.com/stripe/stripe-go/v82/webhook"
 )
 
@@ -70,17 +71,25 @@ func (h *StripeWebhookHandler) HandleStripeWebhook(c *gin.Context) {
 }
 
 func (h *StripeWebhookHandler) handleCheckoutSessionCompleted(event stripe.Event) {
-	var session stripe.CheckoutSession
-	err := json.Unmarshal(event.Data.Raw, &session)
+	var sessionStub stripe.CheckoutSession
+	err := json.Unmarshal(event.Data.Raw, &sessionStub)
 	if err != nil {
-		log.Printf("Error parsing checkout session: %v", err)
+		log.Printf("Error parsing checkout session stub: %v", err)
+		return
+	}
+
+	log.Printf("Checkout session completed event received for session ID: %s", sessionStub.ID)
+
+	params := &stripe.CheckoutSessionParams{}
+	params.AddExpand("line_items")
+	session, err := session.Get(sessionStub.ID, params)
+	if err != nil {
+		log.Printf("Error retrieving full checkout session from Stripe: %v", err)
 		return
 	}
 
 	sessionJSON, _ := json.MarshalIndent(session, "", "  ")
-	log.Printf("Parsed checkout session object: %s", string(sessionJSON))
-
-	log.Printf("Checkout session completed: %s", session.ID)
+	log.Printf("Retrieved full checkout session object from Stripe: %s", string(sessionJSON))
 
 	var purchasedArts []entity.Art
 	var totalAmount int64 = session.AmountTotal
@@ -169,32 +178,34 @@ func (h *StripeWebhookHandler) sendAdminNotificationWithArtInfo(eventType string
 	var body string
 	switch eventType {
 	case "checkout.session.completed":
+		amountInDollars := float64(data["amount_total"].(int64)) / 100.0
 		body = fmt.Sprintf(`
 			<h2>New Payment Completed</h2>
 			<p><strong>Event Type:</strong> Checkout Session Completed</p>
 			<p><strong>Session ID:</strong> %v</p>
-			<p><strong>Amount:</strong> %v %v</p>
+			<p><strong>Amount:</strong> %.2f %v</p>
 			<p><strong>Customer Email:</strong> %v</p>
 			<p><strong>Customer Name:</strong> %v</p>
 			<p><strong>Payment Status:</strong> %v</p>
 		`,
 			data["session_id"],
-			data["amount_total"], data["currency"],
+			amountInDollars, data["currency"],
 			data["customer_email"],
 			data["customer_name"],
 			data["payment_status"])
 
 	case "payment_intent.succeeded":
+		amountInDollars := float64(data["amount"].(int64)) / 100.0
 		body = fmt.Sprintf(`
 			<h2>New Payment Completed</h2>
 			<p><strong>Event Type:</strong> Payment Intent Succeeded</p>
 			<p><strong>Payment Intent ID:</strong> %v</p>
-			<p><strong>Amount:</strong> %v %v</p>
+			<p><strong>Amount:</strong> %.2f %v</p>
 			<p><strong>Status:</strong> %v</p>
 			<p><strong>Description:</strong> %v</p>
 		`,
 			data["payment_intent_id"],
-			data["amount"], data["currency"],
+			amountInDollars, data["currency"],
 			data["status"],
 			data["description"])
 	}
