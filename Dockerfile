@@ -29,7 +29,10 @@ WORKDIR /root/
 
 COPY --from=builder /app/main .
 
-RUN mkdir -p /root/uploads/arts_photos /root/uploads/events_photos /root/uploads/authors_photos
+COPY --from=builder /app/email_templates ./email_templates
+COPY --from=builder /app/configs ./configs
+
+RUN mkdir -p /root/uploads/arts_photos /root/uploads/events_photos /root/uploads/authors_photos /root/uploads/article_photos /root/uploads/press_photos
 
 COPY docker.env docker.env
 COPY .env .env

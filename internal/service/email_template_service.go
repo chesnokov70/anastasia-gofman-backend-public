@@ -17,18 +17,63 @@ type EmailTemplateService struct {
 }
 
 func NewEmailTemplateService() *EmailTemplateService {
+
+	templateDir := "email_templates"
+
+	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
+		possiblePaths := []string{
+			"./email_templates",
+			"../email_templates",
+			"/root/email_templates",
+		}
+
+		for _, path := range possiblePaths {
+			if _, err := os.Stat(path); err == nil {
+				templateDir = path
+				break
+			}
+		}
+	}
+
+	log.Printf("EmailTemplateService initialized with template directory: %s", templateDir)
+
 	return &EmailTemplateService{
-		templateDir: "email_templates",
+		templateDir: templateDir,
 	}
 }
 
 // Генерирует красивое HTML письмо для уведомления о заказе
 func (s *EmailTemplateService) GeneratePaymentNotificationHTML(eventType string, data map[string]interface{}, arts []entity.Art) (string, []EmailAttachment, error) {
 	templatePath := filepath.Join(s.templateDir, "payment_notification_template.html")
+	log.Printf("Attempting to read email template from path: %s", templatePath)
+
+	// Проверяем существование файла
+	if _, err := os.Stat(templatePath); os.IsNotExist(err) {
+		log.Printf("Template file not found at %s, error: %v", templatePath, err)
+
+		alternativePaths := []string{
+			"payment_notification_template.html",
+			"./email_templates/payment_notification_template.html",
+			"../email_templates/payment_notification_template.html",
+			"/root/email_templates/payment_notification_template.html",
+		}
+
+		for _, altPath := range alternativePaths {
+			if _, err := os.Stat(altPath); err == nil {
+				log.Printf("Found template at alternative path: %s", altPath)
+				templatePath = altPath
+				break
+			}
+		}
+	}
+
 	templateContent, err := os.ReadFile(templatePath)
 	if err != nil {
+		log.Printf("Failed to read template file %s: %v", templatePath, err)
 		return "", nil, fmt.Errorf("failed to read template: %w", err)
 	}
+
+	log.Printf("Successfully loaded email template from: %s", templatePath)
 
 	html := string(templateContent)
 
