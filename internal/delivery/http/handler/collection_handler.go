@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"anastasia_gofman_backend/internal/entity"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -158,22 +160,87 @@ func (h *CollectionHandler) PartialUpdateCollection(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter"})
 		return
 	}
-	// var collection dto.UpdateCollectionDTO
+
 	var updateData map[string]interface{}
 	if err := c.ShouldBindJSON(&updateData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	collection_entity, err := h.collectionService.PartialUpdateCollection(uint(id_uint), updateData)
 
-	if updateData["arts_ids"] != nil {
-		arts_ids := updateData["arts_ids"].([]uint)
-		remove_not_in_ids := updateData["remove_not_in_ids"].(bool) || false
-		collection_entity, err = h.collectionService.AddArtsToCollection(uint(id_uint), arts_ids, remove_not_in_ids)
+	processedData := make(map[string]interface{})
+
+	if nameData, exists := updateData["name"]; exists {
+		if nameMap, ok := nameData.(map[string]interface{}); ok {
+			translatedName := entity.TranslatedText{}
+			if en, exists := nameMap["en"]; exists {
+				if enStr, ok := en.(string); ok {
+					translatedName.EN = enStr
+				}
+			}
+			if ru, exists := nameMap["ru"]; exists {
+				if ruStr, ok := ru.(string); ok {
+					translatedName.RU = ruStr
+				}
+			}
+			if es, exists := nameMap["es"]; exists {
+				if esStr, ok := es.(string); ok {
+					translatedName.ES = esStr
+				}
+			}
+			processedData["name"] = translatedName
+		}
 	}
+
+	if descData, exists := updateData["description"]; exists {
+		if descMap, ok := descData.(map[string]interface{}); ok {
+			translatedDesc := entity.TranslatedText{}
+			if en, exists := descMap["en"]; exists {
+				if enStr, ok := en.(string); ok {
+					translatedDesc.EN = enStr
+				}
+			}
+			if ru, exists := descMap["ru"]; exists {
+				if ruStr, ok := ru.(string); ok {
+					translatedDesc.RU = ruStr
+				}
+			}
+			if es, exists := descMap["es"]; exists {
+				if esStr, ok := es.(string); ok {
+					translatedDesc.ES = esStr
+				}
+			}
+			processedData["description"] = translatedDesc
+		}
+	}
+
+	collection_entity, err := h.collectionService.PartialUpdateCollection(uint(id_uint), processedData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	if artsIdsData, exists := updateData["arts_ids"]; exists {
+		if artsIdsSlice, ok := artsIdsData.([]interface{}); ok {
+			var arts_ids []uint
+			for _, artId := range artsIdsSlice {
+				if artIdFloat, ok := artId.(float64); ok {
+					arts_ids = append(arts_ids, uint(artIdFloat))
+				}
+			}
+
+			remove_not_in_ids := false
+			if removeFlag, exists := updateData["remove_not_in_ids"]; exists {
+				if removeBool, ok := removeFlag.(bool); ok {
+					remove_not_in_ids = removeBool
+				}
+			}
+
+			collection_entity, err = h.collectionService.AddArtsToCollection(uint(id_uint), arts_ids, remove_not_in_ids)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
 	}
 
 	base_url := config.GetBaseURL()
