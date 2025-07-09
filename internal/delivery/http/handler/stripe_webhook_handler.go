@@ -32,9 +32,6 @@ func NewStripeWebhookHandler(emailService *service.EmailService, artService serv
 // @Tags payments
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
 // @Router /recive-checkoutevent [post]
 func (h *StripeWebhookHandler) HandleStripeWebhook(c *gin.Context) {
 	payload, err := io.ReadAll(c.Request.Body)
@@ -96,11 +93,21 @@ func (h *StripeWebhookHandler) handleCheckoutSessionCompleted(event stripe.Event
 	}
 
 	go h.sendAdminNotificationWithArtInfo("checkout.session.completed", map[string]interface{}{
-		"session_id":     session.ID,
-		"amount_total":   totalAmount,
-		"currency":       session.Currency,
-		"customer_email": session.CustomerDetails.Email,
-		"customer_name":  session.CustomerDetails.Name,
+		"session_id":   session.ID,
+		"amount_total": totalAmount,
+		"currency":     session.Currency,
+		"customer_email": func() string {
+			if session.CustomerDetails != nil {
+				return session.CustomerDetails.Email
+			}
+			return "N/A"
+		}(),
+		"customer_name": func() string {
+			if session.CustomerDetails != nil {
+				return session.CustomerDetails.Name
+			}
+			return "N/A"
+		}(),
 		"payment_status": session.PaymentStatus,
 	}, purchasedArts)
 }
