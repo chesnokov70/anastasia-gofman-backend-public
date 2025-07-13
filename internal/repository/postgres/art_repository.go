@@ -59,17 +59,13 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 			searchArgs := []interface{}{}
 
 			if filtering.Search.Name != nil {
-				if filtering.Search.Name.EN != "" {
+				if *filtering.Search.Name != "" {
 					searchConditions = append(searchConditions, "name->>'en' ILIKE ?")
-					searchArgs = append(searchArgs, "%"+filtering.Search.Name.EN+"%")
-				}
-				if filtering.Search.Name.RU != "" {
+					searchArgs = append(searchArgs, "%"+*filtering.Search.Name+"%")
 					searchConditions = append(searchConditions, "name->>'ru' ILIKE ?")
-					searchArgs = append(searchArgs, "%"+filtering.Search.Name.RU+"%")
-				}
-				if filtering.Search.Name.ES != "" {
+					searchArgs = append(searchArgs, "%"+*filtering.Search.Name+"%")
 					searchConditions = append(searchConditions, "name->>'es' ILIKE ?")
-					searchArgs = append(searchArgs, "%"+filtering.Search.Name.ES+"%")
+					searchArgs = append(searchArgs, "%"+*filtering.Search.Name+"%")
 				}
 			}
 

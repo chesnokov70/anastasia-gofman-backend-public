@@ -103,7 +103,7 @@ type ArtFilter struct {
 }
 
 type ArtSearch struct {
-	Name         *TranslatedText
+	Name         *string
 	Title        *TranslatedText
 	Description  *TranslatedText
 	Medium       *TranslatedText

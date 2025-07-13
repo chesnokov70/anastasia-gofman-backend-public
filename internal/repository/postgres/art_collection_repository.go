@@ -68,8 +68,16 @@ func (r *ArtCollectionRepository) CreateCollection(collection entity.ArtCollecti
 }
 
 func (r *ArtCollectionRepository) UpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error) {
-	err := r.db.Save(&collection).Error
-	return collection, err
+	var existingCollection entity.ArtCollection
+	if err := r.db.First(&existingCollection, collection.ID).Error; err != nil {
+		return entity.ArtCollection{}, err
+	}
+
+	existingCollection.Name = collection.Name
+	existingCollection.Description = collection.Description
+
+	err := r.db.Save(&existingCollection).Error
+	return existingCollection, err
 }
 
 func (r *ArtCollectionRepository) DeleteCollection(id uint, deleteAction string) error {
@@ -115,8 +123,16 @@ func (r *ArtCollectionRepository) PartialUpdateCollection(id uint, kwargs map[st
 }
 
 func (r *ArtCollectionRepository) FullUpdateCollection(collection entity.ArtCollection) (entity.ArtCollection, error) {
-	err := r.db.Save(&collection).Error
-	return collection, err
+	var existingCollection entity.ArtCollection
+	if err := r.db.First(&existingCollection, collection.ID).Error; err != nil {
+		return entity.ArtCollection{}, err
+	}
+
+	existingCollection.Name = collection.Name
+	existingCollection.Description = collection.Description
+
+	err := r.db.Save(&existingCollection).Error
+	return existingCollection, err
 }
 
 func (r *ArtCollectionRepository) AddArtsToCollection(id uint, arts []uint, remove_not_in_ids bool) (entity.ArtCollection, error) {

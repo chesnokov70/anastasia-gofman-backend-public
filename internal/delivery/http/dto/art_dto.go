@@ -21,7 +21,8 @@ type ArtFilteringDTO struct {
 }
 
 type ArtSearchDTO struct {
-	Name         *TranslatedTextDTO `json:"name"`
+	// Name         *TranslatedTextDTO `json:"name"`
+	Name         *string            `json:"name"`
 	Title        *TranslatedTextDTO `json:"title"`
 	Description  *TranslatedTextDTO `json:"description"`
 	Medium       *TranslatedTextDTO `json:"medium"`
@@ -42,8 +43,7 @@ func (dto *ArtFilteringDTO) ToEntity() *entity.ArtFilter {
 	if dto.Search != nil {
 		search = &entity.ArtSearch{}
 		if dto.Search.Name != nil {
-			nameEntity := dto.Search.Name.ToEntity()
-			search.Name = &nameEntity
+			search.Name = dto.Search.Name
 		}
 		if dto.Search.Title != nil {
 			titleEntity := dto.Search.Title.ToEntity()
