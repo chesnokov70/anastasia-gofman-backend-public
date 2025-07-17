@@ -420,6 +420,7 @@ func (h *EventRegistrationHandler) DeleteEmailSubscription(c *gin.Context) {
 // @Produce json
 // @Tags Art Request
 // @Param request body dto.ArtRequestRequestDTO true "Request details"
+// @Param id path int true "Art ID"
 // @Success 201 {object} dto.ArtRequestResponseDTO
 // @Router /api/arts/{id}/request [post]
 func (h *EventRegistrationHandler) CreateArtRequest(c *gin.Context) {
