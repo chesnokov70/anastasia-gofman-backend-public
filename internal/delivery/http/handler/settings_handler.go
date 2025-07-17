@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type SettingsUpdateRequestDTO map[string]interface{}
+
 type SettingsHandler struct {
 	service service.SettingsService
 }
@@ -36,7 +38,9 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Tags Settings
-// @Param settings body entity.Settings true "Settings"
+// @Param settings body SettingsUpdateRequestDTO true "Settings"
+// @Success 200 {object} entity.Settings
+// @Router /api/settings [patch]
 func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 	var data map[string]interface{}
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -57,7 +61,9 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Tags Settings
-// @Param settings body entity.Settings true "Settings"
+// @Param settings body SettingsUpdateRequestDTO true "Settings"
+// @Success 200 {object} entity.Settings
+// @Router /api/settings [put]
 func (h *SettingsHandler) OverwriteSettings(c *gin.Context) {
 	var data map[string]interface{}
 	if err := c.ShouldBindJSON(&data); err != nil {
