@@ -110,3 +110,9 @@ type TranslationService interface {
 	AutoCompleteEventTranslations(eventDTO *dto.CreateEventDTO, maxRetries int) error
 	AutoCompleteEventWithPhotosTranslations(eventDTO *dto.CreateEventWithPhotosDTO, maxRetries int) error
 }
+
+type SettingsService interface {
+	GetSettings() (entity.Settings, error)
+	UpdateSettings(data map[string]interface{}) (entity.Settings, error)
+	OverwriteSettings(data map[string]interface{}) (entity.Settings, error)
+}

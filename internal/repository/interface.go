@@ -127,3 +127,9 @@ type PressAndArticleRepository interface {
 	RemoveMainAndPreviewPhotoFromPressOrArticle(press_or_article string, id uint) error
 	RemoveSpecificPhotoFromPressOrArticle(press_or_article string, id uint, is_main bool) error
 }
+
+type SettingsRepository interface {
+	GetSettings() (entity.Settings, error)
+	UpdateSettings(settings entity.Settings) (entity.Settings, error)
+	CreateDefaultSettings()
+}
