@@ -114,3 +114,48 @@ func (s *EventRegistrationService) GetAllAuthorRegistrations() ([]entity.AuthorR
 func (s *EventRegistrationService) GetAuthorRegistrationByID(id int) (entity.AuthorRegistration, error) {
 	return s.registrationRepo.GetAuthorRegistrationByID(id)
 }
+
+func (s *EventRegistrationService) SubscribeEmail(email string) (entity.EmailSubscription, error) {
+	isSubscribed, _ := s.registrationRepo.CheckIfEmailSubscribed(email)
+	if isSubscribed {
+		return entity.EmailSubscription{}, fmt.Errorf("email already subscribed")
+	}
+
+	subscription := entity.EmailSubscription{
+		Email:  email,
+		Status: "active",
+	}
+	return s.registrationRepo.CreateEmailSubscription(subscription)
+}
+
+func (s *EventRegistrationService) GetAllEmailSubscriptions(page, size int, withPagination bool, status string, createdAtSort string) ([]entity.EmailSubscription, int64, int64, error) {
+	offset, limit := 0, 0
+	if page > 0 && size > 0 {
+		offset = (page - 1) * size
+		limit = size
+	}
+	subscriptions, total, err := s.registrationRepo.GetAllEmailSubscriptions(offset, limit, withPagination, status, createdAtSort)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	var totalPages int64
+	if total == 0 {
+		totalPages = 0
+	} else {
+		totalPages = (total + int64(size) - 1) / int64(size)
+	}
+	return subscriptions, totalPages, total, nil
+}
+
+func (s *EventRegistrationService) UpdateEmailSubscriptionStatus(id int, status string) (entity.EmailSubscription, error) {
+	subscription, err := s.registrationRepo.GetEmailSubscriptionByID(id)
+	if err != nil {
+		return entity.EmailSubscription{}, err
+	}
+	subscription.Status = status
+	return s.registrationRepo.UpdateEmailSubscription(subscription)
+}
+
+func (s *EventRegistrationService) DeleteEmailSubscription(id int) error {
+	return s.registrationRepo.DeleteEmailSubscription(id)
+}

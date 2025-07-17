@@ -110,6 +110,13 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			mailTemplates.GET("", eventRegistrationHandler.GetMailTemplates)
 			mailTemplates.POST("", eventRegistrationHandler.CreateMailTemplate)
 		}
+		subscriptions := api.Group("/subscriptions")
+		{
+			subscriptions.POST("", eventRegistrationHandler.SubscribeEmail)
+			subscriptions.GET("", paginationMiddleware, eventRegistrationHandler.GetAllEmailSubscriptions)
+			subscriptions.PATCH("/:id", eventRegistrationHandler.UpdateEmailSubscriptionStatus)
+			subscriptions.DELETE("/:id", eventRegistrationHandler.DeleteEmailSubscription)
+		}
 		payments := api.Group("/payments")
 		{
 			payments.POST("/products", paymentHandler.CreateProduct)

@@ -261,3 +261,156 @@ func (h *EventRegistrationHandler) GetAllAuthorRegistrations(c *gin.Context) {
 
 // 	c.JSON(http.StatusOK, ToAuthorRegistrationRequestDTO(registration))
 // }
+
+// @Summary Subscribe to email
+// @Description Добавляет email в список подписок, если он уже есть, то возвращает ошибку, статус по умолчанию active
+// @Accept json
+// @Produce json
+// @Tags Email Subscription
+// @Param subscription body dto.EmailSubscriptionRequestDTO true "Subscription details"
+// @Success 201 {object} dto.EmailSubscriptionResponseDTO
+// @Failure 400 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/subscriptions [post]
+func (h *EventRegistrationHandler) SubscribeEmail(c *gin.Context) {
+	var req dto.EmailSubscriptionRequestDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	subscription, err := h.registrationService.SubscribeEmail(req.Email)
+	if err != nil {
+		if err.Error() == "email already subscribed" {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.ToEmailSubscriptionResponseDTO(subscription))
+}
+
+// @Summary Get all email subscriptions
+// @Description Получает всех мальчишек с пагинацией либо без, фильтрацией по статусу и сортировкой по дате создания
+// @Accept json
+// @Produce json
+// @Tags Email Subscription
+// @Param page query int false "Page number" default(1)
+// @Param size query int false "Page size" default(10)
+// @Param with_pagination query bool false "With pagination" default(true)
+// @Param status query string false "Filter by status"
+// @Param created_at query string false "Sort by created_at date (ASC or DESC)" default("DESC")
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/subscriptions [get]
+func (h *EventRegistrationHandler) GetAllEmailSubscriptions(c *gin.Context) {
+	pageStr := c.DefaultQuery("page", "1")
+	sizeStr := c.DefaultQuery("size", "10")
+	withPaginationStr := c.DefaultQuery("with_pagination", "true")
+	status := c.DefaultQuery("status", "")
+	createdAtSort := c.DefaultQuery("created_at", "DESC")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page format"})
+		return
+	}
+
+	size, err := strconv.Atoi(sizeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid size format"})
+		return
+	}
+
+	withPagination, err := strconv.ParseBool(withPaginationStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid with_pagination format"})
+		return
+	}
+
+	subscriptions, totalPages, totalItems, err := h.registrationService.GetAllEmailSubscriptions(page, size, withPagination, status, createdAtSort)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var response []dto.EmailSubscriptionResponseDTO
+	for _, subscription := range subscriptions {
+		response = append(response, dto.ToEmailSubscriptionResponseDTO(subscription))
+	}
+
+	if withPagination {
+		c.JSON(http.StatusOK, gin.H{
+			"data": response,
+			"pagination": gin.H{
+				"total_pages":  totalPages,
+				"current_page": page,
+				"page_size":    size,
+				"total_items":  totalItems,
+			},
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"data": response})
+	}
+}
+
+// @Summary Update email subscription status
+// @Description Обновляет статус подписки email
+// @Accept json
+// @Produce json
+// @Tags Email Subscription
+// @Param id path int true "Subscription ID"
+// @Param status body dto.UpdateEmailSubscriptionStatusDTO true "New status"
+// @Success 200 {object} dto.EmailSubscriptionResponseDTO
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/subscriptions/{id} [patch]
+func (h *EventRegistrationHandler) UpdateEmailSubscriptionStatus(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid subscription id"})
+		return
+	}
+
+	var req dto.UpdateEmailSubscriptionStatusDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	subscription, err := h.registrationService.UpdateEmailSubscriptionStatus(id, req.Status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.ToEmailSubscriptionResponseDTO(subscription))
+}
+
+// @Summary Delete email subscription
+// @Description Удаляет подписку email
+// @Accept json
+// @Produce json
+// @Tags Email Subscription
+// @Param id path int true "Subscription ID"
+// @Success 204
+// @Router /api/subscriptions/{id} [delete]
+func (h *EventRegistrationHandler) DeleteEmailSubscription(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid subscription id"})
+		return
+	}
+
+	err = h.registrationService.DeleteEmailSubscription(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

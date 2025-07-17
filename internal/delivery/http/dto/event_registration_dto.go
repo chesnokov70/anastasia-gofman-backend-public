@@ -64,3 +64,27 @@ func (dto CreateMailDTO) ToEntity() entity.Mail {
 		TimeOfSendingAfterAction: dto.TimeOfSendingAfterAction,
 	}
 }
+
+type EmailSubscriptionRequestDTO struct {
+	Email string `json:"email" binding:"required" example:"user@example.com"`
+}
+
+type EmailSubscriptionResponseDTO struct {
+	ID        int       `json:"id" example:"1"`
+	Email     string    `json:"email" example:"user@example.com"`
+	Status    string    `json:"status" example:"active"`
+	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
+}
+
+type UpdateEmailSubscriptionStatusDTO struct {
+	Status string `json:"status" binding:"required" example:"inactive"`
+}
+
+func ToEmailSubscriptionResponseDTO(subscription entity.EmailSubscription) EmailSubscriptionResponseDTO {
+	return EmailSubscriptionResponseDTO{
+		ID:        subscription.ID,
+		Email:     subscription.Email,
+		Status:    subscription.Status,
+		CreatedAt: subscription.CreatedAt,
+	}
+}

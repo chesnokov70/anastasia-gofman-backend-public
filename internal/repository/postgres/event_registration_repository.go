@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"anastasia_gofman_backend/internal/entity"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -58,4 +59,58 @@ func (r *EventRegistrationRepository) GetAuthorRegistrationByID(id int) (entity.
 	var registration entity.AuthorRegistration
 	err := r.db.First(&registration, id).Error
 	return registration, err
+}
+
+func (r *EventRegistrationRepository) CreateEmailSubscription(subscription entity.EmailSubscription) (entity.EmailSubscription, error) {
+	err := r.db.Create(&subscription).Error
+	return subscription, err
+}
+
+func (r *EventRegistrationRepository) GetAllEmailSubscriptions(offset int, limit int, withPagination bool, status string, createdAtSort string) ([]entity.EmailSubscription, int64, error) {
+	var subscriptions []entity.EmailSubscription
+	var count int64
+	query := r.db.Model(&entity.EmailSubscription{})
+
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	orderBy := "created_at DESC"
+	if strings.ToUpper(createdAtSort) == "ASC" {
+		orderBy = "created_at ASC"
+	}
+	query = query.Order(orderBy)
+
+	err := query.Count(&count).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if withPagination {
+		query = query.Offset(offset).Limit(limit)
+	}
+
+	err = query.Find(&subscriptions).Error
+	return subscriptions, count, err
+}
+
+func (r *EventRegistrationRepository) UpdateEmailSubscription(subscription entity.EmailSubscription) (entity.EmailSubscription, error) {
+	err := r.db.Save(&subscription).Error
+	return subscription, err
+}
+
+func (r *EventRegistrationRepository) GetEmailSubscriptionByID(id int) (entity.EmailSubscription, error) {
+	var subscription entity.EmailSubscription
+	err := r.db.First(&subscription, id).Error
+	return subscription, err
+}
+
+func (r *EventRegistrationRepository) DeleteEmailSubscription(id int) error {
+	return r.db.Delete(&entity.EmailSubscription{}, id).Error
+}
+
+func (r *EventRegistrationRepository) CheckIfEmailSubscribed(email string) (bool, error) {
+	var count int64
+	err := r.db.Model(&entity.EmailSubscription{}).Where("email = ?", email).Count(&count).Error
+	return count > 0, err
 }

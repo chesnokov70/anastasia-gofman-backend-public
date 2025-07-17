@@ -25,3 +25,11 @@ type AuthorRegistration struct {
 	CreatedAt   time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
 	UpdatedAt   time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
 }
+
+type EmailSubscription struct {
+	ID        int       `json:"id" gorm:"primaryKey" example:"1"`
+	Email     string    `json:"email" gorm:"not null" example:"user@example.com"`
+	Status    string    `json:"status" gorm:"not null" example:"active"`
+	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+}
