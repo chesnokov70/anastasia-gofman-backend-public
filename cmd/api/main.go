@@ -63,6 +63,7 @@ func main() {
 		&entity.EventRegistration{},
 		&entity.AuthorRegistration{},
 		&entity.EmailSubscription{},
+		&entity.Settings{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
@@ -123,7 +124,12 @@ func main() {
 	eventRegistrationHandler := handler.NewEventRegistrationHandler(eventRegistrationService, mailService)
 	stripeWebhookHandler := handler.NewStripeWebhookHandler(emailService, artService)
 
-	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler, eventRegistrationHandler, stripeWebhookHandler)
+	settingsRepository := postgres.NewSettingsRepository(db)
+	settingsRepository.CreateDefaultSettings()
+	settingsService := service.NewSettingsService(settingsRepository)
+	settingsHandler := handler.NewSettingsHandler(settingsService)
+
+	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler, eventRegistrationHandler, stripeWebhookHandler, settingsHandler)
 	router.Static("/uploads", "./uploads")
 
 	// Use default swagger handler without custom URL to force template processing
