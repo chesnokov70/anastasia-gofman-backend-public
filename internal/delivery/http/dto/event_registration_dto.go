@@ -96,7 +96,7 @@ type ArtRequestRequestDTO struct {
 	FullName    string `json:"full_name" binding:"required" example:"John Doe"`
 	Language    string `json:"language" binding:"required" example:"en"`
 	PhoneNumber string `json:"phone_number" binding:"required" example:"+79995667379"`
-	Request     string `json:"request" binding:"required" example:"I want to request a piece of art"`
+	Request     string `json:"request" binding:"omitempty" example:"I want to request a piece of art"`
 }
 
 type ArtRequestResponseDTO struct {
