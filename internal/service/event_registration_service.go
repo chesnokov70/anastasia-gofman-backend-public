@@ -170,3 +170,41 @@ func (s *EventRegistrationService) UpdateEmailSubscriptionStatus(id *int, email 
 func (s *EventRegistrationService) DeleteEmailSubscription(id int) error {
 	return s.registrationRepo.DeleteEmailSubscription(id)
 }
+
+// ----------------- ART REQUESTS ----------------- //
+func (s *EventRegistrationService) CreateArtRequest(email string, fullName string, language string, phoneNumber string, request string, artID int) (entity.ArtRequest, error) {
+	request_entity := entity.ArtRequest{
+		Email:       email,
+		FullName:    fullName,
+		Language:    language,
+		PhoneNumber: phoneNumber,
+		Request:     request,
+		ArtID:       artID,
+	}
+
+	art_request, err := s.registrationRepo.CreateArtRequest(request_entity)
+	if err != nil {
+		return entity.ArtRequest{}, err
+	}
+
+	go func() {
+		err = s.emailService.SendAdminNotificationArtRequest(art_request)
+		if err != nil {
+			fmt.Printf("Warning: Failed to send admin notification: %v\n", err)
+		}
+	}()
+
+	return art_request, nil
+}
+
+func (s *EventRegistrationService) GetAllArtRequests() ([]entity.ArtRequest, error) {
+	return s.registrationRepo.GetAllArtRequests()
+}
+
+func (s *EventRegistrationService) GetArtRequestByID(id int) (entity.ArtRequest, error) {
+	return s.registrationRepo.GetArtRequestByID(id)
+}
+
+func (s *EventRegistrationService) DeleteArtRequest(id int) error {
+	return s.registrationRepo.DeleteArtRequest(id)
+}

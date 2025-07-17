@@ -235,3 +235,19 @@ func (s *EmailService) SendAdminNotificationAuthor(registration entity.AuthorReg
 
 	return s.SendToAllAdmins(subject, body)
 }
+
+func (s *EmailService) SendAdminNotificationArtRequest(request entity.ArtRequest) error {
+	subject := fmt.Sprintf("New Art Request from %s", request.FullName)
+	body := fmt.Sprintf(`
+		<h2>New Art Request</h2>
+		<p><strong>Name:</strong> %s</p>
+		<p><strong>Email:</strong> %s</p>
+		<p><strong>Language:</strong> %s</p>
+		<p><strong>Phone Number:</strong> %s</p>
+		<p><strong>Request:</strong> %s</p>
+		<p><strong>Art:</strong> %s</p>
+		<p><strong>Request Time:</strong> %s</p>
+	`, request.FullName, request.Email, request.Language, request.PhoneNumber, request.Request, request.Art.Name.EN, request.CreatedAt.Format("2006-01-02 15:04"))
+
+	return s.SendToAllAdmins(subject, body)
+}

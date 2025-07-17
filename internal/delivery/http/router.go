@@ -79,6 +79,9 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 
 			arts.POST("/:id/author/:author_id", artHandler.AddAuthorToArt)
 
+			arts.POST("/:id/request", eventRegistrationHandler.CreateArtRequest)
+			arts.GET("/requests", eventRegistrationHandler.GetAllArtRequests)
+			arts.DELETE("/requests/:id", eventRegistrationHandler.DeleteArtRequest)
 		}
 		events := api.Group("/events")
 		{

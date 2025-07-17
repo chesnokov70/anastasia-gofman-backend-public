@@ -120,3 +120,34 @@ func (r *EventRegistrationRepository) CheckIfEmailSubscribed(email string) (bool
 	err := r.db.Model(&entity.EmailSubscription{}).Where("email = ?", email).Count(&count).Error
 	return count > 0, err
 }
+
+// ---------------
+func (r *EventRegistrationRepository) CreateArtRequest(request entity.ArtRequest) (entity.ArtRequest, error) {
+	err := r.db.Create(&request).Error
+	if err != nil {
+		return entity.ArtRequest{}, err
+	}
+
+	var res_request entity.ArtRequest
+	err = r.db.Preload("Art").First(&res_request, request.ID).Error
+	if err != nil {
+		return entity.ArtRequest{}, err
+	}
+	return res_request, err
+}
+
+func (r *EventRegistrationRepository) GetAllArtRequests() ([]entity.ArtRequest, error) {
+	var requests []entity.ArtRequest
+	err := r.db.Preload("Art").Find(&requests).Error
+	return requests, err
+}
+
+func (r *EventRegistrationRepository) GetArtRequestByID(id int) (entity.ArtRequest, error) {
+	var request entity.ArtRequest
+	err := r.db.Preload("Art").First(&request, id).Error
+	return request, err
+}
+
+func (r *EventRegistrationRepository) DeleteArtRequest(id int) error {
+	return r.db.Delete(&entity.ArtRequest{}, id).Error
+}

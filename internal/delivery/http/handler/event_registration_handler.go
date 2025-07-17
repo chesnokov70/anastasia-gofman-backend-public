@@ -4,6 +4,7 @@ import (
 	"anastasia_gofman_backend/internal/delivery/http/dto"
 	"anastasia_gofman_backend/internal/entity"
 	"anastasia_gofman_backend/internal/service"
+	"anastasia_gofman_backend/pkg/config"
 	"net/http"
 	"strconv"
 
@@ -405,6 +406,84 @@ func (h *EventRegistrationHandler) DeleteEmailSubscription(c *gin.Context) {
 	}
 
 	err = h.registrationService.DeleteEmailSubscription(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Create art request
+// @Description Создает запрос на мальчишку
+// @Accept json
+// @Produce json
+// @Tags Art Request
+// @Param request body dto.ArtRequestRequestDTO true "Request details"
+// @Success 201 {object} dto.ArtRequestResponseDTO
+// @Router /api/arts/{id}/request [post]
+func (h *EventRegistrationHandler) CreateArtRequest(c *gin.Context) {
+	var req dto.ArtRequestRequestDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	artID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid art id"})
+		return
+	}
+
+	artRequest, err := h.registrationService.CreateArtRequest(req.Email, req.FullName, req.Language, req.PhoneNumber, req.Request, artID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	base_url := config.GetConfig().BaseURL
+	c.JSON(http.StatusCreated, dto.ToArtRequestResponseDTO(artRequest, base_url))
+}
+
+// @Summary Get all art requests
+// @Description Получает все запросы на мальчишек
+// @Accept json
+// @Produce json
+// @Tags Art Request
+// @Success 200 {array} dto.ArtRequestResponseDTO
+// @Router /api/arts/requests [get]
+func (h *EventRegistrationHandler) GetAllArtRequests(c *gin.Context) {
+	requests, err := h.registrationService.GetAllArtRequests()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var response []dto.ArtRequestResponseDTO
+	base_url := config.GetConfig().BaseURL
+	for _, request := range requests {
+		response = append(response, dto.ToArtRequestResponseDTO(request, base_url))
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// @Summary Delete art request
+// @Description Удаляет запрос на мальчишку
+// @Accept json
+// @Produce json
+// @Tags Art Request
+// @Param id path int true "Request ID"
+// @Success 204
+// @Router /api/arts/requests/{id} [delete]
+func (h *EventRegistrationHandler) DeleteArtRequest(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request id"})
+		return
+	}
+
+	err = h.registrationService.DeleteArtRequest(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

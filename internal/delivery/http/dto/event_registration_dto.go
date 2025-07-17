@@ -90,3 +90,39 @@ func ToEmailSubscriptionResponseDTO(subscription entity.EmailSubscription) Email
 		CreatedAt: subscription.CreatedAt,
 	}
 }
+
+type ArtRequestRequestDTO struct {
+	Email       string `json:"email" binding:"required" example:"user@example.com"`
+	FullName    string `json:"full_name" binding:"required" example:"John Doe"`
+	Language    string `json:"language" binding:"required" example:"en"`
+	PhoneNumber string `json:"phone_number" binding:"required" example:"+79995667379"`
+	Request     string `json:"request" binding:"required" example:"I want to request a piece of art"`
+}
+
+type ArtRequestResponseDTO struct {
+	ID          int            `json:"id" example:"1"`
+	Email       string         `json:"email" example:"user@example.com"`
+	FullName    string         `json:"full_name" example:"John Doe"`
+	Language    string         `json:"language" example:"en"`
+	PhoneNumber string         `json:"phone_number" example:"+79995667379"`
+	Request     string         `json:"request" example:"I want to request a piece of art"`
+	ArtID       int            `json:"art_id" example:"1"`
+	Art         ArtResponseDTO `json:"art"`
+	CreatedAt   time.Time      `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt   time.Time      `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+}
+
+func ToArtRequestResponseDTO(request entity.ArtRequest, base_url string) ArtRequestResponseDTO {
+	return ArtRequestResponseDTO{
+		ID:          request.ID,
+		Email:       request.Email,
+		FullName:    request.FullName,
+		Language:    request.Language,
+		PhoneNumber: request.PhoneNumber,
+		Request:     request.Request,
+		ArtID:       request.ArtID,
+		Art:         ToArtResponseDTO(request.Art, base_url),
+		CreatedAt:   request.CreatedAt,
+		UpdatedAt:   request.UpdatedAt,
+	}
+}
