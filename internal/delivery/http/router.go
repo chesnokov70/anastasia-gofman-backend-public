@@ -114,7 +114,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		{
 			subscriptions.POST("", eventRegistrationHandler.SubscribeEmail)
 			subscriptions.GET("", paginationMiddleware, eventRegistrationHandler.GetAllEmailSubscriptions)
-			subscriptions.PATCH("/:id", eventRegistrationHandler.UpdateEmailSubscriptionStatus)
+			subscriptions.PATCH("/status", eventRegistrationHandler.UpdateEmailSubscriptionStatus)
 			subscriptions.DELETE("/:id", eventRegistrationHandler.DeleteEmailSubscription)
 		}
 		payments := api.Group("/payments")

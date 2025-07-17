@@ -105,6 +105,12 @@ func (r *EventRegistrationRepository) GetEmailSubscriptionByID(id int) (entity.E
 	return subscription, err
 }
 
+func (r *EventRegistrationRepository) GetEmailSubscriptionByEmail(email string) (entity.EmailSubscription, error) {
+	var subscription entity.EmailSubscription
+	err := r.db.Where("email = ?", email).First(&subscription).Error
+	return subscription, err
+}
+
 func (r *EventRegistrationRepository) DeleteEmailSubscription(id int) error {
 	return r.db.Delete(&entity.EmailSubscription{}, id).Error
 }

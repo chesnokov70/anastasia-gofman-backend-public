@@ -77,7 +77,9 @@ type EmailSubscriptionResponseDTO struct {
 }
 
 type UpdateEmailSubscriptionStatusDTO struct {
-	Status string `json:"status" binding:"required" example:"inactive"`
+	ID     *int    `json:"id"`
+	Email  *string `json:"email"`
+	Status string  `json:"status" binding:"required" example:"inactive"`
 }
 
 func ToEmailSubscriptionResponseDTO(subscription entity.EmailSubscription) EmailSubscriptionResponseDTO {

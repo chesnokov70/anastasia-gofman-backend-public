@@ -359,30 +359,28 @@ func (h *EventRegistrationHandler) GetAllEmailSubscriptions(c *gin.Context) {
 }
 
 // @Summary Update email subscription status
-// @Description Обновляет статус подписки email
+// @Description Обновляет статус подписки по id или по email, но будет ругаться, если ничего из этого не положить
 // @Accept json
 // @Produce json
 // @Tags Email Subscription
-// @Param id path int true "Subscription ID"
-// @Param status body dto.UpdateEmailSubscriptionStatusDTO true "New status"
+// @Param subscription body dto.UpdateEmailSubscriptionStatusDTO true "New status and id or email"
 // @Success 200 {object} dto.EmailSubscriptionResponseDTO
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /api/subscriptions/{id} [patch]
+// @Router /api/subscriptions/status [patch]
 func (h *EventRegistrationHandler) UpdateEmailSubscriptionStatus(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid subscription id"})
-		return
-	}
-
 	var req dto.UpdateEmailSubscriptionStatusDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	subscription, err := h.registrationService.UpdateEmailSubscriptionStatus(id, req.Status)
+	if req.ID == nil && req.Email == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "хотя бы что-нибудь дай"})
+		return
+	}
+
+	subscription, err := h.registrationService.UpdateEmailSubscriptionStatus(req.ID, req.Email, req.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

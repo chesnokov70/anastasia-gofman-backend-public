@@ -147,11 +147,22 @@ func (s *EventRegistrationService) GetAllEmailSubscriptions(page, size int, with
 	return subscriptions, totalPages, total, nil
 }
 
-func (s *EventRegistrationService) UpdateEmailSubscriptionStatus(id int, status string) (entity.EmailSubscription, error) {
-	subscription, err := s.registrationRepo.GetEmailSubscriptionByID(id)
+func (s *EventRegistrationService) UpdateEmailSubscriptionStatus(id *int, email *string, status string) (entity.EmailSubscription, error) {
+	var subscription entity.EmailSubscription
+	var err error
+
+	if id != nil {
+		subscription, err = s.registrationRepo.GetEmailSubscriptionByID(*id)
+	} else if email != nil {
+		subscription, err = s.registrationRepo.GetEmailSubscriptionByEmail(*email)
+	} else {
+		return entity.EmailSubscription{}, fmt.Errorf("хотя бы что-нибудь дай")
+	}
+
 	if err != nil {
 		return entity.EmailSubscription{}, err
 	}
+
 	subscription.Status = status
 	return s.registrationRepo.UpdateEmailSubscription(subscription)
 }
