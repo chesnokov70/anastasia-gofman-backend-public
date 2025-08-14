@@ -4,6 +4,7 @@ import (
 	"anastasia_gofman_backend/internal/delivery/http/dto"
 	"anastasia_gofman_backend/internal/service"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -668,6 +669,95 @@ func (h *ArtHandler) GetMainPhoto(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, photo)
+}
+
+// @Summary Recreate all Stripe products for arts
+// @Description Удаляет старые продукты в Stripe и пересоздаёт для всех или выбранных арт-объектов. Операции удаления необратимы — требуется confirm=true. Можно выполнить пробный прогон с dry_run=true (без изменений).
+// @Tags Arts
+// @Accept json
+// @Produce json
+// @Param confirm query bool true "Подтвердить необратимые удаления"
+// @Param dry_run query bool false "Пробный прогон без изменений" default(false)
+// @Param ids query string false "Список ID арт-объектов через запятую; если не указан — для всех"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /update-all-products [post]
+func (h *ArtHandler) RecreateAllStripeProducts(c *gin.Context) {
+	confirmStr := c.DefaultQuery("confirm", "false")
+	dryRunStr := c.DefaultQuery("dry_run", "false")
+	idsStr := c.DefaultQuery("ids", "")
+
+	confirm, err := strconv.ParseBool(confirmStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid confirm parameter"})
+		return
+	}
+	dryRun, err := strconv.ParseBool(dryRunStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid dry_run parameter"})
+		return
+	}
+
+	var ids []uint
+	if idsStr != "" {
+		parts := strings.Split(idsStr, ",")
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			val, convErr := strconv.ParseUint(p, 10, 32)
+			if convErr != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id in ids: " + p})
+				return
+			}
+			ids = append(ids, uint(val))
+		}
+	}
+
+	results, err := h.artService.RecreateAllStripeProducts(confirm, dryRun, ids)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Build per-art validation messages
+	validations := make([]map[string]string, 0, len(results))
+	for _, r := range results {
+		msg := map[string]string{}
+		artID := r["art_id"]
+		msg["art_id"] = fmt.Sprintf("%v", artID)
+
+		if v, ok := r["delete_ok"]; ok && v.(bool) {
+			msg["delete"] = "Удаление в Stripe успешно; далее создаём продукт"
+		} else if _, ok := r["delete_skipped"]; ok {
+			msg["delete"] = "Удаление пропущено (нет старого продукта)"
+		} else if errText, ok := r["delete_error"].(string); ok && errText != "" {
+			msg["delete"] = "Ошибка удаления: " + errText + ". Перешли к следующему art"
+		} else if v, ok := r["delete"].(string); ok && v != "" {
+			msg["delete"] = v
+		}
+
+		if v, ok := r["recreate_ok"]; ok && v.(bool) {
+			msg["create"] = "Создание нового продукта успешно; обновили ссылки в БД"
+		} else if errText, ok := r["recreate_error"].(string); ok && errText != "" {
+			msg["create"] = "Ошибка создания: " + errText + ". Проверьте входные данные/цену"
+		} else if v, ok := r["recreate"].(string); ok && v != "" {
+			msg["create"] = v
+		} else if v, ok := r["recreate_skipped"].(string); ok && v != "" {
+			msg["create"] = v
+		}
+
+		validations = append(validations, msg)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"dry_run":     dryRun,
+		"confirm":     confirm,
+		"results":     results,
+		"validations": validations,
+	})
 }
 
 // // @Summary Get art by ID

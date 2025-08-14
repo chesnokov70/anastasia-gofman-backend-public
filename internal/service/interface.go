@@ -48,6 +48,10 @@ type ArtService interface {
 	DeleteArtsByCollectionIDSync(id uint) error
 	PatchArtPhotosFromStrings(artID uint, photoStrings []string) (entity.Art, error)
 	ChangeArtTypeAfterBuy(stripeProductID string) (entity.Art, error)
+
+	// RecreateAllStripeProducts deletes existing Stripe products for arts and recreates them sequentially.
+	// If ids is empty, applies to all arts. Requires confirm=true; if dryRun=true, only simulates and reports actions.
+	RecreateAllStripeProducts(confirm bool, dryRun bool, ids []uint) ([]map[string]interface{}, error)
 }
 
 type EventService interface {

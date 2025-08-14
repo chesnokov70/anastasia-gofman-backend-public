@@ -773,3 +773,128 @@ func (s *artService) ChangeArtTypeAfterBuy(stripeProductID string) (entity.Art, 
 		"archive_type": "sold",
 	})
 }
+
+func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, ids []uint) ([]map[string]interface{}, error) {
+	if !confirm {
+		return nil, errors.New("explicit confirmation required: set confirm=true to proceed with irreversible deletions")
+	}
+
+	arts, _, err := s.artRepository.GetAllArts(0, 0, false, "", nil, false, false)
+	if err != nil {
+		return nil, err
+	}
+
+	var artsToProcess []entity.Art
+	if len(ids) > 0 {
+		idSet := make(map[uint]struct{}, len(ids))
+		for _, id := range ids {
+			idSet[id] = struct{}{}
+		}
+		for _, a := range arts {
+			if _, ok := idSet[a.ID]; ok {
+				artsToProcess = append(artsToProcess, a)
+			}
+		}
+	} else {
+		artsToProcess = arts
+	}
+
+	results := make([]map[string]interface{}, 0, len(artsToProcess))
+	for _, art := range artsToProcess {
+		report := map[string]interface{}{
+			"art_id":             art.ID,
+			"old_stripe_product": art.StripeProductID,
+			"price":              art.Price,
+		}
+
+		if art.StripeProductID != "" {
+			if dryRun {
+				report["delete"] = "planned: would archive old product in Stripe"
+			} else {
+				if err := s.stripeService.DeleteProduct(art.StripeProductID); err != nil {
+					report["delete_ok"] = false
+					report["delete_error"] = err.Error()
+					results = append(results, report)
+					continue
+				}
+				report["delete_ok"] = true
+			}
+		} else {
+			report["delete_skipped"] = "no existing stripe_product_id"
+		}
+
+		if dryRun {
+			report["db_cleanup"] = "planned: would clear stripe_product_id/payment_link"
+		} else {
+			if _, err := s.artRepository.PartialUpdateArt(art.ID, map[string]interface{}{
+				"stripe_product_id": "",
+				"payment_link":      "",
+			}); err != nil {
+				report["db_cleanup_ok"] = false
+				report["db_cleanup_error"] = err.Error()
+				results = append(results, report)
+				continue
+			}
+			report["db_cleanup_ok"] = true
+		}
+
+		if art.Price <= 0 {
+			report["recreate_skipped"] = "price is 0 or not set; cannot create Stripe product"
+			results = append(results, report)
+			continue
+		}
+
+		name, description := get_name_and_description_for_stripe(art)
+
+		baseURL := config.GetBaseURL()
+		imageURLs := []string{}
+		if art.MainPhotoID != nil && art.MainPhoto.Path != "" {
+			path := strings.TrimPrefix(art.MainPhoto.Path, "/")
+			imageURLs = append(imageURLs, fmt.Sprintf("%s/%s", baseURL, path))
+		}
+		if art.PreviewPhotoID != nil && art.PreviewPhoto.Path != "" {
+			path := strings.TrimPrefix(art.PreviewPhoto.Path, "/")
+			imageURLs = append(imageURLs, fmt.Sprintf("%s/%s", baseURL, path))
+		}
+		for _, photo := range art.Photos {
+			if !photo.IsMain && !photo.IsPreview {
+				path := strings.TrimPrefix(photo.Path, "/")
+				imageURLs = append(imageURLs, fmt.Sprintf("%s/%s", baseURL, path))
+			}
+		}
+
+		if dryRun {
+			report["recreate"] = "planned: would create new product in Stripe with images and price"
+			results = append(results, report)
+			continue
+		}
+
+		productWithPrice, err := s.stripeService.CreateProduct(name, description, imageURLs, int64(art.Price), "usd")
+		if err != nil {
+			report["recreate_ok"] = false
+			report["recreate_error"] = err.Error()
+			results = append(results, report)
+			continue
+		}
+		report["recreate_ok"] = true
+		report["new_stripe_product"] = productWithPrice.Product.ID
+		report["payment_link"] = productWithPrice.Link.URL
+
+		if _, err := s.artRepository.PartialUpdateArt(art.ID, map[string]interface{}{
+			"stripe_product_id":      productWithPrice.Product.ID,
+			"payment_link":           productWithPrice.Link.URL,
+			"name_for_stripe":        name,
+			"description_for_stripe": description,
+		}); err != nil {
+			report["db_update_ok"] = false
+			report["db_update_error"] = err.Error()
+			results = append(results, report)
+			continue
+		}
+		report["db_update_ok"] = true
+
+		results = append(results, report)
+	}
+
+	return results, nil
+}

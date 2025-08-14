@@ -36,6 +36,8 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 	welcom := router.Group("/")
 	welcom.GET("/", welcomeHandler.Welcome)
 
+	router.POST("/update-all-products", artHandler.RecreateAllStripeProducts)
+
 	// Stripe webhook endpoint
 	router.POST("/recive-checkoutevent", stripeWebhookHandler.HandleStripeWebhook)
 
