@@ -679,6 +679,7 @@ func (h *ArtHandler) GetMainPhoto(c *gin.Context) {
 // @Param confirm query bool true "Подтвердить необратимые удаления"
 // @Param dry_run query bool false "Пробный прогон без изменений" default(false)
 // @Param ids query string false "Список ID арт-объектов через запятую; если не указан — для всех"
+// @Param del_from_stripe query bool false "Удалять ли продукт в старом аккаунте Stripe перед созданием нового" default(true)
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -687,6 +688,7 @@ func (h *ArtHandler) RecreateAllStripeProducts(c *gin.Context) {
 	confirmStr := c.DefaultQuery("confirm", "false")
 	dryRunStr := c.DefaultQuery("dry_run", "false")
 	idsStr := c.DefaultQuery("ids", "")
+	delFromStripeStr := c.DefaultQuery("del_from_stripe", "true")
 
 	confirm, err := strconv.ParseBool(confirmStr)
 	if err != nil {
@@ -716,7 +718,13 @@ func (h *ArtHandler) RecreateAllStripeProducts(c *gin.Context) {
 		}
 	}
 
-	results, err := h.artService.RecreateAllStripeProducts(confirm, dryRun, ids)
+	delFromStripe, err := strconv.ParseBool(delFromStripeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid del_from_stripe parameter"})
+		return
+	}
+
+	results, err := h.artService.RecreateAllStripeProducts(confirm, dryRun, delFromStripe, ids)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -753,10 +761,11 @@ func (h *ArtHandler) RecreateAllStripeProducts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"dry_run":     dryRun,
-		"confirm":     confirm,
-		"results":     results,
-		"validations": validations,
+		"dry_run":         dryRun,
+		"confirm":         confirm,
+		"del_from_stripe": delFromStripe,
+		"results":         results,
+		"validations":     validations,
 	})
 }
 

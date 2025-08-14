@@ -774,7 +774,7 @@ func (s *artService) ChangeArtTypeAfterBuy(stripeProductID string) (entity.Art, 
 	})
 }
 
-func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, ids []uint) ([]map[string]interface{}, error) {
+func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, delFromStripe bool, ids []uint) ([]map[string]interface{}, error) {
 	if !confirm {
 		return nil, errors.New("explicit confirmation required: set confirm=true to proceed with irreversible deletions")
 	}
@@ -809,8 +809,12 @@ func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, ids []
 
 		if art.StripeProductID != "" {
 			if dryRun {
-				report["delete"] = "planned: would archive old product in Stripe"
-			} else {
+				if delFromStripe {
+					report["delete"] = "planned: would archive old product in Stripe"
+				} else {
+					report["delete"] = "skipped by flag: del_from_stripe=false"
+				}
+			} else if delFromStripe {
 				if err := s.stripeService.DeleteProduct(art.StripeProductID); err != nil {
 					report["delete_ok"] = false
 					report["delete_error"] = err.Error()
@@ -818,6 +822,8 @@ func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, ids []
 					continue
 				}
 				report["delete_ok"] = true
+			} else {
+				report["delete_skipped"] = "skipped by flag del_from_stripe=false"
 			}
 		} else {
 			report["delete_skipped"] = "no existing stripe_product_id"
