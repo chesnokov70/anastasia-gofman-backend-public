@@ -51,8 +51,9 @@ type ArtService interface {
 
 	// RecreateAllStripeProducts deletes existing Stripe products for arts and recreates them sequentially.
 	// If ids is empty, applies to all arts. Requires confirm=true; if dryRun=true, only simulates and reports actions.
-	// If delFromStripe=false, skips remote deletion in Stripe, clears DB links only, then creates new product.
-	RecreateAllStripeProducts(confirm bool, dryRun bool, delFromStripe bool, ids []uint) ([]map[string]interface{}, error)
+	// If delFromStripe=false, skips remote deletion in Stripe, clears DB links only.
+	// If notCreate=true, performs deletion and DB cleanup only, without creating a new Stripe product.
+	RecreateAllStripeProducts(confirm bool, dryRun bool, delFromStripe bool, notCreate bool, ids []uint) ([]map[string]interface{}, error)
 }
 
 type EventService interface {

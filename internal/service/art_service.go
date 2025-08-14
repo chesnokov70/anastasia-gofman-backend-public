@@ -774,7 +774,7 @@ func (s *artService) ChangeArtTypeAfterBuy(stripeProductID string) (entity.Art, 
 	})
 }
 
-func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, delFromStripe bool, ids []uint) ([]map[string]interface{}, error) {
+func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, delFromStripe bool, notCreate bool, ids []uint) ([]map[string]interface{}, error) {
 	if !confirm {
 		return nil, errors.New("explicit confirmation required: set confirm=true to proceed with irreversible deletions")
 	}
@@ -842,6 +842,13 @@ func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, delFro
 				continue
 			}
 			report["db_cleanup_ok"] = true
+		}
+
+		if notCreate {
+			// Only delete and clean DB per flags; do not create a new product
+			report["recreate_skipped"] = "not_create=true: skipping product creation"
+			results = append(results, report)
+			continue
 		}
 
 		if art.Price <= 0 {
