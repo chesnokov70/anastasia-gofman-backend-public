@@ -836,3 +836,49 @@ func (h *ArtHandler) RecreateAllStripeProducts(c *gin.Context) {
 // 	base_url := config.GetBaseURL()
 // 	c.JSON(http.StatusOK, dto.ToArtResponseDTO(photos_result, base_url))
 // }
+
+// SetCarousel sets the carousel order.
+// @Summary Set carousel
+// @Description Получает массив айди мальчишек артов. индекс = позиция в карусели. Все прошлые карусели при этом сбрасываются.
+// @Accept json
+// @Produce json
+// @Tags Arts
+// @Param ids body []uint true "IDs в порядке карусели"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/arts/carousel [post]
+func (h *ArtHandler) SetCarousel(c *gin.Context) {
+	var ids []uint
+	if err := c.ShouldBindJSON(&ids); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON body: " + err.Error()})
+		return
+	}
+	if len(ids) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ids array must not be empty"})
+		return
+	}
+	if err := h.artService.UpdateCarousel(ids); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "carousel updated"})
+}
+
+// GetCarousel returns current carousel list
+// @Summary Get carousel
+// @Description Возвращает список мальчишек в карусели, отсортированных по carousel_position, с id, main_photo и name
+// @Produce json
+// @Tags Arts
+// @Success 200 {array} dto.CarouselArtDTO
+// @Failure 500 {object} map[string]string
+// @Router /api/arts/carousel [get]
+func (h *ArtHandler) GetCarousel(c *gin.Context) {
+	arts, err := h.artService.GetCarousel()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	baseUrl := config.GetBaseURL()
+	c.JSON(http.StatusOK, dto.ToCarouselArtDTOs(arts, baseUrl))
+}

@@ -44,6 +44,10 @@ type ArtRepository interface {
 	RemoveCollectionFromArts(collectionID uint) error
 	DeleteArtsByCollectionID(collectionID uint) error
 
+	// Carousel
+	UpdateCarousel(ids []uint) error
+	GetCarousel() ([]entity.Art, error)
+
 	// AddPhotoToArt(photo entity.Photo) (entity.Art, error)
 	// GetCountOfPhotos(artID uint) int
 	// PatchArtPhotos(id uint, photos []entity.Photo) (entity.Art, error)

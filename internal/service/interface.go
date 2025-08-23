@@ -54,6 +54,10 @@ type ArtService interface {
 	// If delFromStripe=false, skips remote deletion in Stripe, clears DB links only.
 	// If notCreate=true, performs deletion and DB cleanup only, without creating a new Stripe product.
 	RecreateAllStripeProducts(confirm bool, dryRun bool, delFromStripe bool, notCreate bool, ids []uint) ([]map[string]interface{}, error)
+
+	// Carousel
+	UpdateCarousel(ids []uint) error
+	GetCarousel() ([]entity.Art, error)
 }
 
 type EventService interface {

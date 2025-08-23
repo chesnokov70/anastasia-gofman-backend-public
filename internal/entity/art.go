@@ -76,9 +76,11 @@ type Art struct {
 	Photos []Photo `json:"-" gorm:"polymorphic:Owner;polymorphicValue:arts"`
 
 	// PhotosIDS []uint    `json:"photos_ids"`
-	Position  int       `json:"position" example:"1"`
-	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
-	UpdatedAt time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+	Position         int       `json:"position" example:"1"`
+	CarouselPosition int       `json:"carousel_position" example:"1"`
+	IsCarousel       bool      `json:"is_carousel" example:"true"`
+	CreatedAt        time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt        time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
 
 	NameForStripe        string `json:"name_for_stripe" example:"some name in english"`
 	DescriptionForStripe string `json:"description_for_stripe" example:"some description in english"`

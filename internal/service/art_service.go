@@ -911,3 +911,12 @@ func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, delFro
 
 	return results, nil
 }
+
+// Carousel
+func (s *artService) UpdateCarousel(ids []uint) error {
+	return s.artRepository.UpdateCarousel(ids)
+}
+
+func (s *artService) GetCarousel() ([]entity.Art, error) {
+	return s.artRepository.GetCarousel()
+}

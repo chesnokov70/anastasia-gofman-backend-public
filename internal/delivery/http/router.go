@@ -81,6 +81,10 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 
 			arts.POST("/:id/author/:author_id", artHandler.AddAuthorToArt)
 
+			// Carousel
+			arts.POST("/carousel", artHandler.SetCarousel)
+			arts.GET("/carousel", artHandler.GetCarousel)
+
 			arts.POST("/:id/request", eventRegistrationHandler.CreateArtRequest)
 			arts.GET("/requests", eventRegistrationHandler.GetAllArtRequests)
 			arts.DELETE("/requests/:id", eventRegistrationHandler.DeleteArtRequest)

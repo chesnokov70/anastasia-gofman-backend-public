@@ -374,3 +374,28 @@ func ToArtResponseDTOs(arts []entity.Art, base_url string) []ArtResponseDTO {
 	}
 	return artDTOs
 }
+
+// Carousel DTOs
+
+type CarouselArtDTO struct {
+	ID        uint                  `json:"id"`
+	Name      entity.TranslatedText `json:"name"`
+	MainPhoto string                `json:"main_photo"`
+}
+
+func ToCarouselArtDTOs(arts []entity.Art, base_url string) []CarouselArtDTO {
+	res := make([]CarouselArtDTO, 0, len(arts))
+	for _, a := range arts {
+		var main string
+		if a.MainPhotoID != nil && a.MainPhoto.Path != "" {
+			path := strings.TrimPrefix(a.MainPhoto.Path, "/")
+			main = fmt.Sprintf("%s/%s", base_url, path)
+		}
+		res = append(res, CarouselArtDTO{
+			ID:        a.ID,
+			Name:      a.Name,
+			MainPhoto: main,
+		})
+	}
+	return res
+}

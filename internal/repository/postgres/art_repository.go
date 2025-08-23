@@ -389,42 +389,32 @@ func (r *ArtRepository) DeleteArtsByCollectionID(collectionID uint) error {
 	return r.db.Where("collection_id = ?", collectionID).Delete(&entity.Art{}).Error
 }
 
-// func (r *ArtRepository) AddPhotoToArt(photo entity.Photo) (entity.Art, error) {
-// 	err := r.db.Create(&photo).Error
-// 	if err != nil {
-// 		return entity.Art{}, err
-// 	}
+// UpdateCarousel resets all current carousel flags and positions, then applies the new order
+func (r *ArtRepository) UpdateCarousel(ids []uint) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&entity.Art{}).
+			Where("is_carousel = ?", true).
+			Updates(map[string]interface{}{"	is_carousel": false, "carousel_position": 0}).Error; err != nil {
+			return err
+		}
 
-// 	var art entity.Art
-// 	err = r.db.Where("id = ?", photo.OwnerID).Preload("Photos").First(&art).Error
-// 	if err != nil {
-// 		return entity.Art{}, err
-// 	}
+		for i, id := range ids {
+			pos := i + 1
+			if err := tx.Model(&entity.Art{}).Where("id = ?", id).
+				Updates(map[string]interface{}{"is_carousel": true, "carousel_position": pos}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
 
-// 	err = r.db.Model(&art).Association("Photos").Append(&photo)
-// 	if err != nil {
-// 		return entity.Art{}, err
-// 	}
-
-// 	return art, nil
-// }
-
-// func (r *ArtRepository) PatchArtPhotos(id uint, photos []entity.Photo) (entity.Art, error) {
-// 	for _, photo := range photos {
-// 		err := r.db.Create(&photo).Error
-// 		if err != nil {
-// 			return entity.Art{}, err
-// 		}
-// 	}
-// 	var art entity.Art
-// 	err := r.db.Where("id = ?", id).Preload("Photos").First(&art).Error
-// 	if err != nil {
-// 		return entity.Art{}, err
-// 	}
-
-// 	err = r.db.Model(&art).Association("Photos").Replace(photos)
-// 	if err != nil {
-// 		return entity.Art{}, err
-// 	}
-// 	return art, nil
-// }
+// GetCarousel returns arts marked for carousel ordered by carousel_position ASC
+func (r *ArtRepository) GetCarousel() ([]entity.Art, error) {
+	var arts []entity.Art
+	err := r.db.Where("is_carousel = ?", true).
+		Preload("MainPhoto").
+		Order("carousel_position ASC").
+		Find(&arts).Error
+	return arts, err
+}
