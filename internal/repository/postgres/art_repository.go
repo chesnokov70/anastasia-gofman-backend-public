@@ -394,7 +394,7 @@ func (r *ArtRepository) UpdateCarousel(ids []uint) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&entity.Art{}).
 			Where("is_carousel = ?", true).
-			Updates(map[string]interface{}{"	is_carousel": false, "carousel_position": 0}).Error; err != nil {
+			Updates(map[string]interface{}{"is_carousel": false, "carousel_position": 0}).Error; err != nil {
 			return err
 		}
 
