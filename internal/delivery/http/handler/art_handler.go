@@ -854,10 +854,10 @@ func (h *ArtHandler) SetCarousel(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON body: " + err.Error()})
 		return
 	}
-	if len(ids) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ids array must not be empty"})
-		return
-	}
+	// if len(ids) == 0 {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "ids array must not be empty"})
+	// 	return
+	// }
 	if err := h.artService.UpdateCarousel(ids); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
