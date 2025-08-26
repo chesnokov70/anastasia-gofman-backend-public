@@ -164,6 +164,9 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 				searchConditions = append(searchConditions, "dimension_str ILIKE ?")
 				searchArgs = append(searchArgs, "%"+*filtering.Search.DimensionStr+"%")
 			}
+			if filtering.IsCarousel != nil {
+				query = query.Where("is_carousel = ?", *filtering.IsCarousel)
+			}
 
 			if len(searchConditions) > 0 {
 				searchQuery := "(" + strings.Join(searchConditions, " OR ") + ")"
