@@ -267,7 +267,7 @@ func (r *ArtRepository) FullUpdateArt(art entity.Art) (entity.Art, error) {
 			"dimension_x", "dimension_y", "dimension_str", "year", "frame", "price",
 			"size", "direction", "style", "type", "archive_type", "collection_id",
 			"name_for_stripe", "description_for_stripe", "stripe_product_id",
-			"payment_link", "position").
+			"payment_link", "position", "is_carousel").
 		Updates(art).Error
 	if err != nil {
 		return entity.Art{}, err

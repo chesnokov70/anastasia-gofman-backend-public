@@ -27,9 +27,10 @@ type Event struct {
 
 	Photos []Photo `json:"-" gorm:"polymorphic:Owner;polymorphicValue:event"`
 
-	Position  int       `json:"position" example:"1"`
-	CreatedAt time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
-	UpdatedAt time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+	Position   int       `json:"position" example:"1"`
+	CreatedAt  time.Time `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt  time.Time `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+	IsFinished bool      `json:"is_finished" example:"false"`
 }
 
 func (e *Event) BeforeDelete(tx *gorm.DB) error {

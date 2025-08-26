@@ -102,6 +102,7 @@ type ArtFilter struct {
 	Type        *string
 	ArchiveType *string
 	Search      *ArtSearch
+	IsCarousel  *bool
 }
 
 type ArtSearch struct {

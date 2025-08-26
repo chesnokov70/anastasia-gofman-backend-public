@@ -70,6 +70,7 @@ type CreateEventDTO struct {
 	Format      TranslatedTextDTO `json:"format"`
 	Venue       TranslatedTextDTO `json:"venue"`
 	Organizer   TranslatedTextDTO `json:"organizer"`
+	IsFinished  bool              `json:"is_finished"`
 }
 
 // @name CreateEventWithPhotos
@@ -84,6 +85,7 @@ type CreateEventWithPhotosDTO struct {
 	Format      TranslatedTextDTO `json:"format"`
 	Venue       TranslatedTextDTO `json:"venue"`
 	Organizer   TranslatedTextDTO `json:"organizer"`
+	IsFinished  bool              `json:"is_finished"`
 }
 
 func (dto *CreateEventDTO) ToEntity(id *int) entity.Event {
@@ -97,6 +99,7 @@ func (dto *CreateEventDTO) ToEntity(id *int) entity.Event {
 		Format:      dto.Format.ToEntity(),
 		Venue:       dto.Venue.ToEntity(),
 		Organizer:   dto.Organizer.ToEntity(),
+		IsFinished:  dto.IsFinished,
 	}
 	if id != nil {
 		event.ID = *id
@@ -115,6 +118,7 @@ func (dto *CreateEventWithPhotosDTO) ToEntity(id *int) entity.Event {
 		Format:      dto.Format.ToEntity(),
 		Venue:       dto.Venue.ToEntity(),
 		Organizer:   dto.Organizer.ToEntity(),
+		IsFinished:  dto.IsFinished,
 	}
 	if id != nil {
 		event.ID = *id
@@ -134,6 +138,7 @@ type UpdateEventDTO struct {
 	Format      TranslatedTextDTO `json:"format"`
 	Venue       TranslatedTextDTO `json:"venue"`
 	Organizer   TranslatedTextDTO `json:"organizer"`
+	IsFinished  bool              `json:"is_finished"`
 }
 
 func (dto *UpdateEventDTO) ToEntity(id *int) entity.Event {
@@ -147,6 +152,7 @@ func (dto *UpdateEventDTO) ToEntity(id *int) entity.Event {
 		Format:      dto.Format.ToEntity(),
 		Venue:       dto.Venue.ToEntity(),
 		Organizer:   dto.Organizer.ToEntity(),
+		IsFinished:  dto.IsFinished,
 	}
 	if id != nil {
 		event.ID = *id
@@ -192,6 +198,7 @@ type EventResponseDTO struct {
 	Position         int                   `json:"position"`
 	CreatedAt        string                `json:"created_at"`
 	UpdatedAt        string                `json:"updated_at"`
+	IsFinished       bool                  `json:"is_finished"`
 	Photos           []PhotoResponseDTO    `json:"photos"`
 }
 
@@ -210,6 +217,7 @@ func ToEventResponseDTO(event entity.Event, baseURL string) EventResponseDTO {
 		Format:           event.Format,
 		Venue:            event.Venue,
 		Organizer:        event.Organizer,
+		IsFinished:       event.IsFinished,
 		MainPhotoPath:    "",
 		PreviewPhotoPath: "",
 		Photos:           []PhotoResponseDTO{}, // Initialize with empty slice

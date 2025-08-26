@@ -18,6 +18,7 @@ type ArtFilteringDTO struct {
 	Type        *string       `json:"type"`
 	ArchiveType *string       `json:"archive_type"`
 	Search      *ArtSearchDTO `json:"search"`
+	IsCarousel  *bool         `json:"is_carousel"`
 }
 
 type ArtSearchDTO struct {
@@ -80,6 +81,7 @@ func (dto *ArtFilteringDTO) ToEntity() *entity.ArtFilter {
 		Author:      dto.Author,
 		Type:        dto.Type,
 		ArchiveType: dto.ArchiveType,
+		IsCarousel:  dto.IsCarousel,
 		Search:      search,
 	}
 }
@@ -123,6 +125,7 @@ type CreateArtDTO struct {
 	CollectionID         *uint             `json:"collection_id" example:"1"`
 	Type                 string            `json:"type" example:"archive"`
 	ArchiveType          string            `json:"archive_type" example:"repeat"`
+	IsCarousel           bool              `json:"is_carousel" example:"false"`
 }
 
 // @name CreateArt
@@ -151,6 +154,7 @@ type CreateArtWithPhotosDTO struct {
 	// Photos       []*multipart.FileHeader `json:"photos"`
 	Type        string `json:"type" example:"archive"`
 	ArchiveType string `json:"archive_type" example:"repeat"`
+	IsCarousel  bool   `json:"is_carousel" example:"false"`
 }
 
 // UpdateArtDTO defines the structure for updating an existing art piece.
@@ -176,6 +180,7 @@ type UpdateArtDTO struct {
 	CollectionID         *uint             `json:"collection_id" example:"1"`
 	Type                 string            `json:"type" example:"archive"`
 	ArchiveType          string            `json:"archive_type" example:"repeat"`
+	IsCarousel           bool              `json:"is_carousel" example:"false"`
 }
 
 func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
@@ -201,6 +206,7 @@ func (dto *CreateArtDTO) ToEntity(id *uint) entity.Art {
 		CollectionID:         dto.CollectionID,
 		Type:                 dto.Type,
 		ArchiveType:          dto.ArchiveType,
+		IsCarousel:           dto.IsCarousel,
 	}
 	if id != nil {
 		art.ID = *id
@@ -231,6 +237,7 @@ func (dto *CreateArtWithPhotosDTO) ToEntity(id *uint) entity.Art {
 		CollectionID:         dto.CollectionID,
 		Type:                 dto.Type,
 		ArchiveType:          dto.ArchiveType,
+		IsCarousel:           dto.IsCarousel,
 	}
 	if id != nil {
 		art.ID = *id
@@ -261,6 +268,7 @@ func (dto *UpdateArtDTO) ToEntity(id *uint) entity.Art {
 		CollectionID:         dto.CollectionID,
 		Type:                 dto.Type,
 		ArchiveType:          dto.ArchiveType,
+		IsCarousel:           dto.IsCarousel,
 	}
 	if id != nil {
 		art.ID = *id
@@ -305,6 +313,7 @@ type ArtResponseDTO struct {
 	CollectionID         *uint                 `json:"collection_id,omitempty"`
 	Type                 string                `json:"type"`
 	ArchiveType          string                `json:"archive_type"`
+	IsCarousel           bool                  `json:"is_carousel"`
 }
 
 // TODO: to config
@@ -341,6 +350,7 @@ func ToArtResponseDTO(art entity.Art, base_url string) ArtResponseDTO {
 		CollectionID:         art.CollectionID,
 		Type:                 art.Type,
 		ArchiveType:          art.ArchiveType,
+		IsCarousel:           art.IsCarousel,
 	}
 
 	if art.MainPhotoID != nil && art.MainPhoto.Path != "" {
