@@ -89,7 +89,7 @@ func (h *ArtHandler) GetAllArts(c *gin.Context) {
 		decoder := json.NewDecoder(strings.NewReader(filtering))
 		decoder.DisallowUnknownFields()
 		if err := decoder.Decode(filteringDTO); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid filtering JSON format: " + err.Error() + "Example: {\"price_from\": 100, \"price_to\": 1000, \"size\": \"MEDIUM\", \"direction\": \"EXCLUSIVE\", \"style\": \"abstract\", \"author\": \"author name\", \"type\": \"_common\", \"archive_type\": \"repeat\", \"search\": {\"name\": {\"en\": \"search text\", \"ru\": \"текст поиска\", \"es\": \"texto de búsqueda\"}, \"title\": {\"en\": \"title search\"}, \"description\": {\"en\": \"desc search\"}, \"medium\": {\"en\": \"medium search\"}, \"technique\": {\"en\": \"technique search\"}, \"year\": \"2024\", \"frame\": {\"en\": \"frame search\"}, \"style\": \"abstract\", \"direction\": \"EXCLUSIVE\", \"dimension_str\": \"100x100\"}}"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid filtering JSON format: " + err.Error() + "Example: {\"price_from\": 100, \"price_to\": 1000, \"size\": \"MEDIUM\", \"direction\": \"EXCLUSIVE\", \"style\": \"abstract\", \"author\": \"author name\", \"type\": \"_common\", \"archive_type\": \"repeat\", \"search\": {\"name\": {\"en\": \"search text\", \"ru\": \"текст поиска\", \"es\": \"texto de búsqueda\"}, \"title\": {\"en\": \"title search\"}, \"description\": {\"en\": \"desc search\"}, \"medium\": {\"en\": \"medium search\"}, \"technique\": {\"en\": \"technique search\"}, \"year\": \"2024\", \"frame\": {\"en\": \"frame search\"}, \"style\": \"abstract\", \"direction\": \"EXCLUSIVE\", \"dimension_str\": \"100x100\"}, \"is_carousel\": \"true\"}"})
 			return
 		}
 
