@@ -34,7 +34,7 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 // @Param without_collection query bool false "Without collection" default(true)
 // @Param with_type_discrimination query bool false "With type discrimination" default(false)
 // @Param sorting query string false "Sorting type" Enums(NEW, RATED, PRICE_HIGH, PRICE_LOW) default()
-// @Param filtering query string false "JSON filter object. Example: {"price_from": 100, "price_to": 1000, "size": "MEDIUM", "direction": "EXCLUSIVE", "style": "abstract", "author": "author name", "type": "_common", "archive_type": "repeat", "search": {"name": "search text", "title": {"en": "title search"}, "description": {"en": "desc search"}, "medium": {"en": "medium search"}, "technique": {"en": "technique search"}, "year": "2024", "frame": {"en": "frame search"}, "style": "abstract", "direction": "EXCLUSIVE", "dimension_str": "100x100"}, "is_carousel": true}"
+// @Param filtering query string false "JSON filter object. Example: {"price_from": 100, "price_to": 1000, "size": "MEDIUM", "direction": "EXCLUSIVE", "style": "abstract", "author": "author name", "type": "_common", "archive_type": "repeat", "search": {"name": "search text", "title": {"en": "title search"}, "description": {"en": "desc search"}, "medium": {"en": "medium search"}, "technique": {"en": "technique search"}, "year": "2024", "frame": {"en": "frame search"}, "style": "abstract", "direction": "EXCLUSIVE", "dimension_str": "100x100"}, "is_carousel": "true"}"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
