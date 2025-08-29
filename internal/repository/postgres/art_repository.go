@@ -185,15 +185,15 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 	orderBy := ""
 	switch sorting {
 	case "NEW":
-		orderBy = "created_at DESC"
+		orderBy = "created_at DESC, id DESC"
 	case "RATED":
-		orderBy = "position ASC"
+		orderBy = "position ASC, id ASC"
 	case "PRICE_HIGH":
-		orderBy = "price DESC"
+		orderBy = "price DESC, id DESC"
 	case "PRICE_LOW":
-		orderBy = "price ASC"
+		orderBy = "price ASC, id ASC"
 	default:
-		orderBy = "position ASC"
+		orderBy = "position ASC, id ASC"
 	}
 
 	if with_type_discrimination {
