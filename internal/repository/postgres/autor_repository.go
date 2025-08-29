@@ -20,7 +20,7 @@ func (r *AuthorRepository) GetAllAuthors(offset int, limit int, with_pagination 
 	var count int64
 	query := r.db.Model(&entity.Author{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("photos.position ASC")
-	}).Order("position ASC")
+	}).Order("created_at DESC")
 	if !full {
 		query = query.Where("id != ?", 3333)
 	}
@@ -61,6 +61,7 @@ func (r *AuthorRepository) GetAuthorsBySpecialization(specializations []string, 
 	if with_pagination && limit > 0 {
 		query = query.Offset(offset).Limit(limit)
 	}
+	query = query.Order("created_at DESC")
 
 	err = query.Find(&authors).Error
 	return authors, count, err
