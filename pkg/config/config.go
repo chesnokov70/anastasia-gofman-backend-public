@@ -16,7 +16,10 @@ type EmailConfig struct {
 	Username string   `mapstructure:"username"`
 	Password string   `mapstructure:"password"`
 	From     string   `mapstructure:"from"`
+	FromName string   `mapstructure:"from_name"`
 	Admin    []string `mapstructure:"admin"`
+	SmtpHost string   `mapstructure:"smtp_host"`
+	SmtpPort string   `mapstructure:"smtp_port"`
 }
 
 type Config struct {
@@ -79,16 +82,22 @@ func LoadConfig() (*Config, error) {
 	viper.BindEnv("email.username", "EMAIL_USERNAME")
 	viper.BindEnv("email.password", "EMAIL_PASSWORD")
 	viper.BindEnv("email.from", "EMAIL_FROM")
+	viper.BindEnv("email.from_name", "EMAIL_FROM_NAME")
 	viper.BindEnv("email.admin", "EMAIL_ADMIN")
+	viper.BindEnv("email.smtp_host", "EMAIL_SMTP_HOST")
+	viper.BindEnv("email.smtp_port", "EMAIL_SMTP_PORT")
 
 	viper.BindEnv("base_url", "BASE_URL")
-	log.Printf("!!!Stripe secret key: %s", viper.GetString("stripe.secret_key"))
-	log.Printf("!!!Stripe public key: %s", viper.GetString("stripe.public_key"))
+	// log.Printf("!!!Stripe secret key: %s", viper.GetString("stripe.secret_key"))
+	// log.Printf("!!!Stripe public key: %s", viper.GetString("stripe.public_key"))
 	log.Printf("!!!Base URL: %s", viper.GetString("base_url"))
 	log.Printf("!!!Email username: %s", viper.GetString("email.username"))
 	log.Printf("!!!Email password: %s", viper.GetString("email.password"))
 	log.Printf("!!!Email from: %s", viper.GetString("email.from"))
 	log.Printf("!!!Admin emails: %v", viper.GetStringSlice("email.admin"))
+	log.Printf("!!!Email from name: %s", viper.GetString("email.from_name"))
+	log.Printf("!!!Email SMTP host: %s", viper.GetString("email.smtp_host"))
+	log.Printf("!!!Email SMTP port: %s", viper.GetString("email.smtp_port"))
 
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 5432)
@@ -106,7 +115,10 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("email.username", "")
 	viper.SetDefault("email.password", "")
 	viper.SetDefault("email.from", "")
+	viper.SetDefault("email.from_name", "Anastasia")
 	viper.SetDefault("email.admin", []string{})
+	viper.SetDefault("email.smtp_host", "smtpout.secureserver.net")
+	viper.SetDefault("email.smtp_port", "587")
 
 	viper.AddConfigPath("./configs")
 	viper.SetConfigName("config")
