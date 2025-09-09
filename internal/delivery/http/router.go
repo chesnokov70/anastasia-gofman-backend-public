@@ -22,6 +22,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 	config.AllowOrigins = []string{
 		"https://anastasiagofman.com",
 		"https://www.anastasiagofman.com",
+		"http://localhost:3000",
 	}
 	// config.AllowAllOrigins = true                                                      // Allows all origins
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"} // Specify methods
@@ -30,6 +31,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		"Content-Type",
 		"Accept",
 		"Authorization",
+		"X-Auth",
 	}
 	config.AllowCredentials = true
 	router.Use(cors.New(config))
