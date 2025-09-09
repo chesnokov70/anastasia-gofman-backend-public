@@ -16,6 +16,8 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 
 	router.Use(middleware.DetailedLogging())
 
+	router.Use(middleware.RequireAdminTokenForUnsafeMethods())
+
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{
 		"https://anastasiagofman.com",
@@ -40,7 +42,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 	welcom := router.Group("/")
 	welcom.GET("/", welcomeHandler.Welcome)
 
-	router.POST("/update-all-products", artHandler.RecreateAllStripeProducts)
+	router.POST("/update-all-products", middleware.RequireAdminToken(), artHandler.RecreateAllStripeProducts)
 
 	// Stripe webhook endpoint
 	router.POST("/recive-checkoutevent", stripeWebhookHandler.HandleStripeWebhook)
@@ -113,8 +115,9 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 			events.GET("/:id/registrations", eventRegistrationHandler.GetEventRegistrations)
 		}
 
-		api.GET("/registrations", eventRegistrationHandler.GetAllRegistrations)
-		api.GET("/author-registrations", eventRegistrationHandler.GetAllAuthorRegistrations)
+		// Protect registrations listings
+		api.GET("/registrations", middleware.RequireAdminToken(), eventRegistrationHandler.GetAllRegistrations)
+		api.GET("/author-registrations", middleware.RequireAdminToken(), eventRegistrationHandler.GetAllAuthorRegistrations)
 		// api.GET("/author-registrations/:id", eventRegistrationHandler.GetAuthorRegistrationByID)
 		api.POST("/author-registrations", eventRegistrationHandler.RegisterForAuthor)
 
@@ -126,23 +129,26 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		subscriptions := api.Group("/subscriptions")
 		{
 			subscriptions.POST("", eventRegistrationHandler.SubscribeEmail)
+
+			subscriptions.Use(middleware.RequireAdminToken())
 			subscriptions.GET("", paginationMiddleware, eventRegistrationHandler.GetAllEmailSubscriptions)
 			subscriptions.PATCH("/status", eventRegistrationHandler.UpdateEmailSubscriptionStatus)
 			subscriptions.DELETE("/:id", eventRegistrationHandler.DeleteEmailSubscription)
 		}
 		payments := api.Group("/payments")
 		{
-			payments.POST("/products", paymentHandler.CreateProduct)
+
+			payments.POST("/payment-links", paymentHandler.CreatePaymentLink)
 			payments.GET("/products/:id", paymentHandler.GetProduct)
+
+			payments.Use(middleware.RequireAdminToken())
+			payments.POST("/products", paymentHandler.CreateProduct)
 			payments.PUT("/products/:id", paymentHandler.UpdateProduct)
 			payments.DELETE("/products/:id", paymentHandler.DeleteProduct)
 
 			payments.GET("/customers", paymentHandler.GetCustomers)
-
 			payments.GET("/payment-intents", paymentHandler.GetPayments)
-			payments.POST("/payment-links", paymentHandler.CreatePaymentLink)
 			payments.POST("/refunds", paymentHandler.CreateRefund)
-
 			payments.GET("/balance", paymentHandler.GetBalance)
 		}
 		collections := api.Group("/collections")
@@ -191,6 +197,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 
 		settings := api.Group("/settings")
 		{
+			settings.Use(middleware.RequireAdminToken())
 			settings.GET("", settingsHandler.GetSettings)
 			settings.PATCH("", settingsHandler.UpdateSettings)
 			settings.PUT("", settingsHandler.OverwriteSettings)

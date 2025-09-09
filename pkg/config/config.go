@@ -41,8 +41,9 @@ type DatabaseConfig struct {
 }
 
 type ServerConfig struct {
-	Port string `mapstructure:"port"`
-	Mode string `mapstructure:"mode"`
+	Port       string `mapstructure:"port"`
+	Mode       string `mapstructure:"mode"`
+	AdminToken string `mapstructure:"admin_token"`
 }
 
 type StripeConfig struct {
@@ -74,6 +75,7 @@ func LoadConfig() (*Config, error) {
 	viper.BindEnv("database.sslmode", "DB_SSLMODE")
 	viper.BindEnv("server.port", "APP_PORT")
 	viper.BindEnv("server.mode", "GIN_MODE")
+	viper.BindEnv("server.admin_token", "ADMIN_TOKEN")
 	viper.BindEnv("stripe.secret_key", "STRIPE_SECRET_KEY")
 	viper.BindEnv("stripe.public_key", "STRIPE_PUBLIC_KEY")
 	viper.BindEnv("stripe.webhook_secret", "STRIPE_WEBHOOK_SECRET")
@@ -107,6 +109,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("database.sslmode", "disable")
 	viper.SetDefault("server.port", "8010")
 	viper.SetDefault("server.mode", "debug")
+	viper.SetDefault("server.admin_token", "")
 	viper.SetDefault("stripe.secret_key", "sk_test_")
 	viper.SetDefault("stripe.public_key", "pk_test_")
 	viper.SetDefault("stripe.webhook_secret", "")
