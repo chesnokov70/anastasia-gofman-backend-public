@@ -69,7 +69,7 @@ func (r *EventRepository) PartialUpdateEvent(id uint, kwargs map[string]interfac
 
 func (r *EventRepository) FullUpdateEvent(event entity.Event) (entity.Event, error) {
 	err := r.db.Model(&event).Where("id = ?", event.ID).
-		Select("title", "description", "start_date", "end_date", "location", "position", "is_finished").
+		Select("title", "description", "start_date", "end_date", "location", "language", "format", "venue", "organizer", "position", "is_finished").
 		Updates(event).Error
 	if err != nil {
 		return entity.Event{}, err
