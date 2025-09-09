@@ -3,8 +3,6 @@ package http
 import (
 	"anastasia_gofman_backend/internal/delivery/http/handler"
 	"anastasia_gofman_backend/internal/delivery/http/middleware"
-	"net/url"
-	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -19,15 +17,11 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 	router.Use(middleware.DetailedLogging())
 
 	config := cors.DefaultConfig()
-	config.AllowOriginFunc = func(origin string) bool {
-		u, err := url.Parse(origin)
-		if err != nil {
-			return false
-		}
-		h := strings.ToLower(u.Hostname())
-		return h == "anastasiagofman.com" || strings.HasSuffix(h, ".anastasiagofman.com")
+	config.AllowOrigins = []string{
+		"https://anastasiagofman.com",
+		"https://www.anastasiagofman.com",
 	}
-	//   config.AllowAllOrigins = true                                                      // Allows all origins
+	// config.AllowAllOrigins = true                                                      // Allows all origins
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"} // Specify methods
 	config.AllowHeaders = []string{
 		"Origin",
