@@ -30,6 +30,7 @@ func NewEventHandler(eventService service.EventService, translationService servi
 // @Tags Events
 // @Param offset query int false "Offset v pagination" default(0)
 // @Param limit query int false "Limit v pagination" default(10)
+// @Param only_id query bool false "Only id" default(false)
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
 // @Router /api/events [get]
@@ -47,6 +48,13 @@ func (h *EventHandler) GetAllEvents(c *gin.Context) {
 		return
 	}
 
+	onlyIDStr := c.DefaultQuery("only_id", "false")
+	onlyID, err := strconv.ParseBool(onlyIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid only_id parameter"})
+		return
+	}
+
 	// Валидация параметров
 	if offset < 0 {
 		offset = 0
@@ -55,9 +63,18 @@ func (h *EventHandler) GetAllEvents(c *gin.Context) {
 		limit = 10
 	}
 
-	events, total_pages, total_items, err := h.eventService.GetAllEvents(offset, limit)
+	events, total_pages, total_items, err := h.eventService.GetAllEvents(offset, limit, onlyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if onlyID {
+		ids := make([]int, len(events))
+		for i, e := range events {
+			ids[i] = e.ID
+		}
+		c.JSON(http.StatusOK, ids)
 		return
 	}
 

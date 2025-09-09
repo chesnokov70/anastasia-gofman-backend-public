@@ -61,7 +61,7 @@ type ArtService interface {
 }
 
 type EventService interface {
-	GetAllEvents(offset int, limit int) ([]entity.Event, int64, int64, error)
+	GetAllEvents(offset int, limit int, only_id bool) ([]entity.Event, int64, int64, error)
 	GetEventByID(id uint) (entity.Event, error)
 	GetMainPhoto(id uint) (entity.Photo, error)
 

@@ -14,13 +14,17 @@ func NewEventRepository(db *gorm.DB) *EventRepository {
 	return &EventRepository{db: db}
 }
 
-func (r *EventRepository) GetAllEvents(offset int, limit int) ([]entity.Event, int64, error) {
+func (r *EventRepository) GetAllEvents(offset int, limit int, only_id bool) ([]entity.Event, int64, error) {
 	var events []entity.Event
 	var count int64
-	query := r.db.Model(&entity.Event{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
-		return db.Order("photos.position ASC")
-		// }).Order("position ASC")
-	}).Order("created_at DESC")
+	var query *gorm.DB
+	if only_id {
+		query = r.db.Model(&entity.Event{}).Select("id").Order("created_at DESC")
+	} else {
+		query = r.db.Model(&entity.Event{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+			return db.Order("photos.position ASC")
+		}).Order("created_at DESC")
+	}
 
 	err := query.Count(&count).Error
 	if err != nil {

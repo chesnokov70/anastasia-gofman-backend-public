@@ -58,7 +58,7 @@ type ArtRepository interface {
 }
 
 type EventRepository interface {
-	GetAllEvents(offset int, limit int) ([]entity.Event, int64, error)
+	GetAllEvents(offset int, limit int, only_id bool) ([]entity.Event, int64, error)
 	GetEventByID(id uint) (entity.Event, error)
 	GetCountOfEvents() (int, error)
 

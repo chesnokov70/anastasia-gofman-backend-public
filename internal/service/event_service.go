@@ -20,8 +20,8 @@ type eventService struct {
 func NewEventService(eventRepository repository.EventRepository, photoRepository repository.PhotoRepository) EventService {
 	return &eventService{eventRepository: eventRepository, photoRepository: photoRepository}
 }
-func (s *eventService) GetAllEvents(offset int, limit int) ([]entity.Event, int64, int64, error) {
-	events, total, err := s.eventRepository.GetAllEvents(offset, limit)
+func (s *eventService) GetAllEvents(offset int, limit int, only_id bool) ([]entity.Event, int64, int64, error) {
+	events, total, err := s.eventRepository.GetAllEvents(offset, limit, only_id)
 	if err != nil {
 		return nil, 0, 0, err
 	}
