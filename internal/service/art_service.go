@@ -32,13 +32,13 @@ func NewArtService(artRepository repository.ArtRepository, photoRepository repos
 	}
 }
 
-func (s *artService) GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool, with_type_discrimination bool) ([]entity.Art, int64, int64, error) {
+func (s *artService) GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool, with_type_discrimination bool, only_id bool) ([]entity.Art, int64, int64, error) {
 	offset, limit := 0, 0
 	if page > 0 && size > 0 {
 		offset = (page - 1) * size
 		limit = size
 	}
-	arts, total, err := s.artRepository.GetAllArts(offset, limit, with_pagination, sorting, filtering, without_collection, with_type_discrimination)
+	arts, total, err := s.artRepository.GetAllArts(offset, limit, with_pagination, sorting, filtering, without_collection, with_type_discrimination, only_id)
 	if err != nil {
 		return nil, 0, 0, err
 	}

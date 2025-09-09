@@ -15,12 +15,17 @@ func NewArtRepository(db *gorm.DB) *ArtRepository {
 	return &ArtRepository{db: db}
 }
 
-func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool, with_type_discrimination bool) ([]entity.Art, int64, error) {
+func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool, with_type_discrimination bool, only_id bool) ([]entity.Art, int64, error) {
 	var arts []entity.Art
 	var count int64
-	query := r.db.Model(&entity.Art{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
-		return db.Order("photos.position ASC")
-	})
+	var query *gorm.DB
+	if only_id {
+		query = r.db.Model(&entity.Art{}).Select("id")
+	} else {
+		query = r.db.Model(&entity.Art{}).Preload("MainPhoto").Preload("PreviewPhoto").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+			return db.Order("photos.position ASC")
+		})
+	}
 
 	if filtering != nil {
 		if filtering.PriceFrom != nil {

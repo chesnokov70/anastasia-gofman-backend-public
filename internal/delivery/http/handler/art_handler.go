@@ -2,6 +2,7 @@ package handler
 
 import (
 	"anastasia_gofman_backend/internal/delivery/http/dto"
+	"anastasia_gofman_backend/internal/entity"
 	"anastasia_gofman_backend/internal/service"
 	"encoding/json"
 	"fmt"
@@ -32,6 +33,7 @@ func NewArtHandler(artService service.ArtService) *ArtHandler {
 // @Param size query int false "Page size" default(10)
 // @Param with_pagination query bool false "With pagination" default(true)
 // @Param without_collection query bool false "Without collection" default(true)
+// @Param only_id query bool false "Only id" default(false)
 // @Param with_type_discrimination query bool false "With type discrimination" default(false)
 // @Param sorting query string false "Sorting type" Enums(NEW, RATED, PRICE_HIGH, PRICE_LOW) default()
 // @Param filtering query string false "JSON filter object. Example: {"price_from": 100, "price_to": 1000, "size": "MEDIUM", "direction": "EXCLUSIVE", "style": "abstract", "author": "author name", "type": "_common", "archive_type": "repeat", "search": {"name": "search text", "title": {"en": "title search"}, "description": {"en": "desc search"}, "medium": {"en": "medium search"}, "technique": {"en": "technique search"}, "year": "2024", "frame": {"en": "frame search"}, "style": "abstract", "direction": "EXCLUSIVE", "dimension_str": "100x100"}, "is_carousel": "true"}"
@@ -44,6 +46,12 @@ func (h *ArtHandler) GetAllArts(c *gin.Context) {
 	size := c.DefaultQuery("size", "10")
 	sorting := c.DefaultQuery("sorting", "")
 	filtering := c.DefaultQuery("filtering", "")
+	only_id := c.DefaultQuery("only_id", "false")
+	only_id_bool, err := strconv.ParseBool(only_id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid only_id format"})
+		return
+	}
 	without_collection := c.DefaultQuery("without_collection", "true")
 	without_collection_bool, err := strconv.ParseBool(without_collection)
 	with_type_discrimination := c.DefaultQuery("with_type_discrimination", "false")
@@ -102,9 +110,23 @@ func (h *ArtHandler) GetAllArts(c *gin.Context) {
 		}
 	}
 
-	arts, total_pages, total_items, err := h.artService.GetAllArts(page_int, size_int, with_pagination_bool, sorting, filteringDTO.ToEntity(), without_collection_bool, with_type_discrimination_bool)
+	var filteringEntity *entity.ArtFilter
+	if filteringDTO != nil {
+		filteringEntity = filteringDTO.ToEntity()
+	}
+
+	arts, total_pages, total_items, err := h.artService.GetAllArts(page_int, size_int, with_pagination_bool, sorting, filteringEntity, without_collection_bool, with_type_discrimination_bool, only_id_bool)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if only_id_bool {
+		ids := make([]uint, len(arts))
+		for i, a := range arts {
+			ids[i] = a.ID
+		}
+		c.JSON(http.StatusOK, ids)
 		return
 	}
 	min_price, max_price, err := h.artService.GetMinAndMaxPrice()
