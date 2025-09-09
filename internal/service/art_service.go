@@ -779,7 +779,7 @@ func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, delFro
 		return nil, errors.New("explicit confirmation required: set confirm=true to proceed with irreversible deletions")
 	}
 
-	arts, _, err := s.artRepository.GetAllArts(0, 0, false, "", nil, false, false)
+	arts, _, err := s.artRepository.GetAllArts(0, 0, false, "", nil, false, false, false)
 	if err != nil {
 		return nil, err
 	}
