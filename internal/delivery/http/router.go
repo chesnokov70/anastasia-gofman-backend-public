@@ -23,6 +23,7 @@ func NewRouter(authorHandler *handler.AuthorHandler, artHandler *handler.ArtHand
 		"https://anastasiagofman.com",
 		"https://www.anastasiagofman.com",
 		"http://localhost:3000",
+		"https://anastasia-gofman-art.vercel.app",
 	}
 	// config.AllowAllOrigins = true                                                      // Allows all origins
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"} // Specify methods
