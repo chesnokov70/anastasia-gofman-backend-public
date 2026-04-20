@@ -19,9 +19,6 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
-
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // @title Art Gallery API
@@ -133,9 +130,9 @@ func main() {
 	router := http.NewRouter(authorHandler, artHandler, welcomeHandler, eventHandler, paymentHandler, collectionHandler, pressHandler, articleHandler, translationHandler, eventRegistrationHandler, stripeWebhookHandler, settingsHandler)
 	router.Static("/uploads", "./uploads")
 
-	// Use default swagger handler without custom URL to force template processing
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
-		ginSwagger.DefaultModelsExpandDepth(2)))
+	// Swagger отключен в production.
+	// router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
+	// 	ginSwagger.DefaultModelsExpandDepth(2)))
 
 	// ginSwagger.WrapHandler(swaggerfiles.Handler,
 	// 	ginSwagger.URL("http://localhost:8080/swagger/doc.json"),
