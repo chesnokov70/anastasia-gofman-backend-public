@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const priceOnRequestArchiveType = "price_on_request"
+
 type ArtRepository struct {
 	db *gorm.DB
 }
@@ -29,10 +31,10 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 
 	if filtering != nil {
 		if filtering.PriceFrom != nil {
-			query = query.Where("price >= ?", *filtering.PriceFrom)
+			query = query.Where("(price >= ? OR archive_type = ?)", *filtering.PriceFrom, priceOnRequestArchiveType)
 		}
 		if filtering.PriceTo != nil {
-			query = query.Where("price <= ?", *filtering.PriceTo)
+			query = query.Where("(price <= ? OR archive_type = ?)", *filtering.PriceTo, priceOnRequestArchiveType)
 		}
 		if filtering.Size != nil {
 			query = query.Where("size = ?", *filtering.Size)
@@ -194,9 +196,9 @@ func (r *ArtRepository) GetAllArts(offset int, limit int, with_pagination bool, 
 	case "RATED":
 		orderBy = "position ASC, id ASC"
 	case "PRICE_HIGH":
-		orderBy = "price DESC, id DESC"
+		orderBy = "CASE WHEN archive_type = 'price_on_request' THEN 1 ELSE 0 END ASC, price DESC, id DESC"
 	case "PRICE_LOW":
-		orderBy = "price ASC, id ASC"
+		orderBy = "CASE WHEN archive_type = 'price_on_request' THEN 1 ELSE 0 END ASC, price ASC, id ASC"
 	default:
 		orderBy = "position ASC, id ASC"
 	}

@@ -32,6 +32,53 @@ func NewArtService(artRepository repository.ArtRepository, photoRepository repos
 	}
 }
 
+const priceOnRequestArchiveType = "price_on_request"
+
+func isPurchasable(art entity.Art) bool {
+	return art.Price > 0 && art.ArchiveType != priceOnRequestArchiveType
+}
+
+func (s *artService) deactivateStripeProductForArt(art *entity.Art) error {
+	if art.StripeProductID != "" {
+		if err := s.stripeService.DeleteProduct(art.StripeProductID); err != nil {
+			return err
+		}
+	}
+	art.PaymentLink = ""
+	return nil
+}
+
+func (s *artService) syncPurchasableStripeProduct(art *entity.Art, imageURLs []string) error {
+	if !isPurchasable(*art) {
+		return s.deactivateStripeProductForArt(art)
+	}
+
+	nameForStripe, descriptionForStripe := get_name_and_description_for_stripe(*art)
+	price := int64(art.Price)
+	currency := "usd"
+	active := true
+
+	var product *service.ProductWithPriceAndLink
+	var err error
+	if art.StripeProductID == "" {
+		product, err = s.stripeService.CreateProduct(nameForStripe, descriptionForStripe, imageURLs, price, currency)
+	} else {
+		product, err = s.stripeService.UpdateProduct(art.StripeProductID, &nameForStripe, &descriptionForStripe, &imageURLs, &price, &currency, &active)
+	}
+	if err != nil {
+		return err
+	}
+	if product != nil {
+		art.StripeProductID = product.Product.ID
+		if product.Link != nil {
+			art.PaymentLink = product.Link.URL
+		}
+		art.NameForStripe = nameForStripe
+		art.DescriptionForStripe = descriptionForStripe
+	}
+	return nil
+}
+
 func (s *artService) GetAllArts(page int, size int, with_pagination bool, sorting string, filtering *entity.ArtFilter, without_collection bool, with_type_discrimination bool, only_id bool) ([]entity.Art, int64, int64, error) {
 	offset, limit := 0, 0
 	if page > 0 && size > 0 {
@@ -68,21 +115,15 @@ func (s *artService) CreateArt(art entity.Art, with_stripe bool) (entity.Art, er
 		count = 0
 	}
 	art.Position = count + 1
-	var product *service.ProductWithPriceAndLink = nil
-	if with_stripe && art.Price != 0 {
-		nameForStripe, descriptionForStripe := get_name_and_description_for_stripe(art)
 
-		product, err = s.stripeService.CreateProduct(nameForStripe, descriptionForStripe, []string{}, int64(art.Price), "usd")
+	if with_stripe && art.ArchiveType != priceOnRequestArchiveType && art.Price <= 0 {
+		return entity.Art{}, errors.New("price can't be 0")
+	}
 
-		if err != nil {
+	if with_stripe && isPurchasable(art) {
+		if err := s.syncPurchasableStripeProduct(&art, []string{}); err != nil {
 			return entity.Art{}, err
 		}
-		art.StripeProductID = product.Product.ID
-		art.PaymentLink = product.Link.URL
-		art.NameForStripe = nameForStripe
-		art.DescriptionForStripe = descriptionForStripe
-	} else if with_stripe && art.Price == 0 {
-		return entity.Art{}, errors.New("price can't be 0")
 	} else {
 		art.StripeProductID = ""
 		art.PaymentLink = ""
@@ -104,21 +145,37 @@ func get_name_and_description_for_stripe(art entity.Art) (string, string) {
 	return nameForStripe, descriptionForStripe
 }
 
+func englishTextFromUpdateValue(val interface{}, fieldName string) (string, bool, error) {
+	switch v := val.(type) {
+	case entity.TranslatedText:
+		return v.EN, v.EN != "", nil
+	case *entity.TranslatedText:
+		if v == nil {
+			return "", false, nil
+		}
+		return v.EN, v.EN != "", nil
+	case map[string]interface{}:
+		en, exists := v["en"]
+		if !exists || en == nil {
+			return "", false, nil
+		}
+		enStr, ok := en.(string)
+		if !ok {
+			return "", false, fmt.Errorf("invalid %s.en format", fieldName)
+		}
+		return enStr, enStr != "", nil
+	case map[string]string:
+		enStr, exists := v["en"]
+		return enStr, exists && enStr != "", nil
+	default:
+		return "", false, nil
+	}
+}
+
 func (s *artService) UpdateArt(art entity.Art) (entity.Art, error) {
 
-	currency := "usd"
-	active := true
-	current_price := int64(art.Price)
-	if current_price != 0 {
-		nameForStripe, descriptionForStripe := get_name_and_description_for_stripe(art)
-		product, err := s.stripeService.UpdateProduct(art.StripeProductID, &nameForStripe, &descriptionForStripe, &[]string{}, &current_price, &currency, &active)
-		if err != nil {
-			return entity.Art{}, err
-		}
-		art.StripeProductID = product.Product.ID
-		art.PaymentLink = product.Link.URL
-		art.NameForStripe = nameForStripe
-		art.DescriptionForStripe = descriptionForStripe
+	if err := s.syncPurchasableStripeProduct(&art, []string{}); err != nil {
+		return entity.Art{}, err
 	}
 
 	return s.artRepository.UpdateArt(art)
@@ -260,80 +317,72 @@ func (s *artService) PartialUpdateArt(id uint, kwargs map[string]interface{}, wi
 		}
 	}
 
-	if with_stripe && (nameForStripe != nil || descriptionForStripe != nil || price != nil || kwargs["name"] != nil || kwargs["description"] != nil) {
-		finalNameForStripe := nameForStripe
-		finalDescriptionForStripe := descriptionForStripe
+	finalArt := art
+	if nameForStripe != nil {
+		finalArt.NameForStripe = *nameForStripe
+	}
+	if descriptionForStripe != nil {
+		finalArt.DescriptionForStripe = *descriptionForStripe
+	}
+	if price != nil {
+		finalArt.Price = int(*price)
+		kwargs["price"] = int(*price)
+	}
 
-		if finalNameForStripe == nil {
-			if nameVal, exists := kwargs["name"]; exists && nameVal != nil {
-				var nameEN string
-				if tt, ok := nameVal.(entity.TranslatedText); ok {
-					nameEN = tt.EN
-				} else if tt, ok := nameVal.(*entity.TranslatedText); ok {
-					nameEN = tt.EN
-				} else if mapVal, ok := nameVal.(map[string]interface{}); ok {
-					if en, ok := mapVal["en"].(string); ok {
-						nameEN = en
-					}
-				}
-
-				if nameEN != "" {
-					finalNameForStripe = &nameEN
-				}
-			}
+	if val, exists := kwargs["archive_type"]; exists && val != nil {
+		if strPtr, ok := val.(*string); ok {
+			finalArt.ArchiveType = *strPtr
+		} else if str, ok := val.(string); ok {
+			finalArt.ArchiveType = str
+		} else {
+			return entity.Art{}, errors.New("invalid archive_type format")
 		}
+	}
 
-		if finalDescriptionForStripe == nil {
-			if descVal, exists := kwargs["description"]; exists && descVal != nil {
-				var descEN string
-				if tt, ok := descVal.(entity.TranslatedText); ok {
-					descEN = tt.EN
-				} else if tt, ok := descVal.(*entity.TranslatedText); ok {
-					descEN = tt.EN
-				} else if mapVal, ok := descVal.(map[string]interface{}); ok {
-					if en, ok := mapVal["en"].(string); ok {
-						descEN = en
-					}
-				}
-
-				if descEN != "" {
-					finalDescriptionForStripe = &descEN
-				}
-			}
-		}
-
-		product, err := partial_update_stripe_product(s, art, finalNameForStripe, finalDescriptionForStripe, price)
+	if nameVal, exists := kwargs["name"]; exists && nameVal != nil {
+		nameEN, ok, err := englishTextFromUpdateValue(nameVal, "name")
 		if err != nil {
-			return entity.Art{}, fmt.Errorf("failed to update stripe product: %w", err)
+			return entity.Art{}, err
+		}
+		if ok {
+			finalArt.Name.EN = nameEN
+		}
+	}
+
+	if descVal, exists := kwargs["description"]; exists && descVal != nil {
+		descriptionEN, ok, err := englishTextFromUpdateValue(descVal, "description")
+		if err != nil {
+			return entity.Art{}, err
+		}
+		if ok {
+			finalArt.Description.EN = descriptionEN
+		}
+	}
+
+	stripeRelevantChange := nameForStripe != nil ||
+		descriptionForStripe != nil ||
+		price != nil ||
+		kwargs["name"] != nil ||
+		kwargs["description"] != nil ||
+		kwargs["archive_type"] != nil
+	needsPriceOnRequestCleanup := finalArt.ArchiveType == priceOnRequestArchiveType && finalArt.PaymentLink != ""
+
+	if with_stripe && (stripeRelevantChange || needsPriceOnRequestCleanup) {
+		shouldHaveActiveProduct := isPurchasable(finalArt)
+		if err := s.syncPurchasableStripeProduct(&finalArt, []string{}); err != nil {
+			return entity.Art{}, fmt.Errorf("failed to sync stripe product: %w", err)
 		}
 
-		if product != nil {
-			if finalNameForStripe != nil {
-				kwargs["name_for_stripe"] = *finalNameForStripe
-			}
-			if finalDescriptionForStripe != nil {
-				kwargs["description_for_stripe"] = *finalDescriptionForStripe
-			}
-			if price != nil {
-				kwargs["price"] = int(*price)
-			}
-			kwargs["stripe_product_id"] = product.Product.ID
-			kwargs["payment_link"] = product.Link.URL
+		kwargs["stripe_product_id"] = finalArt.StripeProductID
+		kwargs["payment_link"] = finalArt.PaymentLink
+		if shouldHaveActiveProduct {
+			kwargs["name_for_stripe"] = finalArt.NameForStripe
+			kwargs["description_for_stripe"] = finalArt.DescriptionForStripe
 		}
 	}
 
 	// Финальное обновление в репозитории
 	return s.artRepository.PartialUpdateArt(id, kwargs)
-}
-
-func partial_update_stripe_product(s *artService, art entity.Art, nameForStripe *string, descriptionForStripe *string, price *int64) (*service.ProductWithPriceAndLink, error) {
-	currency := "usd"
-	active := true
-	product, err := s.stripeService.UpdateProduct(art.StripeProductID, nameForStripe, descriptionForStripe, &[]string{}, price, &currency, &active)
-	if err != nil {
-		return nil, err
-	}
-	return product, nil
 }
 
 func (s *artService) FullUpdateArt(art entity.Art, with_stripe bool) (entity.Art, error) {
@@ -342,32 +391,11 @@ func (s *artService) FullUpdateArt(art entity.Art, with_stripe bool) (entity.Art
 		return entity.Art{}, err
 	}
 	art.StripeProductID = existingArt.StripeProductID
+	art.PaymentLink = existingArt.PaymentLink
 
-	nameForStripe, descriptionForStripe := get_name_and_description_for_stripe(art)
-	price := int64(art.Price)
-	currency := "usd"
-	active := true
 	if with_stripe {
-		if art.StripeProductID == "" && art.Price > 0 {
-			product, err := s.stripeService.CreateProduct(nameForStripe, descriptionForStripe, []string{}, price, currency)
-			if err != nil {
-				return entity.Art{}, err
-			}
-			art.StripeProductID = product.Product.ID
-			art.PaymentLink = product.Link.URL
-			art.NameForStripe = nameForStripe
-			art.DescriptionForStripe = descriptionForStripe
-		} else if art.StripeProductID != "" {
-			product, err := s.stripeService.UpdateProduct(art.StripeProductID, &nameForStripe, &descriptionForStripe, &[]string{}, &price, &currency, &active)
-			if err != nil {
-				return entity.Art{}, err
-			}
-			if product != nil {
-				art.StripeProductID = product.Product.ID
-				art.PaymentLink = product.Link.URL
-				art.NameForStripe = nameForStripe
-				art.DescriptionForStripe = descriptionForStripe
-			}
+		if err := s.syncPurchasableStripeProduct(&art, []string{}); err != nil {
+			return entity.Art{}, err
 		}
 	}
 	return s.artRepository.FullUpdateArt(art)
@@ -620,6 +648,18 @@ func (s *artService) UpdatePhotosInStripe(id uint) error {
 	if err != nil {
 		return err
 	}
+
+	if !isPurchasable(art) {
+		if err := s.deactivateStripeProductForArt(&art); err != nil {
+			return err
+		}
+		_, err = s.artRepository.PartialUpdateArt(id, map[string]interface{}{
+			"stripe_product_id": art.StripeProductID,
+			"payment_link":      art.PaymentLink,
+		})
+		return err
+	}
+
 	list_of_photos := []string{}
 	if art.MainPhotoID != nil && art.MainPhoto.Path != "" {
 		path := strings.TrimPrefix(art.MainPhoto.Path, "/")
@@ -637,28 +677,15 @@ func (s *artService) UpdatePhotosInStripe(id uint) error {
 			list_of_photos = append(list_of_photos, fullPath)
 		}
 	}
-	current_price := int64(art.Price)
-	currency := "usd"
-	active := true
-	name := art.NameForStripe
-	if name == "" {
-		name = art.Name.EN
-	}
-	description := art.DescriptionForStripe
-	if description == "" {
-		description = art.Description.EN
-	}
-	ProductAndLink, err := s.stripeService.UpdateProduct(art.StripeProductID, &name, &description, &list_of_photos, &current_price, &currency, &active)
-	if err != nil {
+
+	if err := s.syncPurchasableStripeProduct(&art, list_of_photos); err != nil {
 		return err
 	}
-	if ProductAndLink != nil {
-		art.StripeProductID = ProductAndLink.Product.ID
-		art.PaymentLink = ProductAndLink.Link.URL
-	}
 	_, err = s.artRepository.PartialUpdateArt(id, map[string]interface{}{
-		"stripe_product_id": art.StripeProductID,
-		"payment_link":      art.PaymentLink,
+		"stripe_product_id":      art.StripeProductID,
+		"payment_link":           art.PaymentLink,
+		"name_for_stripe":        art.NameForStripe,
+		"description_for_stripe": art.DescriptionForStripe,
 	})
 	if err != nil {
 		return err
@@ -851,8 +878,11 @@ func (s *artService) RecreateAllStripeProducts(confirm bool, dryRun bool, delFro
 			continue
 		}
 
-		if art.Price <= 0 {
+		if !isPurchasable(art) {
 			report["recreate_skipped"] = "price is 0 or not set; cannot create Stripe product"
+			if art.ArchiveType == priceOnRequestArchiveType {
+				report["recreate_skipped"] = "archive_type=price_on_request; Stripe product is not needed"
+			}
 			results = append(results, report)
 			continue
 		}

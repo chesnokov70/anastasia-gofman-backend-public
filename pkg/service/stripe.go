@@ -203,7 +203,7 @@ func (s *StripeService) UpdateProduct(productID string, name *string, descriptio
 	}
 
 	var updatedPrice *stripe.Price = currentProduct.Price
-	if priceAmount != nil && *priceAmount > 0 && *priceAmount != currentProduct.Price.UnitAmount {
+	if priceAmount != nil && *priceAmount > 0 && (currentProduct.Price == nil || *priceAmount != currentProduct.Price.UnitAmount) {
 		currencyValue := "usd"
 		if currency != nil && *currency != "" {
 			currencyValue = *currency
@@ -229,6 +229,16 @@ func (s *StripeService) UpdateProduct(productID string, name *string, descriptio
 		} else {
 			updatedPrice = newPrice
 		}
+	}
+
+	if active != nil && !*active {
+		result := &ProductWithPriceAndLink{
+			Product: updatedProduct,
+			Price:   updatedPrice,
+		}
+
+		log.Printf("Продукт обновлен: ID %s", productID)
+		return result, nil
 	}
 
 	paymentLink, err := s.CreatePaymentLink(productID, 1)
